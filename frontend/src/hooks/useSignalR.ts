@@ -9,11 +9,9 @@ export function useSignalR(hubPath: string) {
     const [connectionError, setConnectionError] = useState<string | null>(null);
 
     useEffect(() => {
-        const token = localStorage.getItem('accessToken');
-
         const connection = new signalR.HubConnectionBuilder()
             .withUrl(`${API_URL}${hubPath}`, {
-                accessTokenFactory: () => token || '',
+                accessTokenFactory: () => localStorage.getItem('accessToken') || '',
             })
             .withAutomaticReconnect()
             .configureLogging(signalR.LogLevel.Information)
@@ -72,7 +70,7 @@ export function useSignalR(hubPath: string) {
     const invokeWhenReady = useCallback(async (method: string, ...args: unknown[]) => {
         const maxRetries = 10;
         let retries = 0;
-        
+
         while (retries < maxRetries) {
             if (connectionRef.current?.state === signalR.HubConnectionState.Connected) {
                 return connectionRef.current.invoke(method, ...args);
@@ -83,14 +81,14 @@ export function useSignalR(hubPath: string) {
         throw new Error('Connection timeout');
     }, []);
 
-    return { 
-        connection: connectionRef.current, 
-        isConnected, 
+    return {
+        connection: connectionRef.current,
+        isConnected,
         connectionError,
-        on, 
-        off, 
+        on,
+        off,
         invoke,
-        invokeWhenReady 
+        invokeWhenReady
     };
 }
 

@@ -98,7 +98,7 @@ export const Sidebar: React.FC = () => {
                             to={item.path}
                             className={`sidebar-link ${location.pathname.startsWith(item.path) ? 'active' : ''}`}
                         >
-                            <span className="sidebar-icon">{item.icon}</span>
+                            <span className="sidebar-icon" role="img" aria-label={item.label}>{item.icon}</span>
                             <span className="sidebar-label">{item.label}</span>
                         </Link>
                     ))}
@@ -107,8 +107,8 @@ export const Sidebar: React.FC = () => {
                 <div className="sidebar-footer">
                     {user && (
                         <div className="user-info">
-                            <div className="user-avatar">
-                                {user.firstName[0]}{user.lastName[0]}
+                            <div className="user-avatar" aria-label="Kullanıcı avatarı">
+                                {(user.firstName || 'U')[0]}{(user.lastName || 'U')[0]}
                             </div>
                             <div className="user-details">
                                 <span className="user-name">{user.firstName} {user.lastName}</span>
@@ -116,8 +116,8 @@ export const Sidebar: React.FC = () => {
                             </div>
                         </div>
                     )}
-                    <button className="logout-btn" onClick={logout}>
-                        🚪 Çıkış Yap
+                    <button className="logout-btn" onClick={logout} aria-label="Çıkış Yap">
+                        <span role="img" aria-hidden="true">🚪</span> Çıkış Yap
                     </button>
                 </div>
             </aside>

@@ -150,7 +150,7 @@ export const LoginPage: React.FC = () => {
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="ornek@email.com"
                             required
-                            autoComplete="username"
+                            autoComplete="email"
                         />
                     </div>
 
@@ -267,6 +267,7 @@ export const RegisterPage: React.FC = () => {
                                 onChange={handleChange}
                                 placeholder="Adınız"
                                 required
+                                autoComplete="given-name"
                             />
                         </div>
 
@@ -280,6 +281,7 @@ export const RegisterPage: React.FC = () => {
                                 onChange={handleChange}
                                 placeholder="Soyadınız"
                                 required
+                                autoComplete="family-name"
                             />
                         </div>
                     </div>

@@ -1,24 +1,73 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Landing.css';
 
 export const LandingPage: React.FC = () => {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
+    const closeMobileMenu = () => {
+        setIsMobileMenuOpen(false);
+    };
+
     return (
         <div className="landing">
             {/* Navigation */}
             <nav className="landing-nav">
                 <div className="nav-container">
                     <div className="nav-logo">
-                        <span className="logo-icon">🎓</span>
+                        <span className="logo-icon" role="img" aria-label="İzbo">🎓</span>
                         <span className="logo-text">İzbo</span>
                     </div>
+
+                    {/* Desktop Navigation */}
                     <div className="nav-links">
                         <a href="#features">Özellikler</a>
                         <a href="#about">Hakkında</a>
                         <Link to="/login" className="nav-btn login">Giriş Yap</Link>
                         <Link to="/register" className="nav-btn register">Kayıt Ol</Link>
                     </div>
+
+                    {/* Hamburger Button */}
+                    <button
+                        className={`hamburger-btn ${isMobileMenuOpen ? 'active' : ''}`}
+                        onClick={toggleMobileMenu}
+                        aria-label="Menüyü aç/kapat"
+                        aria-expanded={isMobileMenuOpen}
+                    >
+                        <span className="hamburger-line"></span>
+                        <span className="hamburger-line"></span>
+                        <span className="hamburger-line"></span>
+                    </button>
                 </div>
+
+                {/* Mobile Menu Overlay */}
+                {isMobileMenuOpen && (
+                    <div className="mobile-menu-overlay" onClick={closeMobileMenu}>
+                        <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
+                            <div className="mobile-menu-header">
+                                <span className="logo-icon" role="img" aria-label="İzbo">🎓</span>
+                                <span className="logo-text">İzbo</span>
+                                <button className="close-menu-btn" onClick={closeMobileMenu} aria-label="Menüyü kapat">
+                                    ✕
+                                </button>
+                            </div>
+                            <div className="mobile-menu-links">
+                                <a href="#features" onClick={closeMobileMenu}>Özellikler</a>
+                                <a href="#about" onClick={closeMobileMenu}>Hakkında</a>
+                                <Link to="/login" className="mobile-nav-btn login" onClick={closeMobileMenu}>
+                                    Giriş Yap
+                                </Link>
+                                <Link to="/register" className="mobile-nav-btn register" onClick={closeMobileMenu}>
+                                    Kayıt Ol
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </nav>
 
             {/* Hero Section */}
@@ -109,32 +158,32 @@ export const LandingPage: React.FC = () => {
                     </div>
                     <div className="features-grid">
                         <div className="feature-card">
-                            <div className="feature-icon">🎥</div>
+                            <div className="feature-icon" role="img" aria-label="Canlı Dersler">🎥</div>
                             <h3>Canlı Dersler</h3>
                             <p>HD kalitesinde video konferans ile etkileşimli canlı dersler yapın</p>
                         </div>
                         <div className="feature-card">
-                            <div className="feature-icon">📝</div>
+                            <div className="feature-icon" role="img" aria-label="Ödev Yönetimi">📝</div>
                             <h3>Ödev Yönetimi</h3>
                             <p>Ödevleri kolayca oluşturun, teslim alın ve değerlendirin</p>
                         </div>
                         <div className="feature-card">
-                            <div className="feature-icon">📊</div>
+                            <div className="feature-icon" role="img" aria-label="Online Sınavlar">📊</div>
                             <h3>Online Sınavlar</h3>
                             <p>Çoktan seçmeli, doğru-yanlış ve açık uçlu sorularla sınavlar</p>
                         </div>
                         <div className="feature-card">
-                            <div className="feature-icon">🏫</div>
+                            <div className="feature-icon" role="img" aria-label="Sınıf Yönetimi">🏫</div>
                             <h3>Sınıf Yönetimi</h3>
                             <p>Sınıflarınızı oluşturun ve öğrencilerinizi organize edin</p>
                         </div>
                         <div className="feature-card">
-                            <div className="feature-icon">🔔</div>
+                            <div className="feature-icon" role="img" aria-label="Anlık Bildirimler">🔔</div>
                             <h3>Anlık Bildirimler</h3>
                             <p>Önemli duyurulardan ve ödevlerden anında haberdar olun</p>
                         </div>
                         <div className="feature-card">
-                            <div className="feature-icon">📁</div>
+                            <div className="feature-icon" role="img" aria-label="Dosya Paylaşımı">📁</div>
                             <h3>Dosya Paylaşımı</h3>
                             <p>Ders materyallerini ve kaynakları güvenle paylaşın</p>
                         </div>

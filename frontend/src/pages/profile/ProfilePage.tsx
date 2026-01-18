@@ -131,7 +131,7 @@ export const ProfilePage: React.FC = () => {
                         {user.profileImageUrl ? (
                             <img src={user.profileImageUrl} alt="Profil" />
                         ) : (
-                            `${user.firstName[0]}${user.lastName[0]}`
+                            `${(user.firstName || 'U')[0]}${(user.lastName || 'U')[0]}`
                         )}
                         <div className="avatar-upload">📷 Değiştir</div>
                     </div>
