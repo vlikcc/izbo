@@ -1,0 +1,238 @@
+services:
+  # Infrastructure
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_MULTIPLE_DATABASES: eduplatform_auth,eduplatform_user,eduplatform_classroom,eduplatform_homework,eduplatform_exam,eduplatform_notification,eduplatform_file
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: eduplatform
+      RABBITMQ_DEFAULT_PASS: eduplatform
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  # API Gateway
+  apigateway:
+    build:
+      context: .
+      dockerfile: src/ApiGateway/ApiGateway/Dockerfile
+    ports:
+      - "5050:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+    depends_on:
+      - authservice
+      - userservice
+      - classroomservice
+      - homeworkservice
+      - examservice
+      - livesessionservice
+      - notificationservice
+      - fileservice
+
+  # Microservices
+  authservice:
+    build:
+      context: .
+      dockerfile: src/Services/AuthService/AuthService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_auth;Username=postgres;Password=postgres
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  userservice:
+    build:
+      context: .
+      dockerfile: src/Services/UserService/UserService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_user;Username=postgres;Password=postgres
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  classroomservice:
+    build:
+      context: .
+      dockerfile: src/Services/ClassroomService/ClassroomService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_classroom;Username=postgres;Password=postgres
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  homeworkservice:
+    build:
+      context: .
+      dockerfile: src/Services/HomeworkService/HomeworkService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_homework;Username=postgres;Password=postgres
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  examservice:
+    build:
+      context: .
+      dockerfile: src/Services/ExamService/ExamService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_exam;Username=postgres;Password=postgres
+      - ConnectionStrings__Redis=redis:6379
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  livesessionservice:
+    build:
+      context: .
+      dockerfile: src/Services/LiveSessionService/LiveSessionService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+
+  notificationservice:
+    build:
+      context: .
+      dockerfile: src/Services/NotificationService/NotificationService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_notification;Username=postgres;Password=postgres
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__User=eduplatform
+      - RabbitMQ__Password=eduplatform
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  fileservice:
+    build:
+      context: .
+      dockerfile: src/Services/FileService/FileService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_file;Username=postgres;Password=postgres
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+      - MinIO__Endpoint=minio:9000
+      - MinIO__AccessKey=minioadmin
+      - MinIO__SecretKey=minioadmin
+      - MinIO__BucketName=eduplatform
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:5050
+    depends_on:
+      - apigateway
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  minio_data:

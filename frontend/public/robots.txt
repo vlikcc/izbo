@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /classrooms/
+Disallow: /homework/
+Disallow: /exams/
+Disallow: /live/
+Disallow: /admin/
+
+Sitemap: https://yargisalzeka.com/sitemap.xml

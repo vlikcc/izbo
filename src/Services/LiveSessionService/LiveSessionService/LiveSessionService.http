@@ -1,0 +1,6 @@
+@LiveSessionService_HostAddress = http://localhost:5204
+
+GET {{LiveSessionService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
