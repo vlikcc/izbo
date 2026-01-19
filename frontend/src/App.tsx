@@ -1,127 +1,109 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
-import { Sidebar } from './components/common/Sidebar';
-import { LoginPage, RegisterPage, ForgotPasswordPage } from './pages/auth/AuthPages';
-import { VerifyEmailPage, ResendVerificationPage, PendingVerificationPage } from './pages/auth/VerifyEmailPage';
-import { DashboardPage } from './pages/dashboard/DashboardPage';
-import { ProfilePage } from './pages/profile/ProfilePage';
-import { ExamSessionPage } from './pages/exam/ExamSessionPage';
-import { CreateExamPage } from './pages/exam/CreateExamPage';
-import { ExamListPage } from './pages/exam/ExamListPage';
-import { ExamDetailPage } from './pages/exam/ExamDetailPage';
-import { ClassroomListPage, ClassroomDetailPage } from './pages/classroom/ClassroomPages';
-import { JoinClassroomPage } from './pages/classroom/JoinClassroomPage';
-import { CreateClassroomPage } from './pages/classroom/CreateClassroomPage';
-import { LiveSessionPage } from './pages/classroom/LiveSessionPage';
-import { LiveSessionsListPage } from './pages/live/LiveSessionsListPage';
-import { HomeworkListPage, HomeworkDetailPage } from './pages/homework/HomeworkPages';
-import { CreateHomeworkPage } from './pages/homework/CreateHomeworkPage';
-import { NotificationsPage } from './pages/notifications/NotificationsPage';
-import { AnnouncementsPage } from './pages/announcements/AnnouncementsPage';
-import { MessagesPage } from './pages/messages/MessagesPage';
-import { QuizListPage } from './pages/quiz/QuizPage';
-import { CalendarPage } from './pages/calendar/CalendarPage';
-import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
-import { AdminDashboard, AdminUsers } from './pages/admin/AdminPages';
-import { LandingPage } from './pages/landing/LandingPage';
-import { GamificationPage } from './pages/gamification/GamificationPage';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { ToastProvider } from './components/common/Toast';
-import './App.css';
+import { MainLayout } from './components/layout';
+import { LandingPage } from './pages/landing';
+import { LoginPage, RegisterPage } from './pages/auth';
+import { DashboardPage } from './pages/dashboard';
+import { ClassroomsPage } from './pages/classrooms';
+import { ExamsPage } from './pages/exams';
+import { HomeworkPage } from './pages/homework';
+import { LivePage } from './pages/live';
+import { ProfilePage } from './pages/profile';
+import './index.css';
 
-// Protected route wrapper
-const ProtectedRoute = () => {
-  const { isAuthenticated } = useAuthStore();
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = useAuthStore();
+
+  if (isLoading) {
+    return (
+      <div className="app-loading">
+        <div className="app-loading-spinner" />
+        <span>Yükleniyor...</span>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  return (
-    <div className="app-layout">
-      <Sidebar />
-      <main className="main-content">
-        <Outlet />
-      </main>
-    </div>
-  );
+  return <>{children}</>;
 };
 
-// Auth route wrapper (redirects if already logged in)
-const AuthRoute = () => {
+// Public Route (redirect if authenticated)
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuthStore();
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 function App() {
+  const { checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
-    <ErrorBoundary>
-      <ToastProvider>
-        <BrowserRouter>
-          <Routes>
-        {/* Public routes */}
+    <BrowserRouter>
+      <Routes>
+        {/* Landing Page - Public */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Auth routes */}
-        <Route element={<AuthRoute />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/resend-verification" element={<ResendVerificationPage />} />
-          <Route path="/pending-verification" element={<PendingVerificationPage />} />
+        {/* Auth Routes */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* Protected Routes */}
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/app/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="classrooms" element={<ClassroomsPage />} />
+          <Route path="exams" element={<ExamsPage />} />
+          <Route path="homework" element={<HomeworkPage />} />
+          <Route path="live" element={<LivePage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
 
-        {/* Protected routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/announcements" element={<AnnouncementsPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/quiz" element={<QuizListPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/gamification" element={<GamificationPage />} />
+        {/* Legacy redirects */}
+        <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
+        <Route path="/classrooms" element={<Navigate to="/app/classrooms" replace />} />
+        <Route path="/exams" element={<Navigate to="/app/exams" replace />} />
+        <Route path="/homework" element={<Navigate to="/app/homework" replace />} />
+        <Route path="/live" element={<Navigate to="/app/live" replace />} />
+        <Route path="/profile" element={<Navigate to="/app/profile" replace />} />
 
-          {/* Classrooms */}
-          <Route path="/classrooms" element={<ClassroomListPage />} />
-          <Route path="/classrooms/new" element={<CreateClassroomPage />} />
-          <Route path="/classrooms/:id" element={<ClassroomDetailPage />} />
-          <Route path="/join" element={<JoinClassroomPage />} />
-          <Route path="/join/:code" element={<JoinClassroomPage />} />
-
-          {/* Homework */}
-          <Route path="/homework" element={<HomeworkListPage />} />
-          <Route path="/homework/new" element={<CreateHomeworkPage />} />
-          <Route path="/homework/:id" element={<HomeworkDetailPage />} />
-
-          {/* Exams */}
-          <Route path="/exams" element={<ExamListPage />} />
-          <Route path="/exams/new" element={<CreateExamPage />} />
-          <Route path="/exams/:examId" element={<ExamDetailPage />} />
-          <Route path="/exams/:examId/session" element={<ExamSessionPage />} />
-
-          {/* Live Sessions */}
-          <Route path="/live" element={<LiveSessionsListPage />} />
-          <Route path="/live/:sessionId" element={<LiveSessionPage />} />
-
-          {/* Admin */}
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-        </Route>
-
-          {/* Default redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </ToastProvider>
-  </ErrorBoundary>
+        {/* Catch all - redirect to landing */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

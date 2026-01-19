@@ -1,0 +1,157 @@
+/* Modal Component Styles */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
+    padding: var(--space-4);
+}
+
+.modal {
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-sm {
+    width: 100%;
+    max-width: 400px;
+}
+
+.modal-md {
+    width: 100%;
+    max-width: 500px;
+}
+
+.modal-lg {
+    width: 100%;
+    max-width: 700px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.modal-title {
+    font-size: var(--font-size-xl);
+    color: var(--color-gray-900);
+    margin: 0;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--color-gray-100);
+    border-radius: var(--radius-full);
+    color: var(--color-gray-500);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+    background: var(--color-gray-200);
+    color: var(--color-gray-700);
+}
+
+.modal-body {
+    padding: var(--space-6);
+    overflow-y: auto;
+}
+
+.modal-footer {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--color-gray-100);
+}
+
+/* Form in Modal */
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.modal-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    margin-top: var(--space-4);
+}
+
+/* Textarea in Modal */
+.modal-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-gray-800);
+    resize: vertical;
+    transition: all var(--transition-fast);
+}
+
+.modal-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary-400);
+    box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.modal-textarea::placeholder {
+    color: var(--color-gray-400);
+}
+
+/* Select in Modal */
+.modal-select {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-gray-800);
+    background: var(--color-white);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.modal-select:focus {
+    outline: none;
+    border-color: var(--color-primary-400);
+    box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+/* Row in Modal */
+.modal-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+    .modal-row {
+        grid-template-columns: 1fr;
+    }
+}

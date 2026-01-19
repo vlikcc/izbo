@@ -81,15 +81,25 @@ public class SessionService : ISessionService
         return sessions.Select(MapToDto).ToList();
     }
 
-    public async Task<List<ClassSessionDto>> GetUpcomingSessionsAsync(Guid studentId)
+    public async Task<List<ClassSessionDto>> GetUpcomingSessionsAsync(Guid userId)
     {
-        var classroomIds = await _context.Enrollments
-            .Where(e => e.StudentId == studentId && e.IsActive)
+        // 1. Öğrenci olarak kayıtlı olduğu sınıflar
+        var enrolledClassroomIds = await _context.Enrollments
+            .Where(e => e.StudentId == userId && e.IsActive)
             .Select(e => e.ClassroomId)
             .ToListAsync();
 
+        // 2. Eğitmen olduğu sınıflar
+        var ownedClassroomIds = await _context.Classrooms
+            .Where(c => c.InstructorId == userId && c.IsActive)
+            .Select(c => c.Id)
+            .ToListAsync();
+        
+        // Birleştir
+        var allClassroomIds = enrolledClassroomIds.Union(ownedClassroomIds).Distinct().ToList();
+
         var sessions = await _context.ClassSessions
-            .Where(s => classroomIds.Contains(s.ClassroomId) &&
+            .Where(s => allClassroomIds.Contains(s.ClassroomId) &&
                        s.ScheduledStartTime > DateTime.UtcNow &&
                        s.Status == SessionStatus.Scheduled)
             .OrderBy(s => s.ScheduledStartTime)
