@@ -181,7 +181,7 @@ export const ClassroomDetailPage: React.FC = () => {
     const pastSessions = sessions.filter(s => s.status === 'Ended');
 
     return (
-        <div className="classroom-detail">
+        <div className="classroom-detail-container">
             <header className="classroom-header">
                 <Link to="/classrooms" className="back-btn">← Sınıflara Dön</Link>
                 <div
@@ -200,14 +200,14 @@ export const ClassroomDetailPage: React.FC = () => {
 
             <div className="classroom-content">
                 {(user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin') && (
-                    <div className="classroom-actions">
-                        <button onClick={() => setIsInviteModalOpen(true)} className="action-btn invite-btn">
+                    <div className="detail-actions">
+                        <button onClick={() => setIsInviteModalOpen(true)} className="detail-action-btn invite-btn">
                             🔗 Öğrenci Davet Et
                         </button>
-                        <button onClick={() => setIsStudentListModalOpen(true)} className="action-btn students-btn">
+                        <button onClick={() => setIsStudentListModalOpen(true)} className="detail-action-btn students-btn">
                             👥 Öğrenci Listesi ({classroom.studentCount})
                         </button>
-                        <button onClick={() => setIsCreateSessionModalOpen(true)} className="action-btn create-session-btn">
+                        <button onClick={() => setIsCreateSessionModalOpen(true)} className="detail-action-btn create-session-btn">
                             📅 Yeni Canlı Ders Planla
                         </button>
                     </div>

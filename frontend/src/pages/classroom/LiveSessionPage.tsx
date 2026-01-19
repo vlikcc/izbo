@@ -56,7 +56,7 @@ export const LiveSessionPage: React.FC = () => {
         if (localStreamReady && localVideoRef.current && localStreamRef.current) {
             const video = localVideoRef.current;
             video.srcObject = localStreamRef.current;
-            
+
             const playVideo = () => {
                 video.play().catch(e => {
                     console.log('Video play failed, retrying:', e);
@@ -81,7 +81,7 @@ export const LiveSessionPage: React.FC = () => {
         if (screenStreamReady && screenShareRef.current && screenStreamRef.current) {
             const video = screenShareRef.current;
             video.srcObject = screenStreamRef.current;
-            
+
             const playVideo = () => {
                 video.play().catch(e => {
                     console.log('Screen share play failed, retrying:', e);
@@ -187,7 +187,7 @@ export const LiveSessionPage: React.FC = () => {
                 cleanupMedia();
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isConnected, sessionId]);
 
     useEffect(() => {
@@ -222,23 +222,23 @@ export const LiveSessionPage: React.FC = () => {
         try {
             setMediaError(null);
             setLocalStreamReady(false);
-            
+
             // First try with both video and audio
-            const stream = await navigator.mediaDevices.getUserMedia({ 
+            const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     width: { ideal: 1280 },
                     height: { ideal: 720 },
                     facingMode: 'user'
-                }, 
+                },
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true
                 }
             });
-            
+
             localStreamRef.current = stream;
             console.log('Media stream acquired:', stream.getTracks().map(t => `${t.kind}: ${t.label}`));
-            
+
             // Trigger useEffect to attach stream to video element
             setLocalStreamReady(true);
         } catch (error) {
@@ -341,19 +341,19 @@ export const LiveSessionPage: React.FC = () => {
                     },
                     audio: true
                 });
-                
+
                 screenStreamRef.current = stream;
                 console.log('Screen share stream acquired:', stream.getTracks().map(t => `${t.kind}: ${t.label}`));
-                
+
                 // First set screen sharing state, then trigger stream ready
                 setIsScreenSharing(true);
                 // Use setTimeout to ensure the video element is rendered before attaching stream
                 setTimeout(() => {
                     setScreenStreamReady(true);
                 }, 50);
-                
+
                 await invoke('StartScreenShare', sessionId);
-                
+
                 // Handle when user stops sharing via browser UI
                 stream.getVideoTracks()[0].onended = async () => {
                     setIsScreenSharing(false);
@@ -419,7 +419,7 @@ export const LiveSessionPage: React.FC = () => {
                 <div className="live-info">
                     <span className="live-badge">🔴 CANLI</span>
                     <h1>Canlı Ders</h1>
-                    <span className="participant-count">👥 {participants.length + 1} katılımcı</span>
+                    <span className="header-participant-count">👥 {participants.length + 1} katılımcı</span>
                     {isInstructor && <span className="instructor-badge">👨‍🏫 Öğretmen</span>}
                 </div>
                 <button className="leave-btn" onClick={handleLeave}>
@@ -440,11 +440,11 @@ export const LiveSessionPage: React.FC = () => {
                         <div className="screen-share-container">
                             {isScreenSharing ? (
                                 <>
-                                    <video 
-                                        ref={screenShareRef} 
-                                        autoPlay 
-                                        playsInline 
-                                        className="screen-share-video" 
+                                    <video
+                                        ref={screenShareRef}
+                                        autoPlay
+                                        playsInline
+                                        className="screen-share-video"
                                     />
                                     <span className="screen-share-label">📺 Ekranınızı paylaşıyorsunuz</span>
                                 </>
@@ -458,12 +458,12 @@ export const LiveSessionPage: React.FC = () => {
 
                     <div className={`videos-container ${isScreenSharing || screenShareUserId ? 'minimized' : ''}`}>
                         <div className="main-video">
-                            <video 
-                                ref={localVideoRef} 
-                                autoPlay 
-                                muted 
-                                playsInline 
-                                className={`local-video ${isVideoOff ? 'hidden' : ''}`} 
+                            <video
+                                ref={localVideoRef}
+                                autoPlay
+                                muted
+                                playsInline
+                                className={`local-video ${isVideoOff ? 'hidden' : ''}`}
                             />
                             {isVideoOff && (
                                 <div className="video-off-overlay">
@@ -546,8 +546,8 @@ export const LiveSessionPage: React.FC = () => {
                     <span>{isVideoOff ? 'Kamerayı Aç' : 'Kamerayı Kapat'}</span>
                 </button>
                 {isInstructor && (
-                    <button 
-                        className={`control-btn ${isScreenSharing ? 'active screen-share' : ''}`} 
+                    <button
+                        className={`control-btn ${isScreenSharing ? 'active screen-share' : ''}`}
                         onClick={toggleScreenShare}
                     >
                         {isScreenSharing ? '🛑' : '📺'}

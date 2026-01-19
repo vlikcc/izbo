@@ -121,7 +121,7 @@
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 8px;
 }
 
 .calendar-weekday {
@@ -133,10 +133,10 @@
 }
 
 .calendar-day {
-  aspect-ratio: 1;
+  min-height: 100px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   padding: 8px;
   background: rgba(255, 255, 255, 0.02);
@@ -178,12 +178,15 @@
 
 .day-events {
   display: flex;
-  gap: 2px;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  width: 100%;
 }
 
 .event-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 

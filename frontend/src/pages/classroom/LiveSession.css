@@ -12,6 +12,8 @@
     padding: 16px 24px;
     background: rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 24px;
+    flex-wrap: wrap;
 }
 
 .live-info {
@@ -48,7 +50,7 @@
     margin: 0;
 }
 
-.participant-count {
+.header-participant-count {
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.9rem;
 }
@@ -478,9 +480,12 @@
 }
 
 @keyframes screen-share-pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
     }
+
     50% {
         box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
     }

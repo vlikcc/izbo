@@ -62,8 +62,17 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
 }
 
 .live-sessions-grid {
@@ -106,7 +115,7 @@
   font-size: 3rem;
 }
 
-.participant-count {
+.session-preview .participant-count {
   position: absolute;
   top: 12px;
   right: 12px;
