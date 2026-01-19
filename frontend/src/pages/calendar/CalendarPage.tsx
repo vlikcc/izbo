@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { classroomApi, examApi, homeworkApi } from '../../services/api';
 import type { ClassSession, Exam, Homework } from '../../types';
-import './Calendar.css';
 
 interface CalendarEvent {
     id: string;
@@ -23,7 +22,7 @@ export const CalendarPage: React.FC = () => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loading, setLoading] = useState(true);
-    const [viewMode, setViewMode] = useState<'month' | 'week' | 'agenda'>('month');
+    const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
 
     useEffect(() => {
         loadEvents();
@@ -34,7 +33,6 @@ export const CalendarPage: React.FC = () => {
         const allEvents: CalendarEvent[] = [];
 
         try {
-            // Load sessions
             const [sessionsRes, upcomingRes] = await Promise.all([
                 classroomApi.getLiveSessions(),
                 classroomApi.getUpcomingSessions()
@@ -70,7 +68,6 @@ export const CalendarPage: React.FC = () => {
                 });
             }
 
-            // Load exams
             const examsRes = await examApi.getAll();
             if (examsRes.data.success && examsRes.data.data) {
                 examsRes.data.data.items.forEach((exam: Exam) => {
@@ -87,7 +84,6 @@ export const CalendarPage: React.FC = () => {
                 });
             }
 
-            // Load homework
             const homeworkRes = await homeworkApi.getAll();
             if (homeworkRes.data.success && homeworkRes.data.data) {
                 homeworkRes.data.data.items.forEach((hw: Homework) => {
@@ -105,7 +101,6 @@ export const CalendarPage: React.FC = () => {
 
             setEvents(allEvents);
         } catch (error) {
-            // Mock events
             const now = new Date();
             setEvents([
                 {
@@ -160,12 +155,10 @@ export const CalendarPage: React.FC = () => {
         const lastDay = new Date(year, month + 1, 0);
         const days: (Date | null)[] = [];
 
-        // Add empty slots for days before the first day of the month
         for (let i = 0; i < firstDay.getDay(); i++) {
             days.push(null);
         }
 
-        // Add all days of the month
         for (let i = 1; i <= lastDay.getDate(); i++) {
             days.push(new Date(year, month, i));
         }
@@ -215,28 +208,38 @@ export const CalendarPage: React.FC = () => {
     const days = getDaysInMonth(currentDate);
     const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
-    // Agenda view: upcoming events
     const upcomingEvents = events
         .filter(e => new Date(e.date) >= new Date())
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(0, 10);
 
     return (
-        <div className="calendar-page">
-            <header className="page-header">
+        <div className="p-6 lg:p-8 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50 min-h-screen">
+            {/* Header */}
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
-                    <h1>📅 Takvim</h1>
-                    <p>Derslerinizi, sınavlarınızı ve ödevlerinizi takip edin</p>
+                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        📅 Takvim
+                    </h1>
+                    <p className="text-gray-500 mt-1">Derslerinizi, sınavlarınızı ve ödevlerinizi takip edin</p>
                 </div>
-                <div className="view-toggles">
+                <div className="flex gap-2">
                     <button
-                        className={`view-btn ${viewMode === 'month' ? 'active' : ''}`}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                            viewMode === 'month' 
+                                ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                                : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                        }`}
                         onClick={() => setViewMode('month')}
                     >
                         Ay
                     </button>
                     <button
-                        className={`view-btn ${viewMode === 'agenda' ? 'active' : ''}`}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                            viewMode === 'agenda' 
+                                ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                                : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                        }`}
                         onClick={() => setViewMode('agenda')}
                     >
                         Ajanda
@@ -245,49 +248,68 @@ export const CalendarPage: React.FC = () => {
             </header>
 
             {viewMode === 'month' ? (
-                <div className="calendar-container">
-                    <div className="calendar-main">
-                        <div className="calendar-header">
-                            <button className="nav-btn" onClick={() => navigateMonth(-1)}>
+                <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+                    {/* Calendar Main */}
+                    <div className="bg-white rounded-2xl border border-rose-100 p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <button 
+                                className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100 transition-colors"
+                                onClick={() => navigateMonth(-1)}
+                            >
                                 ←
                             </button>
-                            <h2>
+                            <h2 className="text-xl font-semibold text-gray-900">
                                 {MONTHS_TR[currentDate.getMonth()]} {currentDate.getFullYear()}
                             </h2>
-                            <button className="nav-btn" onClick={() => navigateMonth(1)}>
-                                →
-                            </button>
-                            <button className="today-btn" onClick={goToToday}>
-                                Bugün
-                            </button>
+                            <div className="flex gap-2">
+                                <button 
+                                    className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100 transition-colors"
+                                    onClick={() => navigateMonth(1)}
+                                >
+                                    →
+                                </button>
+                                <button 
+                                    className="px-4 py-2 bg-rose-500 text-white font-medium rounded-xl hover:bg-rose-600 transition-colors"
+                                    onClick={goToToday}
+                                >
+                                    Bugün
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="calendar-grid">
+                        <div className="grid grid-cols-7 gap-1">
                             {DAYS_TR.map(day => (
-                                <div key={day} className="day-header">
+                                <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
                                     {day.slice(0, 3)}
                                 </div>
                             ))}
                             {days.map((date, index) => (
                                 <div
                                     key={index}
-                                    className={`day-cell ${!date ? 'empty' : ''} ${date && isToday(date) ? 'today' : ''} ${date && selectedDate && date.toDateString() === selectedDate.toDateString() ? 'selected' : ''}`}
+                                    className={`min-h-[80px] p-2 rounded-xl cursor-pointer transition-all ${
+                                        !date ? 'bg-transparent' : 
+                                        isToday(date) ? 'bg-rose-100 border-2 border-rose-400' :
+                                        selectedDate && date.toDateString() === selectedDate.toDateString() ? 'bg-rose-50 border-2 border-rose-300' :
+                                        'bg-gray-50 hover:bg-rose-50'
+                                    }`}
                                     onClick={() => date && setSelectedDate(date)}
                                 >
                                     {date && (
                                         <>
-                                            <span className="day-number">{date.getDate()}</span>
-                                            <div className="day-events">
+                                            <span className={`text-sm font-medium ${isToday(date) ? 'text-rose-600' : 'text-gray-700'}`}>
+                                                {date.getDate()}
+                                            </span>
+                                            <div className="flex flex-wrap gap-1 mt-1">
                                                 {getEventsForDate(date).slice(0, 3).map(event => (
                                                     <div
                                                         key={event.id}
-                                                        className="event-dot"
+                                                        className="w-2 h-2 rounded-full"
                                                         style={{ backgroundColor: event.color }}
                                                         title={event.title}
                                                     ></div>
                                                 ))}
                                                 {getEventsForDate(date).length > 3 && (
-                                                    <span className="more-events">
+                                                    <span className="text-xs text-gray-500">
                                                         +{getEventsForDate(date).length - 3}
                                                     </span>
                                                 )}
@@ -299,31 +321,34 @@ export const CalendarPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="calendar-sidebar">
+                    {/* Sidebar */}
+                    <div className="bg-white rounded-2xl border border-rose-100 p-6">
                         {selectedDate ? (
                             <>
-                                <h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
                                     {selectedDate.getDate()} {MONTHS_TR[selectedDate.getMonth()]}
-                                    <span className="day-name">{DAYS_TR[selectedDate.getDay()]}</span>
                                 </h3>
+                                <p className="text-gray-500 text-sm mb-4">{DAYS_TR[selectedDate.getDay()]}</p>
                                 {selectedDateEvents.length === 0 ? (
-                                    <p className="no-events">Bu tarihte etkinlik yok</p>
+                                    <p className="text-gray-400 text-center py-8">Bu tarihte etkinlik yok</p>
                                 ) : (
-                                    <div className="event-list">
+                                    <div className="space-y-3">
                                         {selectedDateEvents.map(event => (
                                             <Link
                                                 key={event.id}
                                                 to={event.link || '#'}
-                                                className="event-item"
+                                                className="block p-3 rounded-xl border-l-4 bg-gray-50 hover:bg-rose-50 transition-colors"
                                                 style={{ borderLeftColor: event.color }}
                                             >
-                                                <span className="event-icon">{getTypeIcon(event.type)}</span>
-                                                <div className="event-info">
-                                                    <span className="event-title">{event.title}</span>
-                                                    <span className="event-time">{formatTime(event.date)}</span>
-                                                    {event.classroomName && (
-                                                        <span className="event-classroom">{event.classroomName}</span>
-                                                    )}
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-lg">{getTypeIcon(event.type)}</span>
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className="font-medium text-gray-900 block truncate">{event.title}</span>
+                                                        <span className="text-sm text-gray-500">{formatTime(event.date)}</span>
+                                                        {event.classroomName && (
+                                                            <span className="text-sm text-gray-400 block">{event.classroomName}</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </Link>
                                         ))}
@@ -331,27 +356,29 @@ export const CalendarPage: React.FC = () => {
                                 )}
                             </>
                         ) : (
-                            <div className="select-date-hint">
-                                <span>📅</span>
-                                <p>Etkinlikleri görmek için bir tarih seçin</p>
+                            <div className="text-center py-12">
+                                <span className="text-4xl mb-4 block">📅</span>
+                                <p className="text-gray-500">Etkinlikleri görmek için bir tarih seçin</p>
                             </div>
                         )}
                     </div>
                 </div>
             ) : (
-                <div className="agenda-view">
-                    <h2>📋 Yaklaşan Etkinlikler</h2>
+                <div className="bg-white rounded-2xl border border-rose-100 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                        📋 Yaklaşan Etkinlikler
+                    </h2>
                     {loading ? (
-                        <div className="loading">
-                            <div className="spinner"></div>
+                        <div className="flex justify-center py-12">
+                            <div className="w-10 h-10 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
                         </div>
                     ) : upcomingEvents.length === 0 ? (
-                        <div className="empty-agenda">
-                            <span>🎉</span>
-                            <p>Yaklaşan etkinlik yok</p>
+                        <div className="text-center py-12">
+                            <span className="text-4xl mb-4 block">🎉</span>
+                            <p className="text-gray-500">Yaklaşan etkinlik yok</p>
                         </div>
                     ) : (
-                        <div className="agenda-list">
+                        <div className="space-y-3">
                             {upcomingEvents.map(event => {
                                 const eventDate = new Date(event.date);
                                 const now = new Date();
@@ -361,35 +388,32 @@ export const CalendarPage: React.FC = () => {
                                     <Link
                                         key={event.id}
                                         to={event.link || '#'}
-                                        className="agenda-item"
+                                        className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-rose-50 transition-colors"
                                     >
-                                        <div className="agenda-date">
-                                            <span className="agenda-day">{eventDate.getDate()}</span>
-                                            <span className="agenda-month">{MONTHS_TR[eventDate.getMonth()].slice(0, 3)}</span>
+                                        <div className="text-center flex-shrink-0">
+                                            <span className="text-2xl font-bold text-gray-900 block">{eventDate.getDate()}</span>
+                                            <span className="text-xs text-gray-500">{MONTHS_TR[eventDate.getMonth()].slice(0, 3)}</span>
                                         </div>
-                                        <div
-                                            className="agenda-indicator"
-                                            style={{ backgroundColor: event.color }}
-                                        ></div>
-                                        <div className="agenda-content">
-                                            <span className="agenda-title">
+                                        <div className="w-1 h-12 rounded-full" style={{ backgroundColor: event.color }}></div>
+                                        <div className="flex-1 min-w-0">
+                                            <span className="font-medium text-gray-900 flex items-center gap-2">
                                                 {getTypeIcon(event.type)} {event.title}
                                             </span>
-                                            <span className="agenda-time">
+                                            <span className="text-sm text-gray-500 block">
                                                 {formatTime(eventDate)}
                                                 {event.endDate && ` - ${formatTime(event.endDate)}`}
                                             </span>
                                             {event.classroomName && (
-                                                <span className="agenda-classroom">{event.classroomName}</span>
+                                                <span className="text-sm text-gray-400">{event.classroomName}</span>
                                             )}
                                         </div>
-                                        <div className="agenda-countdown">
+                                        <div className="flex-shrink-0">
                                             {diffDays === 0 ? (
-                                                <span className="today-badge">Bugün</span>
+                                                <span className="px-3 py-1 bg-red-100 text-red-600 text-sm font-medium rounded-full">Bugün</span>
                                             ) : diffDays === 1 ? (
-                                                <span className="tomorrow-badge">Yarın</span>
+                                                <span className="px-3 py-1 bg-orange-100 text-orange-600 text-sm font-medium rounded-full">Yarın</span>
                                             ) : (
-                                                <span>{diffDays} gün</span>
+                                                <span className="text-gray-500">{diffDays} gün</span>
                                             )}
                                         </div>
                                     </Link>
@@ -400,18 +424,19 @@ export const CalendarPage: React.FC = () => {
                 </div>
             )}
 
-            <div className="legend">
-                <div className="legend-item">
-                    <span className="legend-dot" style={{ backgroundColor: '#10b981' }}></span>
-                    Canlı Ders
+            {/* Legend */}
+            <div className="flex flex-wrap gap-6 mt-6 justify-center">
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    <span className="text-sm text-gray-600">Canlı Ders</span>
                 </div>
-                <div className="legend-item">
-                    <span className="legend-dot" style={{ backgroundColor: '#8b5cf6' }}></span>
-                    Sınav
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-violet-500"></span>
+                    <span className="text-sm text-gray-600">Sınav</span>
                 </div>
-                <div className="legend-item">
-                    <span className="legend-dot" style={{ backgroundColor: '#f59e0b' }}></span>
-                    Ödev
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                    <span className="text-sm text-gray-600">Ödev</span>
                 </div>
             </div>
         </div>

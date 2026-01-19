@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './GlobalSearch.css';
 
 interface SearchResult {
     id: string;
@@ -112,88 +111,126 @@ export const GlobalSearch: React.FC = () => {
 
     if (!isOpen) {
         return (
-            <button className="search-trigger" onClick={() => setIsOpen(true)}>
-                <span className="search-icon">🔍</span>
-                <span className="search-placeholder">Ara...</span>
-                <kbd className="search-shortcut">⌘K</kbd>
+            <button 
+                className="flex items-center gap-3 px-4 py-2.5 bg-white border border-rose-100 rounded-xl text-gray-400 hover:border-rose-200 hover:text-gray-500 transition-all shadow-sm"
+                onClick={() => setIsOpen(true)}
+            >
+                <span className="text-lg">🔍</span>
+                <span className="text-sm">Ara...</span>
+                <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 text-rose-500 text-xs font-medium rounded-md border border-rose-100">
+                    ⌘K
+                </kbd>
             </button>
         );
     }
 
     return (
-        <div className="search-overlay" onClick={() => setIsOpen(false)}>
+        <div 
+            className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 bg-black/30 backdrop-blur-sm animate-fade-in"
+            onClick={() => setIsOpen(false)}
+        >
             <div 
-                className="search-modal" 
+                className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-rose-100 overflow-hidden animate-scale-in"
                 ref={containerRef}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="search-input-wrapper">
-                    <span className="search-icon-large">🔍</span>
+                {/* Search Input */}
+                <div className="flex items-center gap-3 px-4 py-4 border-b border-rose-100">
+                    <span className="text-2xl text-rose-400">🔍</span>
                     <input
                         ref={inputRef}
                         type="text"
-                        className="search-input"
+                        className="flex-1 text-lg text-gray-700 placeholder-gray-400 outline-none bg-transparent"
                         placeholder="Ara... (sınıf, ödev, sınav)"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
                     />
-                    <button className="search-close" onClick={() => setIsOpen(false)}>
+                    <button 
+                        className="px-2 py-1 text-xs font-medium text-rose-500 bg-rose-50 rounded-md hover:bg-rose-100 transition-colors"
+                        onClick={() => setIsOpen(false)}
+                    >
                         ESC
                     </button>
                 </div>
 
+                {/* Loading State */}
                 {loading && (
-                    <div className="search-loading">
-                        <div className="spinner-small"></div>
+                    <div className="flex items-center justify-center gap-3 py-8 text-gray-500">
+                        <div className="w-5 h-5 border-2 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
                         <span>Aranıyor...</span>
                     </div>
                 )}
 
+                {/* Results */}
                 {!loading && results.length > 0 && (
-                    <div className="search-results">
+                    <div className="max-h-80 overflow-y-auto py-2">
                         {results.map((result, index) => (
                             <button
                                 key={result.id}
-                                className={`search-result ${index === selectedIndex ? 'selected' : ''}`}
+                                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                                    index === selectedIndex 
+                                        ? 'bg-rose-50' 
+                                        : 'hover:bg-gray-50'
+                                }`}
                                 onClick={() => handleSelect(result)}
                                 onMouseEnter={() => setSelectedIndex(index)}
                             >
-                                <span className="result-icon">{result.icon}</span>
-                                <div className="result-content">
-                                    <span className="result-title">{result.title}</span>
+                                <span className="text-xl w-8 h-8 flex items-center justify-center bg-rose-100 rounded-lg">
+                                    {result.icon}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-gray-800 truncate">{result.title}</p>
                                     {result.subtitle && (
-                                        <span className="result-subtitle">{result.subtitle}</span>
+                                        <p className="text-sm text-gray-500 truncate">{result.subtitle}</p>
                                     )}
                                 </div>
-                                <span className="result-type">{getTypeLabel(result.type)}</span>
+                                <span className="px-2 py-1 text-xs font-medium text-rose-600 bg-rose-100 rounded-full">
+                                    {getTypeLabel(result.type)}
+                                </span>
                             </button>
                         ))}
                     </div>
                 )}
 
+                {/* No Results */}
                 {!loading && query && results.length === 0 && (
-                    <div className="search-empty">
-                        <span>🔍</span>
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                        <span className="text-4xl mb-3 opacity-50">🔍</span>
                         <p>"{query}" için sonuç bulunamadı</p>
                     </div>
                 )}
 
+                {/* Quick Access */}
                 {!query && (
-                    <div className="search-hints">
-                        <p className="hints-title">Hızlı Erişim</p>
-                        <div className="hints-list">
-                            <button onClick={() => { navigate('/dashboard'); setIsOpen(false); }}>
-                                📊 Dashboard
+                    <div className="p-4">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                            Hızlı Erişim
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button 
+                                className="flex items-center gap-2 px-3 py-2.5 bg-rose-50 rounded-xl text-gray-700 hover:bg-rose-100 transition-colors"
+                                onClick={() => { navigate('/dashboard'); setIsOpen(false); }}
+                            >
+                                <span>📊</span> Dashboard
                             </button>
-                            <button onClick={() => { navigate('/classrooms'); setIsOpen(false); }}>
-                                🏫 Sınıflar
+                            <button 
+                                className="flex items-center gap-2 px-3 py-2.5 bg-rose-50 rounded-xl text-gray-700 hover:bg-rose-100 transition-colors"
+                                onClick={() => { navigate('/classrooms'); setIsOpen(false); }}
+                            >
+                                <span>🏫</span> Sınıflar
                             </button>
-                            <button onClick={() => { navigate('/homework'); setIsOpen(false); }}>
-                                📝 Ödevler
+                            <button 
+                                className="flex items-center gap-2 px-3 py-2.5 bg-rose-50 rounded-xl text-gray-700 hover:bg-rose-100 transition-colors"
+                                onClick={() => { navigate('/homework'); setIsOpen(false); }}
+                            >
+                                <span>📝</span> Ödevler
                             </button>
-                            <button onClick={() => { navigate('/exams'); setIsOpen(false); }}>
-                                📋 Sınavlar
+                            <button 
+                                className="flex items-center gap-2 px-3 py-2.5 bg-rose-50 rounded-xl text-gray-700 hover:bg-rose-100 transition-colors"
+                                onClick={() => { navigate('/exams'); setIsOpen(false); }}
+                            >
+                                <span>📋</span> Sınavlar
                             </button>
                         </div>
                     </div>

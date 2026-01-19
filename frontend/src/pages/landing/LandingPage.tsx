@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './Landing.css';
 
 export const LandingPage: React.FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,56 +13,95 @@ export const LandingPage: React.FC = () => {
     };
 
     return (
-        <div className="landing">
+        <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-orange-50">
             {/* Navigation */}
-            <nav className="landing-nav">
-                <div className="nav-container">
-                    <div className="nav-logo">
-                        <span className="logo-icon" role="img" aria-label="İzbo">🎓</span>
-                        <span className="logo-text">İzbo</span>
-                    </div>
+            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-rose-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        {/* Logo */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl">🎓</span>
+                            <span className="text-xl font-bold bg-gradient-to-r from-rose-600 to-rose-500 bg-clip-text text-transparent">
+                                İzbo
+                            </span>
+                        </div>
 
-                    {/* Desktop Navigation */}
-                    <div className="nav-links">
-                        <a href="#features">Özellikler</a>
-                        <a href="#about">Hakkında</a>
-                        <Link to="/login" className="nav-btn login">Giriş Yap</Link>
-                        <Link to="/register" className="nav-btn register">Kayıt Ol</Link>
-                    </div>
+                        {/* Desktop Navigation */}
+                        <div className="hidden md:flex items-center gap-8">
+                            <a href="#features" className="text-gray-600 hover:text-rose-500 transition-colors font-medium">
+                                Özellikler
+                            </a>
+                            <a href="#about" className="text-gray-600 hover:text-rose-500 transition-colors font-medium">
+                                Hakkında
+                            </a>
+                            <Link 
+                                to="/login" 
+                                className="px-4 py-2 text-rose-600 font-medium hover:text-rose-700 transition-colors"
+                            >
+                                Giriş Yap
+                            </Link>
+                            <Link 
+                                to="/register" 
+                                className="px-5 py-2.5 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
+                            >
+                                Kayıt Ol
+                            </Link>
+                        </div>
 
-                    {/* Hamburger Button */}
-                    <button
-                        className={`hamburger-btn ${isMobileMenuOpen ? 'active' : ''}`}
-                        onClick={toggleMobileMenu}
-                        aria-label="Menüyü aç/kapat"
-                        aria-expanded={isMobileMenuOpen}
-                    >
-                        <span className="hamburger-line"></span>
-                        <span className="hamburger-line"></span>
-                        <span className="hamburger-line"></span>
-                    </button>
+                        {/* Mobile Menu Button */}
+                        <button
+                            className="md:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl hover:bg-rose-50 transition-colors"
+                            onClick={toggleMobileMenu}
+                            aria-label="Menüyü aç/kapat"
+                        >
+                            <span className={`w-5 h-0.5 bg-rose-500 rounded-full transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+                            <span className={`w-5 h-0.5 bg-rose-500 rounded-full transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+                            <span className={`w-5 h-0.5 bg-rose-500 rounded-full transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+                        </button>
+                    </div>
                 </div>
 
-                {/* Mobile Menu Overlay */}
+                {/* Mobile Menu */}
                 {isMobileMenuOpen && (
-                    <div className="mobile-menu-overlay" onClick={closeMobileMenu}>
-                        <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
-                            <div className="mobile-menu-header">
-                                <span className="logo-icon" role="img" aria-label="İzbo">🎓</span>
-                                <span className="logo-text">İzbo</span>
-                                <button className="close-menu-btn" onClick={closeMobileMenu} aria-label="Menüyü kapat">
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="mobile-menu-links">
-                                <a href="#features" onClick={closeMobileMenu}>Özellikler</a>
-                                <a href="#about" onClick={closeMobileMenu}>Hakkında</a>
-                                <Link to="/login" className="mobile-nav-btn login" onClick={closeMobileMenu}>
-                                    Giriş Yap
-                                </Link>
-                                <Link to="/register" className="mobile-nav-btn register" onClick={closeMobileMenu}>
-                                    Kayıt Ol
-                                </Link>
+                    <div className="md:hidden fixed inset-0 z-50 bg-black/20 backdrop-blur-sm" onClick={closeMobileMenu}>
+                        <div className="absolute right-0 top-0 h-full w-72 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                            <div className="p-6">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl">🎓</span>
+                                        <span className="text-xl font-bold bg-gradient-to-r from-rose-600 to-rose-500 bg-clip-text text-transparent">
+                                            İzbo
+                                        </span>
+                                    </div>
+                                    <button 
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-rose-50 text-gray-400"
+                                        onClick={closeMobileMenu}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                                <div className="flex flex-col gap-4">
+                                    <a href="#features" onClick={closeMobileMenu} className="py-3 text-gray-600 hover:text-rose-500 font-medium">
+                                        Özellikler
+                                    </a>
+                                    <a href="#about" onClick={closeMobileMenu} className="py-3 text-gray-600 hover:text-rose-500 font-medium">
+                                        Hakkında
+                                    </a>
+                                    <Link 
+                                        to="/login" 
+                                        onClick={closeMobileMenu}
+                                        className="py-3 text-center border border-rose-200 text-rose-600 font-medium rounded-xl hover:bg-rose-50 transition-colors"
+                                    >
+                                        Giriş Yap
+                                    </Link>
+                                    <Link 
+                                        to="/register" 
+                                        onClick={closeMobileMenu}
+                                        className="py-3 text-center bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all"
+                                    >
+                                        Kayıt Ol
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -71,182 +109,209 @@ export const LandingPage: React.FC = () => {
             </nav>
 
             {/* Hero Section */}
-            <section className="hero">
-                <div className="hero-bg">
-                    <div className="hero-gradient"></div>
-                    <div className="hero-particles"></div>
+            <section className="relative pt-32 pb-20 px-4 overflow-hidden">
+                {/* Background Decorations */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute -top-40 -right-40 w-96 h-96 bg-rose-200/40 rounded-full blur-3xl"></div>
+                    <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-orange-200/40 rounded-full blur-3xl"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-rose-100/30 rounded-full blur-3xl"></div>
                 </div>
-                <div className="hero-content">
-                    <div className="hero-badge">
-                        <span className="badge-icon">✨</span>
-                        <span>Yeni Nesil Eğitim Platformu</span>
-                    </div>
-                    <h1 className="hero-title">
-                        Eğitimi <span className="gradient-text">Dönüştürün</span>
-                    </h1>
-                    <p className="hero-subtitle">
-                        Canlı dersler, interaktif sınavlar, ödevler ve daha fazlası.
-                        Öğrenciler ve öğretmenler için tasarlanmış kapsamlı eğitim platformu.
-                    </p>
-                    <div className="hero-actions">
-                        <Link to="/register" className="hero-btn primary">
-                            <span>Hemen Başla</span>
-                            <span className="btn-arrow">→</span>
-                        </Link>
-                        <Link to="/login" className="hero-btn secondary">
-                            <span>Giriş Yap</span>
-                        </Link>
-                    </div>
-                    <div className="hero-stats">
-                        <div className="stat">
-                            <span className="stat-number">1000+</span>
-                            <span className="stat-label">Aktif Öğrenci</span>
-                        </div>
-                        <div className="stat-divider"></div>
-                        <div className="stat">
-                            <span className="stat-number">50+</span>
-                            <span className="stat-label">Eğitmen</span>
-                        </div>
-                        <div className="stat-divider"></div>
-                        <div className="stat">
-                            <span className="stat-number">200+</span>
-                            <span className="stat-label">Canlı Ders</span>
-                        </div>
-                    </div>
-                </div>
-                <div className="hero-visual">
-                    <div className="visual-card main-card">
-                        <div className="card-header">
-                            <span className="card-dot red"></span>
-                            <span className="card-dot yellow"></span>
-                            <span className="card-dot green"></span>
-                        </div>
-                        <div className="card-content">
-                            <div className="mock-video">
-                                <span className="play-icon">▶</span>
+
+                <div className="max-w-7xl mx-auto relative">
+                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                        {/* Hero Content */}
+                        <div className="text-center lg:text-left">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-rose-100 rounded-full text-rose-600 text-sm font-medium mb-6">
+                                <span>✨</span>
+                                <span>Yeni Nesil Eğitim Platformu</span>
                             </div>
-                            <div className="mock-chat">
-                                <div className="chat-message">Merhaba! 👋</div>
-                                <div className="chat-message sent">Dersi takip ediyorum</div>
+                            
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
+                                Eğitimi{' '}
+                                <span className="bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
+                                    Dönüştürün
+                                </span>
+                            </h1>
+                            
+                            <p className="text-lg text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0">
+                                Canlı dersler, interaktif sınavlar, ödevler ve daha fazlası.
+                                Öğrenciler ve öğretmenler için tasarlanmış kapsamlı eğitim platformu.
+                            </p>
+                            
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
+                                <Link 
+                                    to="/register" 
+                                    className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-2xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-xl shadow-rose-200 hover:-translate-y-1"
+                                >
+                                    <span>Hemen Başla</span>
+                                    <span>→</span>
+                                </Link>
+                                <Link 
+                                    to="/login" 
+                                    className="inline-flex items-center justify-center px-8 py-4 bg-white border border-rose-200 text-gray-700 font-semibold rounded-2xl hover:bg-rose-50 hover:border-rose-300 transition-all"
+                                >
+                                    Giriş Yap
+                                </Link>
+                            </div>
+
+                            {/* Stats */}
+                            <div className="flex items-center justify-center lg:justify-start gap-8">
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-gray-900">1000+</div>
+                                    <div className="text-sm text-gray-500">Aktif Öğrenci</div>
+                                </div>
+                                <div className="w-px h-12 bg-rose-200"></div>
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-gray-900">50+</div>
+                                    <div className="text-sm text-gray-500">Eğitmen</div>
+                                </div>
+                                <div className="w-px h-12 bg-rose-200"></div>
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-gray-900">200+</div>
+                                    <div className="text-sm text-gray-500">Canlı Ders</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="visual-card floating-card card-1">
-                        <span className="card-emoji">📚</span>
-                        <span className="card-text">12 Aktif Ders</span>
-                    </div>
-                    <div className="visual-card floating-card card-2">
-                        <span className="card-emoji">✅</span>
-                        <span className="card-text">%95 Başarı</span>
-                    </div>
-                    <div className="visual-card floating-card card-3">
-                        <span className="card-emoji">🔴</span>
-                        <span className="card-text">Canlı</span>
+
+                        {/* Hero Visual */}
+                        <div className="relative hidden lg:block">
+                            <div className="relative bg-white rounded-3xl shadow-2xl border border-rose-100 p-6 transform rotate-2 hover:rotate-0 transition-transform duration-500">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="w-3 h-3 rounded-full bg-rose-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                                </div>
+                                <div className="aspect-video bg-gradient-to-br from-rose-100 to-orange-100 rounded-xl flex items-center justify-center mb-4">
+                                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                                        <span className="text-2xl text-rose-500">▶</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2 p-3 bg-rose-50 rounded-xl">
+                                        <span>💬</span>
+                                        <span className="text-sm text-gray-600">Merhaba! 👋</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-rose-500 to-rose-400 rounded-xl ml-8">
+                                        <span className="text-sm text-white">Dersi takip ediyorum</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Floating Cards */}
+                            <div className="absolute -top-4 -left-4 bg-white rounded-xl shadow-lg border border-rose-100 px-4 py-3 flex items-center gap-2 animate-float">
+                                <span className="text-xl">📚</span>
+                                <span className="text-sm font-medium text-gray-700">12 Aktif Ders</span>
+                            </div>
+                            <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-lg border border-rose-100 px-4 py-3 flex items-center gap-2 animate-float" style={{ animationDelay: '0.5s' }}>
+                                <span className="text-xl">✅</span>
+                                <span className="text-sm font-medium text-gray-700">%95 Başarı</span>
+                            </div>
+                            <div className="absolute top-1/2 -right-8 bg-gradient-to-r from-rose-500 to-rose-400 rounded-xl shadow-lg px-4 py-2 flex items-center gap-2 animate-float" style={{ animationDelay: '1s' }}>
+                                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                                <span className="text-sm font-medium text-white">Canlı</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Features Section */}
-            <section className="features" id="features">
-                <div className="features-container">
-                    <div className="section-header">
-                        <span className="section-badge">Özellikler</span>
-                        <h2 className="section-title">Eğitimin Geleceği Burada</h2>
-                        <p className="section-subtitle">
+            <section className="py-20 px-4" id="features">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <span className="inline-block px-4 py-2 bg-rose-100 rounded-full text-rose-600 text-sm font-medium mb-4">
+                            Özellikler
+                        </span>
+                        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                            Eğitimin Geleceği Burada
+                        </h2>
+                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                             Modern eğitim ihtiyaçlarınız için tasarlanmış kapsamlı araçlar
                         </p>
                     </div>
-                    <div className="features-grid">
-                        <div className="feature-card">
-                            <div className="feature-icon" role="img" aria-label="Canlı Dersler">🎥</div>
-                            <h3>Canlı Dersler</h3>
-                            <p>HD kalitesinde video konferans ile etkileşimli canlı dersler yapın</p>
-                        </div>
-                        <div className="feature-card">
-                            <div className="feature-icon" role="img" aria-label="Ödev Yönetimi">📝</div>
-                            <h3>Ödev Yönetimi</h3>
-                            <p>Ödevleri kolayca oluşturun, teslim alın ve değerlendirin</p>
-                        </div>
-                        <div className="feature-card">
-                            <div className="feature-icon" role="img" aria-label="Online Sınavlar">📊</div>
-                            <h3>Online Sınavlar</h3>
-                            <p>Çoktan seçmeli, doğru-yanlış ve açık uçlu sorularla sınavlar</p>
-                        </div>
-                        <div className="feature-card">
-                            <div className="feature-icon" role="img" aria-label="Sınıf Yönetimi">🏫</div>
-                            <h3>Sınıf Yönetimi</h3>
-                            <p>Sınıflarınızı oluşturun ve öğrencilerinizi organize edin</p>
-                        </div>
-                        <div className="feature-card">
-                            <div className="feature-icon" role="img" aria-label="Anlık Bildirimler">🔔</div>
-                            <h3>Anlık Bildirimler</h3>
-                            <p>Önemli duyurulardan ve ödevlerden anında haberdar olun</p>
-                        </div>
-                        <div className="feature-card">
-                            <div className="feature-icon" role="img" aria-label="Dosya Paylaşımı">📁</div>
-                            <h3>Dosya Paylaşımı</h3>
-                            <p>Ders materyallerini ve kaynakları güvenle paylaşın</p>
-                        </div>
+
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[
+                            { icon: '🎥', title: 'Canlı Dersler', desc: 'HD kalitesinde video konferans ile etkileşimli canlı dersler yapın' },
+                            { icon: '📝', title: 'Ödev Yönetimi', desc: 'Ödevleri kolayca oluşturun, teslim alın ve değerlendirin' },
+                            { icon: '📊', title: 'Online Sınavlar', desc: 'Çoktan seçmeli, doğru-yanlış ve açık uçlu sorularla sınavlar' },
+                            { icon: '🏫', title: 'Sınıf Yönetimi', desc: 'Sınıflarınızı oluşturun ve öğrencilerinizi organize edin' },
+                            { icon: '🔔', title: 'Anlık Bildirimler', desc: 'Önemli duyurulardan ve ödevlerden anında haberdar olun' },
+                            { icon: '📁', title: 'Dosya Paylaşımı', desc: 'Ders materyallerini ve kaynakları güvenle paylaşın' },
+                        ].map((feature, index) => (
+                            <div 
+                                key={index}
+                                className="group bg-white rounded-2xl border border-rose-100 p-6 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-100/50 transition-all duration-300 hover:-translate-y-1"
+                            >
+                                <div className="w-14 h-14 bg-gradient-to-br from-rose-100 to-orange-100 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                                    {feature.icon}
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                                <p className="text-gray-600">{feature.desc}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
 
             {/* About Section */}
-            <section className="about" id="about">
-                <div className="about-container">
-                    <div className="about-content">
-                        <span className="section-badge">Platform Hakkında</span>
-                        <h2 className="section-title">Neden İzbo?</h2>
-                        <p className="about-text">
-                            İzbo, modern eğitim ihtiyaçlarını karşılamak için tasarlanmış
-                            kapsamlı bir öğrenme yönetim sistemidir. Öğretmenler için güçlü
-                            araçlar ve öğrenciler için etkileşimli bir öğrenme deneyimi sunar.
-                        </p>
-                        <ul className="about-list">
-                            <li>
-                                <span className="check-icon">✓</span>
-                                <span>Kullanımı kolay ve sezgisel arayüz</span>
-                            </li>
-                            <li>
-                                <span className="check-icon">✓</span>
-                                <span>Gerçek zamanlı işbirliği araçları</span>
-                            </li>
-                            <li>
-                                <span className="check-icon">✓</span>
-                                <span>Detaylı ilerleme raporları</span>
-                            </li>
-                            <li>
-                                <span className="check-icon">✓</span>
-                                <span>7/24 teknik destek</span>
-                            </li>
-                        </ul>
-                        <Link to="/register" className="about-btn">
-                            Ücretsiz Deneyin
-                            <span className="btn-arrow">→</span>
-                        </Link>
-                    </div>
-                    <div className="about-visual">
-                        <div className="about-card">
-                            <div className="about-metric">
-                                <span className="metric-icon">📈</span>
-                                <div className="metric-info">
-                                    <span className="metric-value">%40</span>
-                                    <span className="metric-label">Daha Yüksek Katılım</span>
-                                </div>
+            <section className="py-20 px-4 bg-gradient-to-br from-rose-50 to-orange-50" id="about">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <span className="inline-block px-4 py-2 bg-white rounded-full text-rose-600 text-sm font-medium mb-4 shadow-sm">
+                                Platform Hakkında
+                            </span>
+                            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                                Neden İzbo?
+                            </h2>
+                            <p className="text-lg text-gray-600 mb-8">
+                                İzbo, modern eğitim ihtiyaçlarını karşılamak için tasarlanmış
+                                kapsamlı bir öğrenme yönetim sistemidir. Öğretmenler için güçlü
+                                araçlar ve öğrenciler için etkileşimli bir öğrenme deneyimi sunar.
+                            </p>
+                            <ul className="space-y-4 mb-8">
+                                {[
+                                    'Kullanımı kolay ve sezgisel arayüz',
+                                    'Gerçek zamanlı işbirliği araçları',
+                                    'Detaylı ilerleme raporları',
+                                    '7/24 teknik destek'
+                                ].map((item, index) => (
+                                    <li key={index} className="flex items-center gap-3">
+                                        <span className="w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white text-sm">✓</span>
+                                        <span className="text-gray-700">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <Link 
+                                to="/register" 
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
+                            >
+                                <span>Ücretsiz Deneyin</span>
+                                <span>→</span>
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white rounded-2xl border border-rose-100 p-6 shadow-lg">
+                                <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-xl mb-4">📈</div>
+                                <div className="text-3xl font-bold text-gray-900 mb-1">%98</div>
+                                <div className="text-gray-600">Memnuniyet Oranı</div>
                             </div>
-                            <div className="about-metric">
-                                <span className="metric-icon">⏱️</span>
-                                <div className="metric-info">
-                                    <span className="metric-value">%60</span>
-                                    <span className="metric-label">Zaman Tasarrufu</span>
-                                </div>
+                            <div className="bg-white rounded-2xl border border-rose-100 p-6 shadow-lg mt-8">
+                                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-xl mb-4">⏱️</div>
+                                <div className="text-3xl font-bold text-gray-900 mb-1">24/7</div>
+                                <div className="text-gray-600">Erişilebilirlik</div>
                             </div>
-                            <div className="about-metric">
-                                <span className="metric-icon">🎯</span>
-                                <div className="metric-info">
-                                    <span className="metric-value">%95</span>
-                                    <span className="metric-label">Memnuniyet Oranı</span>
-                                </div>
+                            <div className="bg-white rounded-2xl border border-rose-100 p-6 shadow-lg">
+                                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-xl mb-4">🎯</div>
+                                <div className="text-3xl font-bold text-gray-900 mb-1">%40</div>
+                                <div className="text-gray-600">Verimlilik Artışı</div>
+                            </div>
+                            <div className="bg-white rounded-2xl border border-rose-100 p-6 shadow-lg mt-8">
+                                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-xl mb-4">🌍</div>
+                                <div className="text-3xl font-bold text-gray-900 mb-1">50+</div>
+                                <div className="text-gray-600">Şehirde Aktif</div>
                             </div>
                         </div>
                     </div>
@@ -254,55 +319,52 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* CTA Section */}
-            <section className="cta">
-                <div className="cta-container">
-                    <div className="cta-glow"></div>
-                    <h2 className="cta-title">Eğitime Yeni Bir Bakış Açısı</h2>
-                    <p className="cta-subtitle">
-                        Hemen kayıt olun ve İzbo'nun sunduğu tüm özellikleri keşfedin
-                    </p>
-                    <Link to="/register" className="cta-btn">
-                        <span>Ücretsiz Başlayın</span>
-                        <span className="btn-arrow">→</span>
-                    </Link>
+            <section className="py-20 px-4">
+                <div className="max-w-4xl mx-auto text-center">
+                    <div className="bg-gradient-to-r from-rose-500 to-orange-400 rounded-3xl p-12 shadow-2xl shadow-rose-200">
+                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                            Eğitim Yolculuğunuza Başlayın
+                        </h2>
+                        <p className="text-lg text-rose-100 mb-8 max-w-2xl mx-auto">
+                            Binlerce öğrenci ve eğitmen İzbo ile öğrenme deneyimini dönüştürüyor. Siz de aramıza katılın!
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <Link 
+                                to="/register" 
+                                className="inline-flex items-center justify-center px-8 py-4 bg-white text-rose-600 font-semibold rounded-2xl hover:bg-rose-50 transition-all shadow-lg"
+                            >
+                                Ücretsiz Kayıt Ol
+                            </Link>
+                            <Link 
+                                to="/login" 
+                                className="inline-flex items-center justify-center px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-all"
+                            >
+                                Giriş Yap
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className="footer">
-                <div className="footer-container">
-                    <div className="footer-brand">
-                        <div className="footer-logo">
-                            <span className="logo-icon">🎓</span>
-                            <span className="logo-text">İzbo</span>
+            <footer className="py-12 px-4 border-t border-rose-100">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl">🎓</span>
+                            <span className="text-xl font-bold bg-gradient-to-r from-rose-600 to-rose-500 bg-clip-text text-transparent">
+                                İzbo
+                            </span>
                         </div>
-                        <p className="footer-desc">
-                            Eğitimin geleceğini birlikte şekillendiriyoruz.
+                        <p className="text-gray-500 text-sm">
+                            © 2024 İzbo. Tüm hakları saklıdır.
                         </p>
-                    </div>
-                    <div className="footer-links">
-                        <div className="footer-column">
-                            <h4>Platform</h4>
-                            <a href="#features">Özellikler</a>
-                            <a href="#about">Hakkında</a>
-                            <Link to="/register">Kayıt Ol</Link>
-                        </div>
-                        <div className="footer-column">
-                            <h4>Destek</h4>
-                            <a href="#">Yardım Merkezi</a>
-                            <a href="#">SSS</a>
-                            <a href="#">İletişim</a>
-                        </div>
-                        <div className="footer-column">
-                            <h4>Yasal</h4>
-                            <a href="#">Gizlilik Politikası</a>
-                            <a href="#">Kullanım Şartları</a>
-                            <a href="#">KVKK</a>
+                        <div className="flex items-center gap-6">
+                            <a href="#" className="text-gray-500 hover:text-rose-500 transition-colors">Gizlilik</a>
+                            <a href="#" className="text-gray-500 hover:text-rose-500 transition-colors">Kullanım Şartları</a>
+                            <a href="#" className="text-gray-500 hover:text-rose-500 transition-colors">İletişim</a>
                         </div>
                     </div>
-                </div>
-                <div className="footer-bottom">
-                    <p>© 2026 İzbo. Tüm hakları saklıdır.</p>
                 </div>
             </footer>
         </div>

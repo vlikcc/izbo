@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import './Toast.css';
 
 interface Toast {
     id: string;
@@ -78,7 +77,7 @@ interface ToastContainerProps {
 
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, removeToast }) => {
     return (
-        <div className="toast-container">
+        <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
             {toasts.map(toast => (
                 <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
             ))}
@@ -101,11 +100,48 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onClose }) => {
         }
     };
 
+    const getStyles = () => {
+        const baseStyles = "flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border backdrop-blur-sm animate-slide-in-right";
+        
+        switch (toast.type) {
+            case 'success':
+                return `${baseStyles} bg-emerald-50/90 border-emerald-200 text-emerald-700`;
+            case 'error':
+                return `${baseStyles} bg-red-50/90 border-red-200 text-red-700`;
+            case 'warning':
+                return `${baseStyles} bg-amber-50/90 border-amber-200 text-amber-700`;
+            case 'info':
+            default:
+                return `${baseStyles} bg-rose-50/90 border-rose-200 text-rose-700`;
+        }
+    };
+
+    const getIconStyles = () => {
+        const baseStyles = "w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0";
+        
+        switch (toast.type) {
+            case 'success':
+                return `${baseStyles} bg-emerald-500 text-white`;
+            case 'error':
+                return `${baseStyles} bg-red-500 text-white`;
+            case 'warning':
+                return `${baseStyles} bg-amber-500 text-white`;
+            case 'info':
+            default:
+                return `${baseStyles} bg-rose-500 text-white`;
+        }
+    };
+
     return (
-        <div className={`toast-item ${toast.type}`}>
-            <span className="toast-icon">{getIcon()}</span>
-            <span className="toast-message">{toast.message}</span>
-            <button className="toast-close" onClick={onClose}>✕</button>
+        <div className={getStyles()}>
+            <span className={getIconStyles()}>{getIcon()}</span>
+            <span className="flex-1 text-sm font-medium">{toast.message}</span>
+            <button 
+                className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-black/5 transition-colors text-current opacity-60 hover:opacity-100 flex-shrink-0"
+                onClick={onClose}
+            >
+                ✕
+            </button>
         </div>
     );
 };

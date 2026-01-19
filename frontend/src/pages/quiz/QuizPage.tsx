@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { quizApi, classroomApi } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import type { Quiz, Classroom } from '../../types';
-import './Quiz.css';
 
 export const QuizListPage: React.FC = () => {
     const { user } = useAuthStore();
@@ -34,7 +33,6 @@ export const QuizListPage: React.FC = () => {
                 }
             }
         } catch (error) {
-            // Mock data
             const mockClassrooms = [
                 { id: 'c1', name: 'Matematik 101', description: '', instructorId: '', studentCount: 25, isActive: true, createdAt: '' },
                 { id: 'c2', name: 'Fizik 102', description: '', instructorId: '', studentCount: 20, isActive: true, createdAt: '' }
@@ -53,7 +51,6 @@ export const QuizListPage: React.FC = () => {
                 setQuizzes(response.data.data);
             }
         } catch (error) {
-            // Mock data
             setQuizzes([
                 {
                     id: 'q1',
@@ -80,22 +77,6 @@ export const QuizListPage: React.FC = () => {
                     responses: [{ optionIndex: 0, count: 22 }],
                     totalResponses: 22,
                     createdAt: new Date(Date.now() - 86400000).toISOString()
-                },
-                {
-                    id: 'q3',
-                    classroomId: selectedClassroom,
-                    title: 'Sınıf gezisi için hangi tarih uygun?',
-                    type: 'Poll',
-                    isActive: true,
-                    options: ['25 Ocak Cumartesi', '26 Ocak Pazar', '1 Şubat Cumartesi'],
-                    responses: [
-                        { optionIndex: 0, count: 15 },
-                        { optionIndex: 1, count: 5 },
-                        { optionIndex: 2, count: 4 }
-                    ],
-                    totalResponses: 24,
-                    createdAt: new Date(Date.now() - 3600000).toISOString(),
-                    expiresAt: new Date(Date.now() + 86400000).toISOString()
                 }
             ]);
         }
@@ -104,7 +85,6 @@ export const QuizListPage: React.FC = () => {
     const handleVote = async (quizId: string, optionIndex: number) => {
         try {
             await quizApi.respond(quizId, optionIndex);
-            // Update local state
             setQuizzes(prev => prev.map(q => {
                 if (q.id === quizId) {
                     const newResponses = [...q.responses];
@@ -117,7 +97,6 @@ export const QuizListPage: React.FC = () => {
                 return q;
             }));
         } catch (error) {
-            // Mock vote
             setQuizzes(prev => prev.map(q => {
                 if (q.id === quizId) {
                     const newResponses = [...q.responses];
@@ -178,15 +157,18 @@ export const QuizListPage: React.FC = () => {
     const closedQuizzes = quizzes.filter(q => !q.isActive);
 
     return (
-        <div className="quiz-page">
-            <header className="page-header">
+        <div className="p-6 lg:p-8 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50 min-h-screen">
+            {/* Header */}
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
-                    <h1>📊 Anketler & Yoklama</h1>
-                    <p>Sınıfınızda anket oluşturun ve sonuçları görüntüleyin</p>
+                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        📊 Anketler & Yoklama
+                    </h1>
+                    <p className="text-gray-500 mt-1">Sınıfınızda anket oluşturun ve sonuçları görüntüleyin</p>
                 </div>
                 {isInstructor && (
                     <button 
-                        className="create-btn"
+                        className="px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
                         onClick={() => setIsCreateModalOpen(true)}
                     >
                         + Yeni Anket
@@ -194,11 +176,12 @@ export const QuizListPage: React.FC = () => {
                 )}
             </header>
 
-            <div className="quiz-filters">
+            {/* Filters */}
+            <div className="mb-6">
                 <select 
                     value={selectedClassroom} 
                     onChange={(e) => setSelectedClassroom(e.target.value)}
-                    className="classroom-filter"
+                    className="px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                 >
                     {classrooms.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
@@ -207,16 +190,19 @@ export const QuizListPage: React.FC = () => {
             </div>
 
             {loading ? (
-                <div className="loading">
-                    <div className="spinner"></div>
-                    <p>Yükleniyor...</p>
+                <div className="flex flex-col items-center justify-center py-20">
+                    <div className="w-10 h-10 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin mb-4"></div>
+                    <p className="text-gray-500">Yükleniyor...</p>
                 </div>
             ) : (
-                <div className="quiz-content">
+                <div className="space-y-8">
                     {activeQuizzes.length > 0 && (
-                        <section className="active-section">
-                            <h2>🔴 Aktif Anketler</h2>
-                            <div className="quiz-list">
+                        <section>
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                                Aktif Anketler
+                            </h2>
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {activeQuizzes.map(quiz => (
                                     <QuizCard
                                         key={quiz.id}
@@ -233,16 +219,20 @@ export const QuizListPage: React.FC = () => {
                         </section>
                     )}
 
-                    <section className="closed-section">
-                        {activeQuizzes.length > 0 && <h2>📋 Tamamlanan Anketler</h2>}
+                    <section>
+                        {activeQuizzes.length > 0 && closedQuizzes.length > 0 && (
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 Tamamlanan Anketler</h2>
+                        )}
                         {closedQuizzes.length === 0 && activeQuizzes.length === 0 ? (
-                            <div className="empty-state">
-                                <span className="empty-icon">📊</span>
-                                <h3>Henüz anket yok</h3>
-                                <p>Bu sınıfta henüz anket oluşturulmamış</p>
+                            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-rose-100">
+                                <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center text-4xl mb-4">
+                                    📊
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Henüz anket yok</h3>
+                                <p className="text-gray-500">Bu sınıfta henüz anket oluşturulmamış</p>
                             </div>
                         ) : (
-                            <div className="quiz-list">
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {closedQuizzes.map(quiz => (
                                     <QuizCard
                                         key={quiz.id}
@@ -310,41 +300,45 @@ const QuizCard: React.FC<QuizCardProps> = ({
     };
 
     return (
-        <div className={`quiz-card ${!quiz.isActive ? 'closed' : ''}`}>
-            <div className="quiz-header">
-                <span className="quiz-type">{getTypeLabel(quiz.type)}</span>
-                <span className="quiz-date">{formatDate(quiz.createdAt)}</span>
-                {isInstructor && (
-                    <div className="quiz-actions">
-                        {quiz.isActive && (
+        <div className={`bg-white rounded-2xl border border-rose-100 p-5 ${!quiz.isActive ? 'opacity-75' : ''}`}>
+            <div className="flex items-center justify-between mb-3">
+                <span className="px-3 py-1 bg-rose-100 text-rose-600 text-sm font-medium rounded-full">
+                    {getTypeLabel(quiz.type)}
+                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">{formatDate(quiz.createdAt)}</span>
+                    {isInstructor && (
+                        <div className="flex items-center gap-1">
+                            {quiz.isActive && (
+                                <button 
+                                    className="w-7 h-7 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center hover:bg-amber-50 hover:text-amber-500 transition-colors text-sm"
+                                    onClick={() => onClose(quiz.id)}
+                                    title="Anketi kapat"
+                                >
+                                    ⏹️
+                                </button>
+                            )}
                             <button 
-                                className="close-quiz-btn"
-                                onClick={() => onClose(quiz.id)}
-                                title="Anketi kapat"
+                                className="w-7 h-7 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors text-sm"
+                                onClick={() => onDelete(quiz.id)}
+                                title="Sil"
                             >
-                                ⏹️
+                                🗑️
                             </button>
-                        )}
-                        <button 
-                            className="delete-quiz-btn"
-                            onClick={() => onDelete(quiz.id)}
-                            title="Sil"
-                        >
-                            🗑️
-                        </button>
-                    </div>
-                )}
+                        </div>
+                    )}
+                </div>
             </div>
 
-            <h3 className="quiz-title">{quiz.title}</h3>
+            <h3 className="text-gray-900 font-medium mb-3">{quiz.title}</h3>
 
             {quiz.expiresAt && quiz.isActive && (
-                <div className="quiz-expires">
+                <div className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg mb-3">
                     ⏰ {formatDate(quiz.expiresAt)} tarihinde sona erecek
                 </div>
             )}
 
-            <div className="quiz-options">
+            <div className="space-y-2">
                 {quiz.options?.map((option, index) => {
                     const response = quiz.responses.find(r => r.optionIndex === index);
                     const count = response?.count || 0;
@@ -355,18 +349,22 @@ const QuizCard: React.FC<QuizCardProps> = ({
                     return (
                         <button
                             key={index}
-                            className={`option-btn ${isSelected ? 'selected' : ''} ${showResults ? 'show-results' : ''}`}
+                            className={`w-full relative p-3 rounded-xl border-2 text-left transition-all ${
+                                isSelected 
+                                    ? 'border-rose-500 bg-rose-50' 
+                                    : 'border-rose-100 hover:border-rose-200'
+                            } ${(hasVoted || !quiz.isActive) ? 'cursor-default' : 'cursor-pointer'}`}
                             onClick={() => handleVote(index)}
                             disabled={hasVoted || !quiz.isActive}
                         >
-                            <span className="option-text">{option}</span>
+                            <span className="relative z-10 text-sm text-gray-700">{option}</span>
                             {showResults && (
                                 <>
                                     <div 
-                                        className="option-bar" 
+                                        className="absolute inset-0 bg-rose-100 rounded-xl transition-all"
                                         style={{ width: `${percentage}%` }}
                                     ></div>
-                                    <span className="option-percentage">
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 z-10">
                                         {count} ({percentage}%)
                                     </span>
                                 </>
@@ -376,12 +374,14 @@ const QuizCard: React.FC<QuizCardProps> = ({
                 })}
             </div>
 
-            <div className="quiz-footer">
-                <span className="total-responses">
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-rose-50">
+                <span className="text-sm text-gray-500">
                     👥 {quiz.totalResponses} yanıt
                 </span>
                 {!quiz.isActive && (
-                    <span className="closed-badge">Tamamlandı</span>
+                    <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
+                        Tamamlandı
+                    </span>
                 )}
             </div>
         </div>
@@ -448,7 +448,6 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({
                 onCreated(response.data.data);
             }
         } catch {
-            // Mock creation
             const mockQuiz: Quiz = {
                 id: Math.random().toString(36).substring(7),
                 classroomId,
@@ -478,59 +477,76 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content quiz-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>📊 Yeni Anket Oluştur</h2>
-                    <button className="close-btn" onClick={onClose}>×</button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-6 border-b border-rose-100 relative">
+                    <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                        📊 Yeni Anket Oluştur
+                    </h2>
+                    <button 
+                        className="absolute top-4 right-4 w-8 h-8 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                        onClick={onClose}
+                    >
+                        ×
+                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="quiz-type-selector">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[60vh]">
+                    <div className="flex gap-2">
                         <button
                             type="button"
-                            className={`type-btn ${formData.type === 'Poll' ? 'active' : ''}`}
+                            className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
+                                formData.type === 'Poll' 
+                                    ? 'bg-rose-500 text-white' 
+                                    : 'bg-gray-100 text-gray-600 hover:bg-rose-50'
+                            }`}
                             onClick={() => handleTypeChange('Poll')}
                         >
                             📊 Anket
                         </button>
                         <button
                             type="button"
-                            className={`type-btn ${formData.type === 'Attendance' ? 'active' : ''}`}
+                            className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
+                                formData.type === 'Attendance' 
+                                    ? 'bg-rose-500 text-white' 
+                                    : 'bg-gray-100 text-gray-600 hover:bg-rose-50'
+                            }`}
                             onClick={() => handleTypeChange('Attendance')}
                         >
                             ✋ Yoklama
                         </button>
                     </div>
 
-                    <div className="form-group">
-                        <label>Soru / Başlık</label>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Soru / Başlık</label>
                         <input
                             type="text"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             placeholder={formData.type === 'Attendance' ? 'Örn: Yoklama - 17 Ocak' : 'Sorunuzu yazın...'}
                             required
+                            className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                         />
                     </div>
 
                     {formData.type !== 'Attendance' && (
-                        <div className="form-group">
-                            <label>Seçenekler</label>
-                            <div className="options-builder">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Seçenekler</label>
+                            <div className="space-y-2">
                                 {formData.options.map((option, index) => (
-                                    <div key={index} className="option-input">
+                                    <div key={index} className="flex gap-2">
                                         <input
                                             type="text"
                                             value={option}
                                             onChange={(e) => handleOptionChange(index, e.target.value)}
                                             placeholder={`Seçenek ${index + 1}`}
+                                            className="flex-1 px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                                         />
                                         {formData.options.length > 2 && (
                                             <button 
                                                 type="button"
                                                 onClick={() => handleRemoveOption(index)}
-                                                className="remove-option-btn"
+                                                className="w-12 h-12 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
                                             >
                                                 ✕
                                             </button>
@@ -540,7 +556,7 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({
                                 <button
                                     type="button"
                                     onClick={handleAddOption}
-                                    className="add-option-btn"
+                                    className="w-full px-4 py-3 bg-rose-50 text-rose-600 font-medium rounded-xl hover:bg-rose-100 transition-colors"
                                 >
                                     + Seçenek Ekle
                                 </button>
@@ -548,20 +564,31 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({
                         </div>
                     )}
 
-                    <div className="form-group">
-                        <label>Süre (dakika, opsiyonel)</label>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Süre (dakika, opsiyonel)</label>
                         <input
                             type="number"
                             value={formData.expiresInMinutes || ''}
                             onChange={(e) => setFormData({ ...formData, expiresInMinutes: parseInt(e.target.value) || 0 })}
                             placeholder="Sınırsız için boş bırakın"
                             min={0}
+                            className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                         />
                     </div>
 
-                    <div className="modal-actions">
-                        <button type="button" onClick={onClose}>İptal</button>
-                        <button type="submit" disabled={loading}>
+                    <div className="flex gap-3 pt-4">
+                        <button 
+                            type="button" 
+                            onClick={onClose}
+                            className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+                        >
+                            İptal
+                        </button>
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="flex-1 px-4 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200 disabled:opacity-50"
+                        >
                             {loading ? 'Oluşturuluyor...' : 'Oluştur'}
                         </button>
                     </div>

@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from 'react';
-import './VideoPlayer.css';
 
 interface VideoPlayerProps {
     src: string;
@@ -153,7 +152,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     return (
         <div 
-            className={`video-player ${isFullscreen ? 'fullscreen' : ''}`}
+            className={`relative bg-black rounded-2xl overflow-hidden group ${isFullscreen ? 'fixed inset-0 z-50 rounded-none' : ''}`}
             onMouseMove={handleMouseMove}
             onMouseLeave={() => isPlaying && setShowControls(false)}
         >
@@ -162,52 +161,69 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 src={src}
                 poster={poster}
                 onClick={togglePlay}
-                className="video-element"
+                className="w-full h-full object-contain cursor-pointer"
             />
 
             {/* Play Overlay */}
             {!isPlaying && (
-                <div className="play-overlay" onClick={togglePlay}>
-                    <button className="play-button-large">▶</button>
+                <div 
+                    className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
+                    onClick={togglePlay}
+                >
+                    <button className="w-20 h-20 bg-rose-500/90 text-white rounded-full flex items-center justify-center text-3xl hover:bg-rose-600 transition-colors shadow-lg">
+                        ▶
+                    </button>
                 </div>
             )}
 
             {/* Controls */}
-            <div className={`video-controls ${showControls ? 'visible' : ''}`}>
-                {title && <div className="video-title">{title}</div>}
+            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+                {title && <div className="text-white text-sm font-medium mb-3">{title}</div>}
 
                 {/* Progress Bar */}
                 <div 
-                    className="progress-container"
+                    className="h-1 bg-white/30 rounded-full cursor-pointer mb-3 group/progress"
                     ref={progressRef}
                     onClick={handleProgressClick}
                 >
-                    <div className="progress-bar">
+                    <div className="relative h-full">
                         <div 
-                            className="progress-filled"
+                            className="h-full bg-rose-500 rounded-full"
                             style={{ width: `${progress}%` }}
                         ></div>
                         <div 
-                            className="progress-handle"
-                            style={{ left: `${progress}%` }}
+                            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover/progress:opacity-100 transition-opacity"
+                            style={{ left: `${progress}%`, marginLeft: '-6px' }}
                         ></div>
                     </div>
                 </div>
 
-                <div className="controls-row">
-                    <div className="controls-left">
-                        <button onClick={togglePlay} className="control-btn">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={togglePlay} 
+                            className="w-8 h-8 bg-white/20 text-white rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
+                        >
                             {isPlaying ? '⏸' : '▶'}
                         </button>
-                        <button onClick={() => skip(-10)} className="control-btn skip">
+                        <button 
+                            onClick={() => skip(-10)} 
+                            className="px-2 py-1 bg-white/20 text-white text-xs rounded-lg hover:bg-white/30 transition-colors"
+                        >
                             -10s
                         </button>
-                        <button onClick={() => skip(10)} className="control-btn skip">
+                        <button 
+                            onClick={() => skip(10)} 
+                            className="px-2 py-1 bg-white/20 text-white text-xs rounded-lg hover:bg-white/30 transition-colors"
+                        >
                             +10s
                         </button>
 
-                        <div className="volume-control">
-                            <button onClick={toggleMute} className="control-btn">
+                        <div className="flex items-center gap-1 ml-2">
+                            <button 
+                                onClick={toggleMute} 
+                                className="w-8 h-8 bg-white/20 text-white rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
+                            >
                                 {isMuted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}
                             </button>
                             <input
@@ -217,31 +233,35 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                 step="0.1"
                                 value={isMuted ? 0 : volume}
                                 onChange={handleVolumeChange}
-                                className="volume-slider"
+                                className="w-16 h-1 bg-white/30 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                             />
                         </div>
 
-                        <span className="time-display">
+                        <span className="text-white text-xs ml-2">
                             {formatTime(currentTime)} / {formatTime(duration)}
                         </span>
                     </div>
 
-                    <div className="controls-right">
-                        <div className="settings-container">
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
                             <button 
                                 onClick={() => setShowSettings(!showSettings)} 
-                                className="control-btn"
+                                className="px-2 py-1 bg-white/20 text-white text-xs rounded-lg hover:bg-white/30 transition-colors"
                             >
                                 ⚙️ {playbackRate}x
                             </button>
                             {showSettings && (
-                                <div className="settings-menu">
-                                    <div className="settings-title">Oynatma Hızı</div>
+                                <div className="absolute bottom-full right-0 mb-2 bg-gray-900 rounded-xl p-2 min-w-[100px]">
+                                    <div className="text-white/60 text-xs mb-2 px-2">Oynatma Hızı</div>
                                     {[0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => (
                                         <button
                                             key={rate}
                                             onClick={() => handlePlaybackRateChange(rate)}
-                                            className={`settings-item ${playbackRate === rate ? 'active' : ''}`}
+                                            className={`w-full px-2 py-1 text-left text-sm rounded-lg transition-colors ${
+                                                playbackRate === rate 
+                                                    ? 'bg-rose-500 text-white' 
+                                                    : 'text-white hover:bg-white/10'
+                                            }`}
                                         >
                                             {rate}x
                                         </button>
@@ -249,8 +269,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                 </div>
                             )}
                         </div>
-                        <button onClick={toggleFullscreen} className="control-btn">
-                            {isFullscreen ? '⛶' : '⛶'}
+                        <button 
+                            onClick={toggleFullscreen} 
+                            className="w-8 h-8 bg-white/20 text-white rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
+                        >
+                            ⛶
                         </button>
                     </div>
                 </div>

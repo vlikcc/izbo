@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { classroomApi } from '../../services/api';
-import './ClassroomModals.css';
 
 interface InviteModalProps {
     classroomId: string;
@@ -30,7 +29,6 @@ export const InviteModal: React.FC<InviteModalProps> = ({ classroomId, classroom
             }
         } catch (error) {
             console.error('Failed to generate invite code:', error);
-            // Mock code for development
             setInviteCode(Math.random().toString(36).substring(2, 8).toUpperCase());
         } finally {
             setLoading(false);
@@ -122,72 +120,101 @@ export const InviteModal: React.FC<InviteModalProps> = ({ classroomId, classroom
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content invite-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>🔗 Öğrenci Davet Et</h2>
-                    <p className="modal-subtitle">{classroomName}</p>
-                    <button className="close-btn" onClick={onClose}>×</button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="p-6 border-b border-rose-100 relative">
+                    <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                        🔗 Öğrenci Davet Et
+                    </h2>
+                    <p className="text-gray-500 text-sm mt-1">{classroomName}</p>
+                    <button 
+                        className="absolute top-4 right-4 w-8 h-8 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                        onClick={onClose}
+                    >
+                        ×
+                    </button>
                 </div>
 
-                <div className="invite-tabs">
+                {/* Tabs */}
+                <div className="flex border-b border-rose-100">
                     <button 
-                        className={`tab-btn ${activeTab === 'code' ? 'active' : ''}`}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'code' 
+                                ? 'text-rose-600 border-b-2 border-rose-500' 
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
                         onClick={() => setActiveTab('code')}
                     >
                         📋 Davet Kodu
                     </button>
                     <button 
-                        className={`tab-btn ${activeTab === 'email' ? 'active' : ''}`}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'email' 
+                                ? 'text-rose-600 border-b-2 border-rose-500' 
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
                         onClick={() => setActiveTab('email')}
                     >
                         ✉️ E-posta
                     </button>
                     <button 
-                        className={`tab-btn ${activeTab === 'bulk' ? 'active' : ''}`}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'bulk' 
+                                ? 'text-rose-600 border-b-2 border-rose-500' 
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
                         onClick={() => setActiveTab('bulk')}
                     >
                         📄 Toplu Ekle
                     </button>
                 </div>
 
-                <div className="modal-body">
+                {/* Body */}
+                <div className="p-6 overflow-y-auto max-h-[60vh]">
                     {message && (
-                        <div className={`message ${message.type}`}>
+                        <div className={`mb-4 p-3 rounded-xl text-sm ${
+                            message.type === 'success' 
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
                             {message.text}
                         </div>
                     )}
 
                     {activeTab === 'code' && (
-                        <div className="invite-code-section">
-                            <div className="invite-code-box">
-                                <label>Davet Kodu</label>
-                                <div className="code-display">
-                                    {loading ? (
-                                        <span className="loading-text">Yükleniyor...</span>
-                                    ) : (
-                                        <span className="code">{inviteCode}</span>
-                                    )}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Davet Kodu</label>
+                                <div className="flex gap-2">
+                                    <div className="flex-1 px-4 py-3 bg-rose-50 rounded-xl text-center">
+                                        {loading ? (
+                                            <span className="text-gray-500">Yükleniyor...</span>
+                                        ) : (
+                                            <span className="text-2xl font-bold text-rose-600 tracking-widest">{inviteCode}</span>
+                                        )}
+                                    </div>
                                     <button 
-                                        className="copy-btn" 
+                                        className="px-4 py-3 bg-rose-500 text-white font-medium rounded-xl hover:bg-rose-600 transition-colors disabled:opacity-50"
                                         onClick={() => copyToClipboard(inviteCode)}
                                         disabled={loading}
                                     >
-                                        {copied ? '✓ Kopyalandı' : '📋 Kopyala'}
+                                        {copied ? '✓' : '📋'}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="invite-link-box">
-                                <label>Davet Linki</label>
-                                <div className="link-display">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Davet Linki</label>
+                                <div className="flex gap-2">
                                     <input 
                                         type="text" 
                                         value={getInviteLink()} 
                                         readOnly 
+                                        className="flex-1 px-4 py-3 bg-gray-50 border border-rose-100 rounded-xl text-gray-600 text-sm"
                                     />
                                     <button 
-                                        className="copy-btn" 
+                                        className="px-4 py-3 bg-rose-500 text-white font-medium rounded-xl hover:bg-rose-600 transition-colors disabled:opacity-50"
                                         onClick={() => copyToClipboard(getInviteLink())}
                                         disabled={loading}
                                     >
@@ -197,51 +224,59 @@ export const InviteModal: React.FC<InviteModalProps> = ({ classroomId, classroom
                             </div>
 
                             <button 
-                                className="regenerate-btn" 
+                                className="w-full px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
                                 onClick={generateCode}
                                 disabled={loading}
                             >
                                 🔄 Yeni Kod Oluştur
                             </button>
 
-                            <p className="invite-note">
+                            <p className="text-sm text-gray-500 text-center">
                                 Öğrenciler bu kodu kullanarak sınıfa katılabilir.
                             </p>
                         </div>
                     )}
 
                     {activeTab === 'email' && (
-                        <form className="email-invite-section" onSubmit={handleAddByEmail}>
-                            <div className="form-group">
-                                <label>Öğrenci E-posta Adresi</label>
+                        <form className="space-y-4" onSubmit={handleAddByEmail}>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Öğrenci E-posta Adresi</label>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="ornek@email.com"
                                     required
+                                    className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                                 />
                             </div>
-                            <button type="submit" className="submit-btn" disabled={loading}>
+                            <button 
+                                type="submit" 
+                                className="w-full px-4 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200 disabled:opacity-50"
+                                disabled={loading}
+                            >
                                 {loading ? 'Ekleniyor...' : 'Öğrenci Ekle'}
                             </button>
                         </form>
                     )}
 
                     {activeTab === 'bulk' && (
-                        <form className="bulk-invite-section" onSubmit={handleBulkAdd}>
-                            <div className="form-group">
-                                <label>E-posta Adresleri (her satıra bir tane veya virgülle ayırın)</label>
+                        <form className="space-y-4" onSubmit={handleBulkAdd}>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    E-posta Adresleri (her satıra bir tane veya virgülle ayırın)
+                                </label>
                                 <textarea
                                     value={bulkEmails}
                                     onChange={(e) => setBulkEmails(e.target.value)}
                                     placeholder="ogrenci1@email.com&#10;ogrenci2@email.com&#10;ogrenci3@email.com"
                                     rows={6}
+                                    className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none"
                                 />
                             </div>
 
-                            <div className="file-upload-section">
-                                <label htmlFor="csv-upload" className="file-upload-btn">
+                            <div className="flex items-center gap-3">
+                                <label htmlFor="csv-upload" className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors cursor-pointer text-center">
                                     📁 CSV Dosyası Yükle
                                 </label>
                                 <input
@@ -251,10 +286,14 @@ export const InviteModal: React.FC<InviteModalProps> = ({ classroomId, classroom
                                     onChange={handleFileUpload}
                                     hidden
                                 />
-                                <span className="file-hint">CSV veya TXT dosyası yükleyebilirsiniz</span>
                             </div>
+                            <p className="text-xs text-gray-500 text-center">CSV veya TXT dosyası yükleyebilirsiniz</p>
 
-                            <button type="submit" className="submit-btn" disabled={loading}>
+                            <button 
+                                type="submit" 
+                                className="w-full px-4 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200 disabled:opacity-50"
+                                disabled={loading}
+                            >
                                 {loading ? 'Ekleniyor...' : 'Toplu Ekle'}
                             </button>
                         </form>

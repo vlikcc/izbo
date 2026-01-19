@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { examApi } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import type { Exam } from '../../types';
-import './ExamList.css';
 
 type ExamStatus = 'all' | 'Draft' | 'Published' | 'InProgress' | 'Ended';
 
@@ -116,15 +115,15 @@ export const ExamListPage: React.FC = () => {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Draft':
-                return <span className="status-badge draft">📝 Taslak</span>;
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">📝 Taslak</span>;
             case 'Published':
-                return <span className="status-badge published">📋 Yayında</span>;
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-600 text-xs font-medium rounded-full">📋 Yayında</span>;
             case 'InProgress':
-                return <span className="status-badge in-progress">🔴 Devam Ediyor</span>;
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full">🔴 Devam Ediyor</span>;
             case 'Ended':
-                return <span className="status-badge ended">✓ Tamamlandı</span>;
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-600 text-xs font-medium rounded-full">✓ Tamamlandı</span>;
             default:
-                return <span className="status-badge">{status}</span>;
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">{status}</span>;
         }
     };
 
@@ -166,69 +165,98 @@ export const ExamListPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="exam-list-page">
-                <div className="loading">
-                    <div className="spinner"></div>
-                    <p>Sınavlar yükleniyor...</p>
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="w-10 h-10 mx-auto mb-4 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
+                    <p className="text-gray-500">Sınavlar yükleniyor...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="exam-list-page">
-            <header className="page-header">
+        <div className="p-6 lg:p-8 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50 min-h-screen">
+            {/* Header */}
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
-                    <h1>📋 Sınavlar</h1>
-                    <p>Tüm sınavlarınızı görüntüleyin ve yönetin</p>
+                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        📋 Sınavlar
+                    </h1>
+                    <p className="text-gray-500 mt-1">Tüm sınavlarınızı görüntüleyin ve yönetin</p>
                 </div>
                 {isInstructor && (
-                    <Link to="/exams/new" className="create-btn">
-                        + Yeni Sınav
+                    <Link 
+                        to="/exams/new" 
+                        className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
+                    >
+                        <span>+</span>
+                        <span>Yeni Sınav</span>
                     </Link>
                 )}
             </header>
 
-            <div className="exam-filters">
-                <div className="search-box">
+            {/* Filters */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-8">
+                <div className="relative flex-1 max-w-md">
                     <input
                         type="text"
                         placeholder="Sınav ara..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                     />
-                    <span className="search-icon">🔍</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
                 </div>
 
-                <div className="filter-tabs">
+                <div className="flex flex-wrap gap-2">
                     <button
-                        className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                            filter === 'all' 
+                                ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                                : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                        }`}
                         onClick={() => setFilter('all')}
                     >
                         Tümü ({exams.length})
                     </button>
                     <button
-                        className={`filter-tab ${filter === 'InProgress' ? 'active' : ''}`}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                            filter === 'InProgress' 
+                                ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                                : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                        }`}
                         onClick={() => setFilter('InProgress')}
                     >
                         🔴 Aktif
                     </button>
                     <button
-                        className={`filter-tab ${filter === 'Published' ? 'active' : ''}`}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                            filter === 'Published' 
+                                ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                                : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                        }`}
                         onClick={() => setFilter('Published')}
                     >
                         📋 Yaklaşan
                     </button>
                     {isInstructor && (
                         <button
-                            className={`filter-tab ${filter === 'Draft' ? 'active' : ''}`}
+                            className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                                filter === 'Draft' 
+                                    ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                                    : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                            }`}
                             onClick={() => setFilter('Draft')}
                         >
                             📝 Taslak
                         </button>
                     )}
                     <button
-                        className={`filter-tab ${filter === 'Ended' ? 'active' : ''}`}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                            filter === 'Ended' 
+                                ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                                : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                        }`}
                         onClick={() => setFilter('Ended')}
                     >
                         ✓ Tamamlanan
@@ -236,80 +264,97 @@ export const ExamListPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="exam-grid">
-                {filteredExams.length === 0 ? (
-                    <div className="empty-state">
-                        <span className="empty-icon">📋</span>
-                        <h3>Sınav bulunamadı</h3>
-                        <p>
-                            {searchTerm
-                                ? 'Arama kriterlerinize uygun sınav yok'
-                                : 'Henüz sınav oluşturulmamış'}
-                        </p>
+            {/* Exam Grid */}
+            {filteredExams.length === 0 ? (
+                <div className="text-center py-20">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-rose-100 rounded-full flex items-center justify-center text-4xl">
+                        📋
                     </div>
-                ) : (
-                    filteredExams.map(exam => (
-                        <div key={exam.id} className={`exam-card ${exam.status.toLowerCase()}`}>
-                            <div className="exam-card-header">
-                                {getStatusBadge(exam.status)}
-                                <span className="exam-classroom">{exam.classroomName}</span>
-                            </div>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Sınav bulunamadı</h3>
+                    <p className="text-gray-500">
+                        {searchTerm
+                            ? 'Arama kriterlerinize uygun sınav yok'
+                            : 'Henüz sınav oluşturulmamış'}
+                    </p>
+                </div>
+            ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredExams.map(exam => (
+                        <div 
+                            key={exam.id} 
+                            className={`bg-white rounded-2xl border overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 ${
+                                exam.status === 'InProgress' 
+                                    ? 'border-red-200 shadow-lg shadow-red-100' 
+                                    : 'border-rose-100 hover:shadow-rose-100/50'
+                            }`}
+                        >
+                            <div className="p-5">
+                                <div className="flex items-center justify-between mb-3">
+                                    {getStatusBadge(exam.status)}
+                                    <span className="text-sm text-gray-500">{exam.classroomName}</span>
+                                </div>
 
-                            <h3 className="exam-title">{exam.title}</h3>
-                            {exam.description && (
-                                <p className="exam-description">{exam.description}</p>
-                            )}
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">{exam.title}</h3>
+                                {exam.description && (
+                                    <p className="text-gray-500 text-sm line-clamp-2 mb-4">{exam.description}</p>
+                                )}
 
-                            <div className="exam-info">
-                                <div className="info-item">
-                                    <span className="info-icon">⏱️</span>
-                                    <span>{exam.durationMinutes} dakika</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="info-icon">❓</span>
-                                    <span>{exam.questionCount} soru</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="info-icon">🏆</span>
-                                    <span>{exam.totalPoints} puan</span>
-                                </div>
-                                {exam.passingScore && (
-                                    <div className="info-item">
-                                        <span className="info-icon">✓</span>
-                                        <span>Geçme: {exam.passingScore}</span>
+                                <div className="grid grid-cols-2 gap-2 mb-4">
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <span>⏱️</span>
+                                        <span>{exam.durationMinutes} dakika</span>
                                     </div>
-                                )}
-                            </div>
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <span>❓</span>
+                                        <span>{exam.questionCount} soru</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <span>🏆</span>
+                                        <span>{exam.totalPoints} puan</span>
+                                    </div>
+                                    {exam.passingScore && (
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <span>✓</span>
+                                            <span>Geçme: {exam.passingScore}</span>
+                                        </div>
+                                    )}
+                                </div>
 
-                            <div className="exam-time">
-                                {getTimeInfo(exam)}
-                            </div>
+                                <div className={`text-sm font-medium mb-4 ${
+                                    exam.status === 'InProgress' ? 'text-red-500' : 'text-gray-500'
+                                }`}>
+                                    {getTimeInfo(exam)}
+                                </div>
 
-                            <div className="exam-actions">
-                                {exam.status === 'InProgress' && (
-                                    <button
-                                        className="action-btn start"
-                                        onClick={() => handleStartExam(exam.id)}
+                                <div className="flex gap-2">
+                                    {exam.status === 'InProgress' && (
+                                        <button
+                                            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
+                                            onClick={() => handleStartExam(exam.id)}
+                                        >
+                                            🚀 Sınava Gir
+                                        </button>
+                                    )}
+                                    {exam.status === 'Published' && new Date(exam.startTime) <= new Date() && (
+                                        <button
+                                            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
+                                            onClick={() => handleStartExam(exam.id)}
+                                        >
+                                            🚀 Sınava Başla
+                                        </button>
+                                    )}
+                                    <Link 
+                                        to={`/exams/${exam.id}`} 
+                                        className="flex-1 px-4 py-2.5 bg-white border border-rose-200 text-rose-600 font-medium rounded-xl hover:bg-rose-50 transition-colors text-center"
                                     >
-                                        🚀 Sınava Gir
-                                    </button>
-                                )}
-                                {exam.status === 'Published' && new Date(exam.startTime) <= new Date() && (
-                                    <button
-                                        className="action-btn start"
-                                        onClick={() => handleStartExam(exam.id)}
-                                    >
-                                        🚀 Sınava Başla
-                                    </button>
-                                )}
-                                <Link to={`/exams/${exam.id}`} className="action-btn detail">
-                                    Detaylar →
-                                </Link>
+                                        Detaylar →
+                                    </Link>
+                                </div>
                             </div>
                         </div>
-                    ))
-                )}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

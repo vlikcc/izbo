@@ -1,6 +1,5 @@
 import React from 'react';
 import { useThemeStore } from '../../stores/themeStore';
-import './ThemeToggle.css';
 
 export const ThemeToggle: React.FC = () => {
     const { theme, setTheme } = useThemeStore();
@@ -42,9 +41,13 @@ export const ThemeToggle: React.FC = () => {
     };
 
     return (
-        <button className="theme-toggle" onClick={handleToggle} title={`Tema: ${getLabel()}`}>
-            <span className="theme-icon">{getIcon()}</span>
-            <span className="theme-label">{getLabel()}</span>
+        <button 
+            className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-gray-700 rounded-xl hover:bg-rose-100 transition-colors"
+            onClick={handleToggle} 
+            title={`Tema: ${getLabel()}`}
+        >
+            <span className="text-lg">{getIcon()}</span>
+            <span className="text-sm font-medium">{getLabel()}</span>
         </button>
     );
 };
@@ -53,23 +56,35 @@ export const ThemeSelector: React.FC = () => {
     const { theme, setTheme } = useThemeStore();
 
     return (
-        <div className="theme-selector">
-            <label className="selector-label">Tema</label>
-            <div className="theme-options">
+        <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">Tema</label>
+            <div className="flex gap-2">
                 <button
-                    className={`theme-option ${theme === 'light' ? 'active' : ''}`}
+                    className={`flex-1 px-4 py-2 rounded-xl font-medium transition-all ${
+                        theme === 'light' 
+                            ? 'bg-rose-500 text-white' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-rose-50'
+                    }`}
                     onClick={() => setTheme('light')}
                 >
                     ☀️ Aydınlık
                 </button>
                 <button
-                    className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
+                    className={`flex-1 px-4 py-2 rounded-xl font-medium transition-all ${
+                        theme === 'dark' 
+                            ? 'bg-rose-500 text-white' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-rose-50'
+                    }`}
                     onClick={() => setTheme('dark')}
                 >
                     🌙 Karanlık
                 </button>
                 <button
-                    className={`theme-option ${theme === 'system' ? 'active' : ''}`}
+                    className={`flex-1 px-4 py-2 rounded-xl font-medium transition-all ${
+                        theme === 'system' 
+                            ? 'bg-rose-500 text-white' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-rose-50'
+                    }`}
                     onClick={() => setTheme('system')}
                 >
                     💻 Sistem

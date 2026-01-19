@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { classroomApi } from '../../services/api';
 import type { ClassSession } from '../../types';
-import './LiveSessions.css';
 
 export const LiveSessionsListPage: React.FC = () => {
     const [liveSessions, setLiveSessions] = useState<ClassSession[]>([]);
@@ -59,41 +58,48 @@ export const LiveSessionsListPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="loading">
-                <div className="spinner"></div>
-                <p>Canlı dersler yükleniyor...</p>
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="w-10 h-10 mx-auto mb-4 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
+                    <p className="text-gray-500">Canlı dersler yükleniyor...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="live-sessions-page">
-            <header className="page-header">
-                <div>
-                    <h1>🎥 Canlı Dersler</h1>
-                    <p>Aktif ve yaklaşan canlı dersleriniz</p>
-                </div>
+        <div className="p-6 lg:p-8 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50 min-h-screen">
+            {/* Header */}
+            <header className="mb-8">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    🎥 Canlı Dersler
+                </h1>
+                <p className="text-gray-500 mt-1">Aktif ve yaklaşan canlı dersleriniz</p>
             </header>
 
             {/* Live Now Section */}
             {liveSessions.length > 0 && (
-                <section className="sessions-section live-now-section">
-                    <h2>
-                        <span className="section-icon pulse-icon">🔴</span>
+                <section className="mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                         Şu An Canlı
                     </h2>
-                    <div className="sessions-grid">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {liveSessions.map((session) => (
-                            <Link key={session.id} to={`/live/${session.id}`} className="session-card live">
-                                <div className="live-badge">
-                                    <span className="pulse-dot"></span>
+                            <Link 
+                                key={session.id} 
+                                to={`/live/${session.id}`} 
+                                className="relative overflow-hidden bg-gradient-to-r from-rose-500 to-rose-400 rounded-2xl p-6 text-white shadow-xl shadow-rose-200 hover:shadow-2xl hover:shadow-rose-300 transition-all hover:-translate-y-1"
+                            >
+                                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
+                                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                                     CANLI
                                 </div>
-                                <h3>{session.title}</h3>
-                                <p className="session-description">{session.description}</p>
-                                <div className="session-footer">
-                                    <span className="join-text">Derse Katıl →</span>
-                                </div>
+                                <h3 className="text-xl font-bold mb-2">{session.title}</h3>
+                                <p className="text-rose-100 text-sm mb-4 line-clamp-2">{session.description}</p>
+                                <span className="text-rose-100 flex items-center gap-1 font-medium">
+                                    Derse Katıl <span>→</span>
+                                </span>
                             </Link>
                         ))}
                     </div>
@@ -101,34 +107,41 @@ export const LiveSessionsListPage: React.FC = () => {
             )}
 
             {/* Upcoming Sessions */}
-            <section className="sessions-section">
-                <h2>
-                    <span className="section-icon">📅</span>
-                    Yaklaşan Dersler
+            <section className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    📅 Yaklaşan Dersler
                 </h2>
                 {upcomingSessions.length === 0 ? (
-                    <div className="empty-state">
-                        <span className="empty-icon">📭</span>
-                        <h3>Yaklaşan ders yok</h3>
-                        <p>Planlanmış canlı ders bulunmuyor</p>
+                    <div className="bg-white rounded-2xl border border-rose-100 p-12 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 bg-rose-100 rounded-full flex items-center justify-center text-3xl">
+                            📭
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Yaklaşan ders yok</h3>
+                        <p className="text-gray-500">Planlanmış canlı ders bulunmuyor</p>
                     </div>
                 ) : (
-                    <div className="sessions-list">
+                    <div className="space-y-3">
                         {upcomingSessions.map((session) => (
-                            <div key={session.id} className="session-list-item">
-                                <div className="session-time-info">
-                                    <span className="time-badge">{getTimeUntil(session.scheduledStartTime)}</span>
-                                    <span className="time-full">{formatDate(session.scheduledStartTime)}</span>
+                            <div 
+                                key={session.id} 
+                                className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 bg-white rounded-2xl border border-rose-100 hover:shadow-lg transition-shadow"
+                            >
+                                <div className="flex-shrink-0">
+                                    <span className="inline-block px-3 py-1 bg-rose-100 text-rose-600 text-sm font-medium rounded-full">
+                                        {getTimeUntil(session.scheduledStartTime)}
+                                    </span>
+                                    <p className="text-sm text-gray-500 mt-1">{formatDate(session.scheduledStartTime)}</p>
                                 </div>
-                                <div className="session-details">
-                                    <h3>{session.title}</h3>
-                                    <p>{session.description}</p>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-gray-900">{session.title}</h3>
+                                    <p className="text-gray-500 text-sm line-clamp-1">{session.description}</p>
                                 </div>
-                                <div className="session-actions">
-                                    <button className="reminder-btn" title="Hatırlatıcı ekle">
-                                        🔔
-                                    </button>
-                                </div>
+                                <button 
+                                    className="flex-shrink-0 w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100 transition-colors"
+                                    title="Hatırlatıcı ekle"
+                                >
+                                    🔔
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -136,16 +149,32 @@ export const LiveSessionsListPage: React.FC = () => {
             </section>
 
             {/* Info Card */}
-            <section className="info-card">
-                <div className="info-icon">💡</div>
-                <div className="info-content">
-                    <h3>Canlı Ders İpuçları</h3>
-                    <ul>
-                        <li>Derse başlamadan önce mikrofon ve kamera izinlerini kontrol edin</li>
-                        <li>Stabil bir internet bağlantısı kullanın</li>
-                        <li>Sessiz bir ortamda katılım sağlayın</li>
-                        <li>Soru sormak için el kaldır özelliğini kullanın</li>
-                    </ul>
+            <section className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                <div className="flex gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+                        💡
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-gray-900 mb-3">Canlı Ders İpuçları</h3>
+                        <ul className="space-y-2 text-gray-600 text-sm">
+                            <li className="flex items-start gap-2">
+                                <span className="text-blue-500">•</span>
+                                Derse başlamadan önce mikrofon ve kamera izinlerini kontrol edin
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-blue-500">•</span>
+                                Stabil bir internet bağlantısı kullanın
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-blue-500">•</span>
+                                Sessiz bir ortamda katılım sağlayın
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-blue-500">•</span>
+                                Soru sormak için el kaldır özelliğini kullanın
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </section>
         </div>

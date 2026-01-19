@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { homeworkApi, classroomApi } from '../../services/api';
 import type { Classroom } from '../../types';
-import './Homework.css';
 
 export const CreateHomeworkPage: React.FC = () => {
     const navigate = useNavigate();
@@ -78,27 +77,32 @@ export const CreateHomeworkPage: React.FC = () => {
     };
 
     return (
-        <div className="homework-page">
-            <header className="page-header">
-                <div>
-                    <h1>📝 Yeni Ödev Oluştur</h1>
-                    <p>Sınıfınız için yeni bir ödev tanımlayın</p>
-                </div>
+        <div className="p-6 lg:p-8 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50 min-h-screen">
+            {/* Header */}
+            <header className="mb-8">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    📝 Yeni Ödev Oluştur
+                </h1>
+                <p className="text-gray-500 mt-1">Sınıfınız için yeni bir ödev tanımlayın</p>
             </header>
 
-            <div className="form-container">
-                <form onSubmit={handleSubmit} className="create-form">
-                    {error && <div className="error-message">{error}</div>}
+            <div className="max-w-2xl mx-auto">
+                <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-rose-100 p-6 space-y-6">
+                    {error && (
+                        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl">
+                            {error}
+                        </div>
+                    )}
 
-                    <div className="form-group">
-                        <label htmlFor="classroomId">Sınıf *</label>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Sınıf *</label>
                         <select
-                            id="classroomId"
                             name="classroomId"
                             value={formData.classroomId}
                             onChange={handleChange}
                             required
                             disabled={loadingClassrooms}
+                            className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                         >
                             <option value="">Sınıf seçin...</option>
                             {classrooms.map((classroom) => (
@@ -109,106 +113,113 @@ export const CreateHomeworkPage: React.FC = () => {
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="title">Ödev Başlığı *</label>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Ödev Başlığı *</label>
                         <input
                             type="text"
-                            id="title"
                             name="title"
                             value={formData.title}
                             onChange={handleChange}
                             placeholder="Örn: Hafta 1 - Matematik Ödev"
                             required
+                            className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="description">Açıklama *</label>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Açıklama *</label>
                         <textarea
-                            id="description"
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
                             placeholder="Ödev hakkında detaylı bilgi..."
                             rows={5}
                             required
+                            className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none"
                         />
                     </div>
 
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="dueDate">Son Teslim Tarihi *</label>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Son Teslim Tarihi *</label>
                             <input
                                 type="datetime-local"
-                                id="dueDate"
                                 name="dueDate"
                                 value={formData.dueDate}
                                 onChange={handleChange}
                                 required
+                                className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                             />
                         </div>
-
-                        <div className="form-group">
-                            <label htmlFor="maxScore">Maksimum Puan *</label>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Maksimum Puan *</label>
                             <input
                                 type="number"
-                                id="maxScore"
                                 name="maxScore"
                                 value={formData.maxScore}
                                 onChange={handleChange}
                                 min={1}
                                 max={1000}
                                 required
+                                className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                             />
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="attachmentUrl">Ek Dosya URL (İsteğe bağlı)</label>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Ek Dosya URL (İsteğe bağlı)</label>
                         <input
                             type="url"
-                            id="attachmentUrl"
                             name="attachmentUrl"
                             value={formData.attachmentUrl}
                             onChange={handleChange}
                             placeholder="https://example.com/dosya.pdf"
+                            className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                         />
                     </div>
 
-                    <div className="form-group checkbox-group">
-                        <label className="checkbox-label">
+                    <div>
+                        <label className="flex items-center gap-3 cursor-pointer">
                             <input
                                 type="checkbox"
                                 name="allowLateSubmission"
                                 checked={formData.allowLateSubmission}
                                 onChange={handleChange}
+                                className="w-5 h-5 rounded text-rose-500 focus:ring-rose-300 border-rose-200"
                             />
-                            <span className="checkmark"></span>
-                            Geç teslime izin ver
+                            <span className="text-gray-700">Geç teslime izin ver</span>
                         </label>
                     </div>
 
                     {formData.allowLateSubmission && (
-                        <div className="form-group">
-                            <label htmlFor="latePenaltyPercent">Geç Teslim Ceza Yüzdesi</label>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Geç Teslim Ceza Yüzdesi</label>
                             <input
                                 type="number"
-                                id="latePenaltyPercent"
                                 name="latePenaltyPercent"
                                 value={formData.latePenaltyPercent}
                                 onChange={handleChange}
                                 min={0}
                                 max={100}
+                                className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
                             />
-                            <span className="form-hint">Her geç gün için puandan düşülecek yüzde</span>
+                            <p className="text-sm text-gray-500 mt-1">Her geç gün için puandan düşülecek yüzde</p>
                         </div>
                     )}
 
-                    <div className="form-actions">
-                        <button type="button" onClick={() => navigate('/homework')} className="cancel-btn">
+                    <div className="flex gap-3 pt-4">
+                        <button 
+                            type="button" 
+                            onClick={() => navigate('/homework')} 
+                            className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+                        >
                             İptal
                         </button>
-                        <button type="submit" className="submit-btn" disabled={loading}>
+                        <button 
+                            type="submit" 
+                            className="flex-1 px-4 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={loading}
+                        >
                             {loading ? 'Oluşturuluyor...' : 'Ödevi Oluştur'}
                         </button>
                     </div>

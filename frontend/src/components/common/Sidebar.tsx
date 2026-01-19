@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import './Sidebar.css';
 
 interface MenuItem {
     path: string;
@@ -45,7 +44,6 @@ export const Sidebar: React.FC = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Close sidebar when route changes on mobile
     useEffect(() => {
         if (isMobile) {
             setIsOpen(false);
@@ -62,14 +60,23 @@ export const Sidebar: React.FC = () => {
         <>
             {/* Mobile Header */}
             {isMobile && (
-                <header className="mobile-header">
-                    <button className="hamburger-btn" onClick={toggleSidebar}>
-                        <span className={`hamburger-line ${isOpen ? 'open' : ''}`}></span>
-                        <span className={`hamburger-line ${isOpen ? 'open' : ''}`}></span>
-                        <span className={`hamburger-line ${isOpen ? 'open' : ''}`}></span>
+                <header className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-lg border-b border-rose-100 px-4 py-3 flex items-center justify-between">
+                    <button 
+                        className="w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl hover:bg-rose-50 transition-colors"
+                        onClick={toggleSidebar}
+                        aria-label="Menüyü aç/kapat"
+                    >
+                        <span className={`w-5 h-0.5 bg-rose-500 rounded-full transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+                        <span className={`w-5 h-0.5 bg-rose-500 rounded-full transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></span>
+                        <span className={`w-5 h-0.5 bg-rose-500 rounded-full transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
                     </button>
-                    <h1 className="mobile-logo">📚 İzbo</h1>
-                    <Link to="/notifications" className="mobile-notification">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-rose-500 to-rose-400 bg-clip-text text-transparent flex items-center gap-2">
+                        <span>🎓</span> İzbo
+                    </h1>
+                    <Link 
+                        to="/notifications" 
+                        className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-rose-50 transition-colors text-xl"
+                    >
                         🔔
                     </Link>
                 </header>
@@ -77,47 +84,89 @@ export const Sidebar: React.FC = () => {
 
             {/* Overlay */}
             {isMobile && isOpen && (
-                <div className="sidebar-overlay" onClick={() => setIsOpen(false)}></div>
+                <div 
+                    className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm animate-fade-in"
+                    onClick={() => setIsOpen(false)}
+                ></div>
             )}
 
             {/* Sidebar */}
-            <aside className={`sidebar ${isOpen ? 'open' : ''} ${isMobile ? 'mobile' : ''}`}>
-                <div className="sidebar-header">
-                    <h1 className="sidebar-logo">📚 İzbo</h1>
+            <aside className={`
+                fixed top-0 left-0 z-50 h-full w-64
+                bg-white border-r border-rose-100
+                flex flex-col
+                transition-transform duration-300 ease-out
+                ${isMobile ? (isOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
+                ${isMobile ? 'shadow-2xl' : ''}
+            `}>
+                {/* Sidebar Header */}
+                <div className="px-6 py-5 border-b border-rose-100 flex items-center justify-between">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-rose-500 to-rose-400 bg-clip-text text-transparent flex items-center gap-2">
+                        <span>🎓</span> İzbo
+                    </h1>
                     {isMobile && (
-                        <button className="close-btn" onClick={() => setIsOpen(false)}>
+                        <button 
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-rose-50 text-rose-400 hover:text-rose-500 transition-colors"
+                            onClick={() => setIsOpen(false)}
+                            aria-label="Menüyü kapat"
+                        >
                             ✕
                         </button>
                     )}
                 </div>
 
-                <nav className="sidebar-nav">
-                    {filteredItems.map((item) => (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`sidebar-link ${location.pathname.startsWith(item.path) ? 'active' : ''}`}
-                        >
-                            <span className="sidebar-icon" role="img" aria-label={item.label}>{item.icon}</span>
-                            <span className="sidebar-label">{item.label}</span>
-                        </Link>
-                    ))}
+                {/* Navigation */}
+                <nav className="flex-1 overflow-y-auto py-4 px-3">
+                    <div className="space-y-1">
+                        {filteredItems.map((item) => {
+                            const isActive = location.pathname.startsWith(item.path);
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`
+                                        flex items-center gap-3 px-4 py-3 rounded-xl
+                                        transition-all duration-200
+                                        ${isActive 
+                                            ? 'bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-lg shadow-rose-200' 
+                                            : 'text-gray-600 hover:bg-rose-50 hover:text-rose-600'
+                                        }
+                                    `}
+                                >
+                                    <span className="text-xl" role="img" aria-label={item.label}>
+                                        {item.icon}
+                                    </span>
+                                    <span className="font-medium">{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </nav>
 
-                <div className="sidebar-footer">
+                {/* Sidebar Footer */}
+                <div className="p-4 border-t border-rose-100 bg-gradient-to-r from-rose-50 to-cream-50">
                     {user && (
-                        <div className="user-info">
-                            <div className="user-avatar" aria-label="Kullanıcı avatarı">
+                        <div className="flex items-center gap-3 mb-4 p-3 bg-white rounded-xl border border-rose-100">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-rose-500 flex items-center justify-center text-white font-semibold text-sm shadow-md">
                                 {(user.firstName || 'U')[0]}{(user.lastName || 'U')[0]}
                             </div>
-                            <div className="user-details">
-                                <span className="user-name">{user.firstName} {user.lastName}</span>
-                                <span className="user-role">{user.role}</span>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-800 truncate">
+                                    {user.firstName} {user.lastName}
+                                </p>
+                                <p className="text-xs text-rose-500 font-medium">
+                                    {user.role}
+                                </p>
                             </div>
                         </div>
                     )}
-                    <button className="logout-btn" onClick={logout} aria-label="Çıkış Yap">
-                        <span role="img" aria-hidden="true">🚪</span> Çıkış Yap
+                    <button 
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white border border-rose-200 text-rose-600 font-medium hover:bg-rose-50 hover:border-rose-300 transition-all duration-200"
+                        onClick={logout}
+                        aria-label="Çıkış Yap"
+                    >
+                        <span role="img" aria-hidden="true">🚪</span>
+                        Çıkış Yap
                     </button>
                 </div>
             </aside>

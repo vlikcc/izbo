@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import './Whiteboard.css';
 
 interface Point {
     x: number;
@@ -37,18 +36,17 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentElement, setCurrentElement] = useState<DrawElement | null>(null);
     const [tool, setTool] = useState<'pen' | 'line' | 'rectangle' | 'circle' | 'eraser' | 'text'>('pen');
-    const [color, setColor] = useState('#ffffff');
+    const [color, setColor] = useState('#f43f5e');
     const [strokeWidth, setStrokeWidth] = useState(3);
     const [showColorPicker, setShowColorPicker] = useState(false);
 
     const colors = [
-        '#ffffff', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4',
-        '#ffeaa7', '#dfe6e9', '#fd79a8', '#a29bfe', '#667eea'
+        '#f43f5e', '#ec4899', '#8b5cf6', '#3b82f6', '#06b6d4',
+        '#10b981', '#84cc16', '#eab308', '#f97316', '#1f2937'
     ];
 
     const strokeWidths = [2, 4, 6, 8, 12];
 
-    // Render all elements to canvas
     const render = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -56,12 +54,12 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Clear canvas
-        ctx.fillStyle = '#1a1a2e';
+        // Clear canvas with light background
+        ctx.fillStyle = '#fef2f2';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Draw grid
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.strokeStyle = 'rgba(251, 113, 133, 0.1)';
         ctx.lineWidth = 1;
         const gridSize = 20;
         for (let x = 0; x < canvas.width; x += gridSize) {
@@ -183,7 +181,6 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
         }
 
         if (tool === 'eraser') {
-            // Find and remove element near click
             const threshold = 20;
             setElements(prev => prev.filter(el => {
                 if (el.type === 'path' && el.points) {
@@ -255,47 +252,60 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
     };
 
     return (
-        <div className="whiteboard-container">
+        <div className="flex flex-col bg-white rounded-2xl border border-rose-100 overflow-hidden">
             {!readOnly && (
-                <div className="whiteboard-toolbar">
-                    <div className="tool-group">
+                <div className="flex flex-wrap items-center gap-4 p-4 bg-rose-50 border-b border-rose-100">
+                    {/* Tools */}
+                    <div className="flex items-center gap-1 bg-white rounded-xl p-1">
                         <button
-                            className={`tool-btn ${tool === 'pen' ? 'active' : ''}`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                tool === 'pen' ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-rose-100'
+                            }`}
                             onClick={() => setTool('pen')}
                             title="Kalem"
                         >
                             ✏️
                         </button>
                         <button
-                            className={`tool-btn ${tool === 'line' ? 'active' : ''}`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                tool === 'line' ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-rose-100'
+                            }`}
                             onClick={() => setTool('line')}
                             title="Çizgi"
                         >
                             📏
                         </button>
                         <button
-                            className={`tool-btn ${tool === 'rectangle' ? 'active' : ''}`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                tool === 'rectangle' ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-rose-100'
+                            }`}
                             onClick={() => setTool('rectangle')}
                             title="Dikdörtgen"
                         >
                             ⬜
                         </button>
                         <button
-                            className={`tool-btn ${tool === 'circle' ? 'active' : ''}`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                tool === 'circle' ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-rose-100'
+                            }`}
                             onClick={() => setTool('circle')}
                             title="Daire"
                         >
                             ⭕
                         </button>
                         <button
-                            className={`tool-btn ${tool === 'text' ? 'active' : ''}`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                tool === 'text' ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-rose-100'
+                            }`}
                             onClick={() => setTool('text')}
                             title="Metin"
                         >
                             🔤
                         </button>
                         <button
-                            className={`tool-btn ${tool === 'eraser' ? 'active' : ''}`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                tool === 'eraser' ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-rose-100'
+                            }`}
                             onClick={() => setTool('eraser')}
                             title="Silgi"
                         >
@@ -303,51 +313,71 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
                         </button>
                     </div>
 
-                    <div className="tool-group">
-                        <div className="color-picker-container">
-                            <button
-                                className="tool-btn color-btn"
-                                onClick={() => setShowColorPicker(!showColorPicker)}
-                                style={{ backgroundColor: color }}
-                            />
-                            {showColorPicker && (
-                                <div className="color-picker-dropdown">
-                                    {colors.map(c => (
-                                        <button
-                                            key={c}
-                                            className={`color-option ${color === c ? 'active' : ''}`}
-                                            style={{ backgroundColor: c }}
-                                            onClick={() => {
-                                                setColor(c);
-                                                setShowColorPicker(false);
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                    {/* Color Picker */}
+                    <div className="relative">
+                        <button
+                            className="w-10 h-10 rounded-xl border-2 border-white shadow-md"
+                            onClick={() => setShowColorPicker(!showColorPicker)}
+                            style={{ backgroundColor: color }}
+                        />
+                        {showColorPicker && (
+                            <div className="absolute top-full left-0 mt-2 p-2 bg-white rounded-xl shadow-lg border border-rose-100 grid grid-cols-5 gap-1 z-10">
+                                {colors.map(c => (
+                                    <button
+                                        key={c}
+                                        className={`w-8 h-8 rounded-lg transition-transform hover:scale-110 ${
+                                            color === c ? 'ring-2 ring-rose-500 ring-offset-2' : ''
+                                        }`}
+                                        style={{ backgroundColor: c }}
+                                        onClick={() => {
+                                            setColor(c);
+                                            setShowColorPicker(false);
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="tool-group stroke-group">
+                    {/* Stroke Width */}
+                    <div className="flex items-center gap-1 bg-white rounded-xl p-1">
                         {strokeWidths.map(w => (
                             <button
                                 key={w}
-                                className={`stroke-btn ${strokeWidth === w ? 'active' : ''}`}
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                    strokeWidth === w ? 'bg-rose-100' : 'hover:bg-gray-100'
+                                }`}
                                 onClick={() => setStrokeWidth(w)}
                             >
-                                <span style={{ width: w * 2, height: w * 2 }} />
+                                <span 
+                                    className="rounded-full bg-gray-700"
+                                    style={{ width: w * 2, height: w * 2 }} 
+                                />
                             </button>
                         ))}
                     </div>
 
-                    <div className="tool-group">
-                        <button className="tool-btn" onClick={undo} title="Geri Al">
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 bg-white rounded-xl p-1 ml-auto">
+                        <button 
+                            className="w-10 h-10 rounded-lg flex items-center justify-center text-gray-600 hover:bg-rose-100 transition-colors"
+                            onClick={undo} 
+                            title="Geri Al"
+                        >
                             ↩️
                         </button>
-                        <button className="tool-btn" onClick={clearCanvas} title="Temizle">
+                        <button 
+                            className="w-10 h-10 rounded-lg flex items-center justify-center text-gray-600 hover:bg-rose-100 transition-colors"
+                            onClick={clearCanvas} 
+                            title="Temizle"
+                        >
                             🗑️
                         </button>
-                        <button className="tool-btn" onClick={downloadCanvas} title="İndir">
+                        <button 
+                            className="w-10 h-10 rounded-lg flex items-center justify-center text-gray-600 hover:bg-rose-100 transition-colors"
+                            onClick={downloadCanvas} 
+                            title="İndir"
+                        >
                             💾
                         </button>
                     </div>
@@ -358,7 +388,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
                 ref={canvasRef}
                 width={width}
                 height={height}
-                className="whiteboard-canvas"
+                className="w-full cursor-crosshair"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { homeworkApi } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import type { Homework, Submission } from '../../types';
-import './Homework.css';
 
 export const HomeworkListPage: React.FC = () => {
     const { user } = useAuthStore();
@@ -47,80 +46,111 @@ export const HomeworkListPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="loading">
-                <div className="spinner"></div>
-                <p>Ödevler yükleniyor...</p>
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="w-10 h-10 mx-auto mb-4 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
+                    <p className="text-gray-500">Ödevler yükleniyor...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="homework-page">
-            <header className="page-header">
+        <div className="p-6 lg:p-8 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50 min-h-screen">
+            {/* Header */}
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
-                    <h1>📝 Ödevler</h1>
-                    <p>Tüm ödevlerinizi buradan takip edebilirsiniz</p>
+                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        📝 Ödevler
+                    </h1>
+                    <p className="text-gray-500 mt-1">Tüm ödevlerinizi buradan takip edebilirsiniz</p>
                 </div>
                 {(user?.role === 'Instructor' || user?.role === 'Admin') && (
-                    <Link to="/homework/new" className="create-btn">
-                        + Yeni Ödev
+                    <Link 
+                        to="/homework/new" 
+                        className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
+                    >
+                        <span>+</span>
+                        <span>Yeni Ödev</span>
                     </Link>
                 )}
             </header>
 
-            <div className="homework-list">
-                {homeworks.length === 0 ? (
-                    <div className="empty-state">
-                        <span className="empty-icon">📋</span>
-                        <h3>Henüz ödev yok</h3>
-                        <p>Ödevler eklendiğinde burada görünecek</p>
+            {/* Homework List */}
+            {homeworks.length === 0 ? (
+                <div className="text-center py-20">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-rose-100 rounded-full flex items-center justify-center text-4xl">
+                        📋
                     </div>
-                ) : (
-                    homeworks.map(hw => (
-                        <Link key={hw.id} to={`/homework/${hw.id}`} className="homework-card">
-                            <div className="homework-icon">📝</div>
-                            <div className="homework-info">
-                                <h3>{hw.title}</h3>
-                                <p className="homework-classroom">{hw.classroomName}</p>
-                                <p className="homework-description">{hw.description}</p>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Henüz ödev yok</h3>
+                    <p className="text-gray-500">Ödevler eklendiğinde burada görünecek</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {homeworks.map(hw => (
+                        <Link 
+                            key={hw.id} 
+                            to={`/homework/${hw.id}`} 
+                            className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 bg-white rounded-2xl border border-rose-100 hover:shadow-xl hover:shadow-rose-100/50 transition-all hover:-translate-y-0.5 group"
+                        >
+                            <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform">
+                                📝
                             </div>
-                            <div className="homework-meta">
-                                <div className={`due-date ${isOverdue(hw.dueDate) ? 'overdue' : ''}`}>
-                                    <span className="label">Son Teslim</span>
-                                    <span className="value">{formatDate(hw.dueDate)}</span>
+                            
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="font-semibold text-gray-900 truncate group-hover:text-rose-600 transition-colors">
+                                        {hw.title}
+                                    </h3>
+                                    {isOverdue(hw.dueDate) && !hw.allowLateSubmission && (
+                                        <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-medium rounded-full">Süre Doldu</span>
+                                    )}
+                                    {isOverdue(hw.dueDate) && hw.allowLateSubmission && (
+                                        <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-xs font-medium rounded-full">Geç Teslim</span>
+                                    )}
                                 </div>
-                                <div className="max-score">
-                                    <span className="label">Puan</span>
-                                    <span className="value">{hw.maxScore}</span>
+                                <p className="text-sm text-rose-500 mb-1">{hw.classroomName}</p>
+                                <p className="text-sm text-gray-500 line-clamp-1">{hw.description}</p>
+                            </div>
+                            
+                            <div className="flex sm:flex-col items-center sm:items-end gap-4 sm:gap-2 text-sm">
+                                <div className={`${isOverdue(hw.dueDate) ? 'text-red-500' : 'text-gray-600'}`}>
+                                    <span className="text-xs text-gray-400 block">Son Teslim</span>
+                                    <span className="font-medium">{formatDate(hw.dueDate)}</span>
                                 </div>
-                                <div className="submissions">
-                                    <span className="label">Teslim</span>
-                                    <span className="value">{hw.submissionCount}</span>
+                                <div className="flex items-center gap-4 text-gray-500">
+                                    <span className="flex items-center gap-1">
+                                        <span>🏆</span>
+                                        <span>{hw.maxScore} puan</span>
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <span>📤</span>
+                                        <span>{hw.submissionCount} teslim</span>
+                                    </span>
                                 </div>
                             </div>
-                            {isOverdue(hw.dueDate) && !hw.allowLateSubmission && (
-                                <span className="status-badge overdue">Süre Doldu</span>
-                            )}
-                            {isOverdue(hw.dueDate) && hw.allowLateSubmission && (
-                                <span className="status-badge late">Geç Teslim</span>
-                            )}
+                            
+                            <span className="hidden sm:block text-gray-400 group-hover:text-rose-500 transition-colors">→</span>
                         </Link>
-                    ))
-                )}
-            </div>
+                    ))}
+                </div>
+            )}
 
+            {/* Pagination */}
             {totalPages > 1 && (
-                <div className="pagination">
+                <div className="flex items-center justify-center gap-4 mt-8">
                     <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={page === 1}
+                        className="px-4 py-2 bg-white border border-rose-200 text-rose-600 font-medium rounded-xl hover:bg-rose-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         ← Önceki
                     </button>
-                    <span>Sayfa {page} / {totalPages}</span>
+                    <span className="text-gray-600">Sayfa {page} / {totalPages}</span>
                     <button
                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                         disabled={page === totalPages}
+                        className="px-4 py-2 bg-white border border-rose-200 text-rose-600 font-medium rounded-xl hover:bg-rose-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Sonraki →
                     </button>
@@ -183,104 +213,149 @@ export const HomeworkDetailPage: React.FC = () => {
     };
 
     if (loading) {
-        return <div className="loading"><div className="spinner"></div></div>;
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="w-10 h-10 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
+            </div>
+        );
     }
 
     if (!homework) {
-        return <div className="error">Ödev bulunamadı</div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen">
+                <div className="w-16 h-16 mb-4 bg-rose-100 rounded-full flex items-center justify-center text-3xl">
+                    ⚠️
+                </div>
+                <p className="text-gray-600">Ödev bulunamadı</p>
+            </div>
+        );
     }
 
     return (
-        <div className="homework-detail">
-            <header className="detail-header">
-                <Link to="/homework" className="back-btn">← Ödevlere Dön</Link>
-                <h1>{homework.title}</h1>
-                <span className="classroom-name">{homework.classroomName}</span>
+        <div className="p-6 lg:p-8 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50 min-h-screen">
+            {/* Header */}
+            <header className="mb-8">
+                <Link 
+                    to="/homework" 
+                    className="inline-flex items-center gap-2 text-rose-500 hover:text-rose-600 font-medium mb-4"
+                >
+                    ← Ödevlere Dön
+                </Link>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{homework.title}</h1>
+                <span className="inline-block px-3 py-1 bg-rose-100 text-rose-600 text-sm font-medium rounded-full">
+                    {homework.classroomName}
+                </span>
             </header>
 
-            <div className="detail-content">
-                <section className="homework-description-section">
-                    <h2>📋 Açıklama</h2>
-                    <p>{homework.description}</p>
+            <div className="grid lg:grid-cols-3 gap-6">
+                {/* Main Content */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Description */}
+                    <section className="bg-white rounded-2xl border border-rose-100 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            📋 Açıklama
+                        </h2>
+                        <p className="text-gray-600 whitespace-pre-wrap">{homework.description}</p>
 
-                    {homework.attachmentUrl && (
-                        <a href={homework.attachmentUrl} target="_blank" rel="noopener noreferrer" className="attachment-link">
-                            📎 Ek Dosyayı İndir
-                        </a>
-                    )}
-                </section>
-
-                <section className="homework-info-section">
-                    <div className="info-grid">
-                        <div className="info-item">
-                            <span className="info-label">Son Teslim</span>
-                            <span className="info-value">
-                                {new Date(homework.dueDate).toLocaleDateString('tr-TR', {
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
-                            </span>
-                        </div>
-                        <div className="info-item">
-                            <span className="info-label">Maksimum Puan</span>
-                            <span className="info-value">{homework.maxScore}</span>
-                        </div>
-                        <div className="info-item">
-                            <span className="info-label">Geç Teslim</span>
-                            <span className="info-value">
-                                {homework.allowLateSubmission ? `İzin Var (-%${homework.latePenaltyPercent} ceza)` : 'İzin Yok'}
-                            </span>
-                        </div>
-                    </div>
-                </section>
-
-                {user?.role === 'Student' && (
-                    <section className="submission-section">
-                        <h2>✍️ Cevabınız</h2>
-
-                        {submission?.status === 'Graded' ? (
-                            <div className="graded-result">
-                                <div className="score">
-                                    <span className="score-value">{submission.score}</span>
-                                    <span className="score-max">/ {homework.maxScore}</span>
-                                </div>
-                                {submission.feedback && (
-                                    <div className="feedback">
-                                        <h4>Geri Bildirim:</h4>
-                                        <p>{submission.feedback}</p>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <>
-                                <textarea
-                                    value={content}
-                                    onChange={(e) => setContent(e.target.value)}
-                                    placeholder="Cevabınızı buraya yazın..."
-                                    rows={10}
-                                    disabled={submission?.status === 'Submitted' || submission?.status === 'Late'}
-                                />
-
-                                {submission && (
-                                    <p className="submission-status">
-                                        ✅ Teslim edildi: {new Date(submission.submittedAt!).toLocaleString('tr-TR')}
-                                    </p>
-                                )}
-
-                                <button
-                                    className="submit-btn"
-                                    onClick={handleSubmit}
-                                    disabled={submitting || !content.trim()}
-                                >
-                                    {submitting ? 'Gönderiliyor...' : submission ? 'Güncelle' : 'Teslim Et'}
-                                </button>
-                            </>
+                        {homework.attachmentUrl && (
+                            <a 
+                                href={homework.attachmentUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-rose-50 text-rose-600 font-medium rounded-xl hover:bg-rose-100 transition-colors"
+                            >
+                                📎 Ek Dosyayı İndir
+                            </a>
                         )}
                     </section>
-                )}
+
+                    {/* Submission Section */}
+                    {user?.role === 'Student' && (
+                        <section className="bg-white rounded-2xl border border-rose-100 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                ✍️ Cevabınız
+                            </h2>
+
+                            {submission?.status === 'Graded' ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl">
+                                        <div className="text-center">
+                                            <span className="text-3xl font-bold text-emerald-600">{submission.score}</span>
+                                            <span className="text-lg text-emerald-500">/ {homework.maxScore}</span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-emerald-700 font-medium">Notlandırıldı</p>
+                                        </div>
+                                    </div>
+                                    {submission.feedback && (
+                                        <div className="p-4 bg-gray-50 rounded-xl">
+                                            <h4 className="font-medium text-gray-700 mb-2">Geri Bildirim:</h4>
+                                            <p className="text-gray-600">{submission.feedback}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <textarea
+                                        value={content}
+                                        onChange={(e) => setContent(e.target.value)}
+                                        placeholder="Cevabınızı buraya yazın..."
+                                        rows={10}
+                                        disabled={submission?.status === 'Submitted' || submission?.status === 'Late'}
+                                        className="w-full px-4 py-3 bg-white border border-rose-100 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+                                    />
+
+                                    {submission && (
+                                        <p className="text-emerald-600 text-sm flex items-center gap-2">
+                                            ✅ Teslim edildi: {new Date(submission.submittedAt!).toLocaleString('tr-TR')}
+                                        </p>
+                                    )}
+
+                                    <button
+                                        className="w-full px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        onClick={handleSubmit}
+                                        disabled={submitting || !content.trim()}
+                                    >
+                                        {submitting ? 'Gönderiliyor...' : submission ? 'Güncelle' : 'Teslim Et'}
+                                    </button>
+                                </div>
+                            )}
+                        </section>
+                    )}
+                </div>
+
+                {/* Sidebar */}
+                <div className="space-y-6">
+                    <div className="bg-white rounded-2xl border border-rose-100 p-6">
+                        <h3 className="font-semibold text-gray-900 mb-4">Ödev Bilgileri</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <span className="text-sm text-gray-500">Son Teslim</span>
+                                <p className="font-medium text-gray-900">
+                                    {new Date(homework.dueDate).toLocaleDateString('tr-TR', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </p>
+                            </div>
+                            <div>
+                                <span className="text-sm text-gray-500">Maksimum Puan</span>
+                                <p className="font-medium text-gray-900">{homework.maxScore}</p>
+                            </div>
+                            <div>
+                                <span className="text-sm text-gray-500">Geç Teslim</span>
+                                <p className="font-medium text-gray-900">
+                                    {homework.allowLateSubmission 
+                                        ? `İzin Var (-%${homework.latePenaltyPercent} ceza)` 
+                                        : 'İzin Yok'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

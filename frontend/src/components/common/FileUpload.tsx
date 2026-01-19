@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { fileApi } from '../../services/api';
-import './FileUpload.css';
 
 interface UploadedFile {
     fileId: string;
@@ -48,12 +47,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     };
 
     const validateFile = (file: File): string | null => {
-        // Check size
         if (file.size > maxSize * 1024 * 1024) {
             return `Dosya boyutu ${maxSize}MB'dan küçük olmalıdır`;
         }
 
-        // Check type if specified
         if (accept !== '*') {
             const acceptedTypes = accept.split(',').map(t => t.trim());
             const fileType = file.type;
@@ -166,10 +163,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     };
 
     return (
-        <div className="file-upload-container">
+        <div className="w-full">
             {!uploadedFile && !uploading && (
                 <div
-                    className={`upload-dropzone ${isDragging ? 'dragging' : ''}`}
+                    className={`
+                        relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer
+                        transition-all duration-200
+                        ${isDragging 
+                            ? 'border-rose-400 bg-rose-50' 
+                            : 'border-rose-200 hover:border-rose-300 hover:bg-rose-50/50'
+                        }
+                    `}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
@@ -183,10 +187,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                         onChange={handleFileSelect}
                         hidden
                     />
-                    <div className="dropzone-content">
-                        <span className="upload-icon">📁</span>
-                        <p className="upload-label">{label}</p>
-                        <p className="upload-hint">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-14 h-14 bg-rose-100 rounded-xl flex items-center justify-center text-2xl">
+                            📁
+                        </div>
+                        <p className="font-medium text-gray-700">{label}</p>
+                        <p className="text-sm text-gray-500">
                             {hint || `Sürükle bırak veya tıkla (Max: ${maxSize}MB)`}
                         </p>
                     </div>
@@ -194,14 +200,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             )}
 
             {uploading && (
-                <div className="upload-progress">
-                    <div className="progress-info">
-                        <span className="progress-icon">📤</span>
-                        <span className="progress-text">Yükleniyor... %{progress}</span>
+                <div className="bg-rose-50 rounded-xl p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                        <span className="text-xl">📤</span>
+                        <span className="text-sm font-medium text-gray-700">Yükleniyor... %{progress}</span>
                     </div>
-                    <div className="progress-bar">
+                    <div className="h-2 bg-rose-100 rounded-full overflow-hidden">
                         <div 
-                            className="progress-fill" 
+                            className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                         ></div>
                     </div>
@@ -209,28 +215,36 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             )}
 
             {uploadedFile && showPreview && (
-                <div className="uploaded-file">
+                <div className="flex items-center gap-4 p-4 bg-white border border-rose-100 rounded-xl">
                     {isImage(uploadedFile.fileName) ? (
-                        <div className="file-preview image">
-                            <img src={uploadedFile.url} alt={uploadedFile.fileName} />
+                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-rose-50 flex-shrink-0">
+                            <img 
+                                src={uploadedFile.url} 
+                                alt={uploadedFile.fileName}
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                     ) : (
-                        <div className="file-preview document">
-                            <span className="file-icon">📄</span>
+                        <div className="w-16 h-16 rounded-lg bg-rose-50 flex items-center justify-center text-2xl flex-shrink-0">
+                            📄
                         </div>
                     )}
-                    <div className="file-info">
-                        <span className="file-name">{uploadedFile.fileName}</span>
-                        <span className="file-size">{formatFileSize(uploadedFile.fileSize)}</span>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-800 truncate">{uploadedFile.fileName}</p>
+                        <p className="text-sm text-gray-500">{formatFileSize(uploadedFile.fileSize)}</p>
                     </div>
-                    <button className="remove-btn" onClick={handleRemove} title="Kaldır">
+                    <button 
+                        className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 transition-colors flex items-center justify-center"
+                        onClick={handleRemove}
+                        title="Kaldır"
+                    >
                         ✕
                     </button>
                 </div>
             )}
 
             {error && (
-                <div className="upload-error">
+                <div className="mt-3 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                     <span>⚠️</span> {error}
                 </div>
             )}
@@ -258,7 +272,6 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validate image
         if (!file.type.startsWith('image/')) {
             alert('Lütfen bir resim dosyası seçin');
             return;
@@ -288,7 +301,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
     return (
         <div 
-            className="avatar-upload"
+            className="relative rounded-full overflow-hidden cursor-pointer group"
             style={{ width: size, height: size }}
             onClick={() => inputRef.current?.click()}
         >
@@ -300,17 +313,21 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
                 hidden
             />
             {preview ? (
-                <img src={preview} alt="Avatar" className="avatar-image" />
+                <img 
+                    src={preview} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover"
+                />
             ) : (
-                <div className="avatar-placeholder">
-                    <span>📷</span>
+                <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-3xl">
+                    📷
                 </div>
             )}
-            <div className="avatar-overlay">
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 {uploading ? (
-                    <span className="uploading-text">...</span>
+                    <span className="text-white text-sm font-medium">...</span>
                 ) : (
-                    <span className="change-text">Değiştir</span>
+                    <span className="text-white text-sm font-medium">Değiştir</span>
                 )}
             </div>
         </div>

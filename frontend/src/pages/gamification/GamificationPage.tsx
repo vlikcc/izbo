@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
-import './Gamification.css';
 
 interface Badge {
     id: string;
@@ -52,7 +51,6 @@ export const GamificationPage: React.FC = () => {
 
     const loadData = async () => {
         setLoading(true);
-        // Simulating API call with mock data
         setTimeout(() => {
             setStats({
                 totalPoints: 2450,
@@ -112,126 +110,143 @@ export const GamificationPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="gamification-page loading-state">
-                <div className="spinner"></div>
+            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50">
+                <div className="w-10 h-10 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <div className="gamification-page">
-            <header className="page-header">
-                <h1>🏆 Başarılar & Sıralama</h1>
+        <div className="p-6 lg:p-8 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/50 min-h-screen">
+            {/* Header */}
+            <header className="mb-8">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    🏆 Başarılar & Sıralama
+                </h1>
             </header>
 
-            <div className="gamification-tabs">
+            {/* Tabs */}
+            <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
                 <button
-                    className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+                    className={`px-6 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${
+                        activeTab === 'overview' 
+                            ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                            : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                    }`}
                     onClick={() => setActiveTab('overview')}
                 >
                     📊 Genel Bakış
                 </button>
                 <button
-                    className={`tab-btn ${activeTab === 'badges' ? 'active' : ''}`}
+                    className={`px-6 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${
+                        activeTab === 'badges' 
+                            ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                            : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                    }`}
                     onClick={() => setActiveTab('badges')}
                 >
                     🎖️ Rozetler
                 </button>
                 <button
-                    className={`tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
+                    className={`px-6 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${
+                        activeTab === 'leaderboard' 
+                            ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                            : 'bg-white border border-rose-100 text-gray-600 hover:bg-rose-50'
+                    }`}
                     onClick={() => setActiveTab('leaderboard')}
                 >
                     🏅 Sıralama
                 </button>
             </div>
 
+            {/* Overview Tab */}
             {activeTab === 'overview' && stats && (
-                <div className="overview-content">
-                    <div className="user-level-card">
-                        <div className="level-info">
-                            <div className="level-badge">
-                                <span className="level-number">{stats.level}</span>
+                <div className="space-y-6">
+                    {/* Level Card */}
+                    <div className="bg-gradient-to-r from-rose-500 to-rose-400 rounded-2xl p-6 text-white">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-2xl font-bold">
+                                {stats.level}
                             </div>
-                            <div className="level-details">
-                                <h2>Seviye {stats.level}</h2>
-                                <p>{stats.currentXp} / {stats.xpToNextLevel} XP</p>
+                            <div>
+                                <h2 className="text-xl font-semibold">Seviye {stats.level}</h2>
+                                <p className="text-rose-100">{stats.currentXp} / {stats.xpToNextLevel} XP</p>
                             </div>
                         </div>
-                        <div className="level-progress-bar">
+                        <div className="h-3 bg-white/20 rounded-full overflow-hidden">
                             <div 
-                                className="level-progress-fill"
+                                className="h-full bg-white rounded-full transition-all"
                                 style={{ width: `${getLevelProgress()}%` }}
                             ></div>
                         </div>
-                        <p className="next-level-hint">
+                        <p className="text-rose-100 text-sm mt-2">
                             Sonraki seviyeye {stats.xpToNextLevel - stats.currentXp} XP kaldı
                         </p>
                     </div>
 
-                    <div className="stats-grid">
-                        <div className="stat-card points">
-                            <span className="stat-icon">⭐</span>
-                            <div className="stat-info">
-                                <span className="stat-value">{stats.totalPoints.toLocaleString()}</span>
-                                <span className="stat-label">Toplam Puan</span>
-                            </div>
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-white rounded-2xl border border-rose-100 p-4">
+                            <span className="text-2xl mb-2 block">⭐</span>
+                            <span className="text-2xl font-bold text-gray-900">{stats.totalPoints.toLocaleString()}</span>
+                            <span className="text-gray-500 text-sm block">Toplam Puan</span>
                         </div>
-                        <div className="stat-card rank">
-                            <span className="stat-icon">🏆</span>
-                            <div className="stat-info">
-                                <span className="stat-value">#{stats.rank}</span>
-                                <span className="stat-label">Sıralama</span>
-                            </div>
+                        <div className="bg-white rounded-2xl border border-rose-100 p-4">
+                            <span className="text-2xl mb-2 block">🏆</span>
+                            <span className="text-2xl font-bold text-gray-900">#{stats.rank}</span>
+                            <span className="text-gray-500 text-sm block">Sıralama</span>
                         </div>
-                        <div className="stat-card streak">
-                            <span className="stat-icon">🔥</span>
-                            <div className="stat-info">
-                                <span className="stat-value">{stats.streak} gün</span>
-                                <span className="stat-label">Günlük Seri</span>
-                            </div>
+                        <div className="bg-white rounded-2xl border border-rose-100 p-4">
+                            <span className="text-2xl mb-2 block">🔥</span>
+                            <span className="text-2xl font-bold text-gray-900">{stats.streak} gün</span>
+                            <span className="text-gray-500 text-sm block">Günlük Seri</span>
                         </div>
-                        <div className="stat-card badges">
-                            <span className="stat-icon">🎖️</span>
-                            <div className="stat-info">
-                                <span className="stat-value">{stats.badgesEarned}/{stats.totalBadges}</span>
-                                <span className="stat-label">Rozetler</span>
+                        <div className="bg-white rounded-2xl border border-rose-100 p-4">
+                            <span className="text-2xl mb-2 block">🎖️</span>
+                            <span className="text-2xl font-bold text-gray-900">{stats.badgesEarned}/{stats.totalBadges}</span>
+                            <span className="text-gray-500 text-sm block">Rozetler</span>
+                        </div>
+                    </div>
+
+                    {/* Activity Stats */}
+                    <div className="bg-white rounded-2xl border border-rose-100 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            📈 Aktivite İstatistikleri
+                        </h3>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="text-center p-4 bg-rose-50 rounded-xl">
+                                <span className="text-2xl block mb-1">📝</span>
+                                <span className="text-xl font-bold text-gray-900">{stats.homeworksCompleted}</span>
+                                <span className="text-gray-500 text-sm block">Tamamlanan Ödev</span>
+                            </div>
+                            <div className="text-center p-4 bg-rose-50 rounded-xl">
+                                <span className="text-2xl block mb-1">📋</span>
+                                <span className="text-xl font-bold text-gray-900">{stats.examsCompleted}</span>
+                                <span className="text-gray-500 text-sm block">Tamamlanan Sınav</span>
+                            </div>
+                            <div className="text-center p-4 bg-rose-50 rounded-xl">
+                                <span className="text-2xl block mb-1">🎥</span>
+                                <span className="text-xl font-bold text-gray-900">{stats.classesAttended}</span>
+                                <span className="text-gray-500 text-sm block">Katıldığı Ders</span>
+                            </div>
+                            <div className="text-center p-4 bg-rose-50 rounded-xl">
+                                <span className="text-2xl block mb-1">📆</span>
+                                <span className="text-xl font-bold text-gray-900">{stats.longestStreak}</span>
+                                <span className="text-gray-500 text-sm block">En Uzun Seri</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="activity-stats">
-                        <h3>📈 Aktivite İstatistikleri</h3>
-                        <div className="activity-grid">
-                            <div className="activity-item">
-                                <span className="activity-icon">📝</span>
-                                <span className="activity-value">{stats.homeworksCompleted}</span>
-                                <span className="activity-label">Tamamlanan Ödev</span>
-                            </div>
-                            <div className="activity-item">
-                                <span className="activity-icon">📋</span>
-                                <span className="activity-value">{stats.examsCompleted}</span>
-                                <span className="activity-label">Tamamlanan Sınav</span>
-                            </div>
-                            <div className="activity-item">
-                                <span className="activity-icon">🎥</span>
-                                <span className="activity-value">{stats.classesAttended}</span>
-                                <span className="activity-label">Katıldığı Ders</span>
-                            </div>
-                            <div className="activity-item">
-                                <span className="activity-icon">📆</span>
-                                <span className="activity-value">{stats.longestStreak}</span>
-                                <span className="activity-label">En Uzun Seri</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="recent-badges">
-                        <h3>🎖️ Son Kazanılan Rozetler</h3>
-                        <div className="badges-row">
+                    {/* Recent Badges */}
+                    <div className="bg-white rounded-2xl border border-rose-100 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            🎖️ Son Kazanılan Rozetler
+                        </h3>
+                        <div className="flex flex-wrap gap-4">
                             {badges.filter(b => b.earnedAt).slice(0, 4).map(badge => (
-                                <div key={badge.id} className="badge-item earned">
-                                    <span className="badge-icon">{badge.icon}</span>
-                                    <span className="badge-name">{badge.name}</span>
+                                <div key={badge.id} className="flex items-center gap-3 p-3 bg-rose-50 rounded-xl">
+                                    <span className="text-2xl">{badge.icon}</span>
+                                    <span className="font-medium text-gray-800">{badge.name}</span>
                                 </div>
                             ))}
                         </div>
@@ -239,46 +254,53 @@ export const GamificationPage: React.FC = () => {
                 </div>
             )}
 
+            {/* Badges Tab */}
             {activeTab === 'badges' && (
-                <div className="badges-content">
+                <div className="space-y-8">
                     {(['milestone', 'achievement', 'skill', 'special'] as const).map(category => (
-                        <div key={category} className="badge-category">
-                            <h3>
+                        <div key={category}>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
                                 {category === 'milestone' && '📍 Kilometre Taşları'}
                                 {category === 'achievement' && '🏅 Başarılar'}
                                 {category === 'skill' && '💪 Beceriler'}
                                 {category === 'special' && '✨ Özel'}
                             </h3>
-                            <div className="badges-grid">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                 {getCategoryBadges(category).map(badge => (
                                     <div 
                                         key={badge.id} 
-                                        className={`badge-card ${badge.earnedAt ? 'earned' : 'locked'}`}
+                                        className={`bg-white rounded-2xl border p-4 transition-all ${
+                                            badge.earnedAt 
+                                                ? 'border-rose-200 shadow-lg shadow-rose-100' 
+                                                : 'border-gray-200 opacity-60'
+                                        }`}
                                     >
-                                        <span className="badge-icon">{badge.icon}</span>
-                                        <h4 className="badge-name">{badge.name}</h4>
-                                        <p className="badge-description">{badge.description}</p>
-                                        {badge.earnedAt && (
-                                            <span className="badge-date">
-                                                {new Date(badge.earnedAt).toLocaleDateString('tr-TR')}
-                                            </span>
-                                        )}
-                                        {badge.progress !== undefined && !badge.earnedAt && (
-                                            <div className="badge-progress">
-                                                <div className="badge-progress-bar">
-                                                    <div 
-                                                        className="badge-progress-fill"
-                                                        style={{ width: `${(badge.progress / (badge.maxProgress || 1)) * 100}%` }}
-                                                    ></div>
-                                                </div>
-                                                <span className="badge-progress-text">
-                                                    {badge.progress}/{badge.maxProgress}
+                                        <div className="text-center">
+                                            <span className="text-4xl block mb-2">{badge.icon}</span>
+                                            <h4 className="font-semibold text-gray-900 mb-1">{badge.name}</h4>
+                                            <p className="text-sm text-gray-500 mb-3">{badge.description}</p>
+                                            {badge.earnedAt && (
+                                                <span className="text-xs text-rose-500 font-medium">
+                                                    ✓ {new Date(badge.earnedAt).toLocaleDateString('tr-TR')}
                                                 </span>
-                                            </div>
-                                        )}
-                                        {!badge.earnedAt && !badge.progress && (
-                                            <span className="badge-locked-text">🔒 Kilitli</span>
-                                        )}
+                                            )}
+                                            {badge.progress !== undefined && !badge.earnedAt && (
+                                                <div>
+                                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1">
+                                                        <div 
+                                                            className="h-full bg-rose-400 rounded-full"
+                                                            style={{ width: `${(badge.progress / (badge.maxProgress || 1)) * 100}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-xs text-gray-500">
+                                                        {badge.progress}/{badge.maxProgress}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {!badge.earnedAt && !badge.progress && (
+                                                <span className="text-xs text-gray-400">🔒 Kilitli</span>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -287,25 +309,29 @@ export const GamificationPage: React.FC = () => {
                 </div>
             )}
 
+            {/* Leaderboard Tab */}
             {activeTab === 'leaderboard' && (
-                <div className="leaderboard-content">
-                    <div className="top-three">
+                <div className="space-y-6">
+                    {/* Top 3 */}
+                    <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
                         {leaderboard.slice(0, 3).map((entry, index) => (
                             <div 
                                 key={entry.userId}
-                                className={`top-player rank-${index + 1}`}
+                                className={`bg-white rounded-2xl border border-rose-100 p-4 text-center ${
+                                    index === 0 ? 'order-2 transform scale-105' : index === 1 ? 'order-1' : 'order-3'
+                                }`}
                             >
-                                <div className="podium-rank">
+                                <div className="text-3xl mb-2">
                                     {index === 0 && '🥇'}
                                     {index === 1 && '🥈'}
                                     {index === 2 && '🥉'}
                                 </div>
-                                <div className="player-avatar">
+                                <div className="w-12 h-12 mx-auto bg-gradient-to-br from-rose-400 to-rose-500 rounded-full flex items-center justify-center text-white font-bold text-lg mb-2">
                                     {entry.userName.charAt(0)}
                                 </div>
-                                <h4 className="player-name">{entry.userName}</h4>
-                                <span className="player-points">{entry.points.toLocaleString()} puan</span>
-                                <div className="player-meta">
+                                <h4 className="font-semibold text-gray-900 text-sm truncate">{entry.userName}</h4>
+                                <span className="text-rose-500 font-bold">{entry.points.toLocaleString()}</span>
+                                <div className="flex justify-center gap-2 mt-2 text-xs text-gray-500">
                                     <span>🎖️ {entry.badges}</span>
                                     <span>🔥 {entry.streak}</span>
                                 </div>
@@ -313,28 +339,33 @@ export const GamificationPage: React.FC = () => {
                         ))}
                     </div>
 
-                    <div className="leaderboard-table">
-                        <div className="table-header">
+                    {/* Leaderboard Table */}
+                    <div className="bg-white rounded-2xl border border-rose-100 overflow-hidden">
+                        <div className="grid grid-cols-5 gap-4 p-4 bg-rose-50 font-medium text-gray-600 text-sm">
                             <span>Sıra</span>
-                            <span>Kullanıcı</span>
+                            <span className="col-span-2">Kullanıcı</span>
                             <span>Puan</span>
                             <span>Rozet</span>
-                            <span>Seri</span>
                         </div>
                         {leaderboard.slice(3).map(entry => (
                             <div 
                                 key={entry.userId}
-                                className={`table-row ${entry.userId === user?.id ? 'current-user' : ''}`}
+                                className={`grid grid-cols-5 gap-4 p-4 border-t border-rose-50 items-center ${
+                                    entry.userId === user?.id ? 'bg-rose-50' : ''
+                                }`}
                             >
-                                <span className="rank">#{entry.rank}</span>
-                                <span className="name">
-                                    <span className="avatar">{entry.userName.charAt(0)}</span>
-                                    {entry.userName}
-                                    {entry.userId === user?.id && <span className="you-badge">Sen</span>}
+                                <span className="font-medium text-gray-600">#{entry.rank}</span>
+                                <span className="col-span-2 flex items-center gap-2">
+                                    <span className="w-8 h-8 bg-gradient-to-br from-rose-400 to-rose-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                        {entry.userName.charAt(0)}
+                                    </span>
+                                    <span className="font-medium text-gray-900 truncate">{entry.userName}</span>
+                                    {entry.userId === user?.id && (
+                                        <span className="px-2 py-0.5 bg-rose-500 text-white text-xs font-medium rounded-full">Sen</span>
+                                    )}
                                 </span>
-                                <span className="points">{entry.points.toLocaleString()}</span>
-                                <span className="badges">🎖️ {entry.badges}</span>
-                                <span className="streak">🔥 {entry.streak}</span>
+                                <span className="font-semibold text-gray-900">{entry.points.toLocaleString()}</span>
+                                <span className="text-gray-500">🎖️ {entry.badges}</span>
                             </div>
                         ))}
                     </div>

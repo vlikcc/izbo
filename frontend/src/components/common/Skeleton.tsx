@@ -1,5 +1,4 @@
 import React from 'react';
-import './Skeleton.css';
 
 interface SkeletonProps {
     width?: string | number;
@@ -16,7 +15,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
     return (
         <div
-            className={`skeleton ${className}`}
+            className={`animate-pulse bg-gradient-to-r from-rose-100 via-rose-50 to-rose-100 ${className}`}
             style={{
                 width: typeof width === 'number' ? `${width}px` : width,
                 height: typeof height === 'number' ? `${height}px` : height,
@@ -28,13 +27,13 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 // Pre-built skeleton layouts
 export const CardSkeleton: React.FC = () => (
-    <div className="skeleton-card">
-        <Skeleton height={160} borderRadius="20px 20px 0 0" />
-        <div className="skeleton-card-body">
-            <Skeleton height={24} width="70%" />
-            <Skeleton height={16} width="100%" className="mt-2" />
-            <Skeleton height={16} width="80%" className="mt-1" />
-            <div className="skeleton-card-footer">
+    <div className="bg-white rounded-xl border border-rose-100 overflow-hidden">
+        <Skeleton height={160} borderRadius="0" />
+        <div className="p-4">
+            <Skeleton height={24} width="70%" className="mb-3" />
+            <Skeleton height={16} width="100%" className="mb-2" />
+            <Skeleton height={16} width="80%" className="mb-4" />
+            <div className="flex items-center justify-between">
                 <Skeleton height={14} width="30%" />
                 <Skeleton height={14} width="30%" />
             </div>
@@ -43,20 +42,20 @@ export const CardSkeleton: React.FC = () => (
 );
 
 export const ListItemSkeleton: React.FC = () => (
-    <div className="skeleton-list-item">
+    <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-rose-100">
         <Skeleton width={48} height={48} borderRadius="50%" />
-        <div className="skeleton-list-content">
-            <Skeleton height={18} width="60%" />
-            <Skeleton height={14} width="40%" className="mt-1" />
+        <div className="flex-1">
+            <Skeleton height={18} width="60%" className="mb-2" />
+            <Skeleton height={14} width="40%" />
         </div>
         <Skeleton width={60} height={24} borderRadius="12px" />
     </div>
 );
 
 export const TableRowSkeleton: React.FC<{ columns?: number }> = ({ columns = 5 }) => (
-    <tr className="skeleton-table-row">
+    <tr>
         {Array.from({ length: columns }).map((_, i) => (
-            <td key={i}>
+            <td key={i} className="px-4 py-3">
                 <Skeleton height={16} width={i === 0 ? '80%' : '60%'} />
             </td>
         ))}
@@ -64,20 +63,20 @@ export const TableRowSkeleton: React.FC<{ columns?: number }> = ({ columns = 5 }
 );
 
 export const StatCardSkeleton: React.FC = () => (
-    <div className="skeleton-stat-card">
+    <div className="flex items-center gap-4 p-5 bg-white rounded-xl border border-rose-100">
         <Skeleton width={48} height={48} borderRadius="12px" />
-        <div className="skeleton-stat-content">
-            <Skeleton height={32} width="50%" />
-            <Skeleton height={14} width="70%" className="mt-1" />
+        <div className="flex-1">
+            <Skeleton height={32} width="50%" className="mb-2" />
+            <Skeleton height={14} width="70%" />
         </div>
     </div>
 );
 
 export const PageHeaderSkeleton: React.FC = () => (
-    <div className="skeleton-page-header">
-        <div className="skeleton-header-content">
-            <Skeleton height={32} width="200px" />
-            <Skeleton height={16} width="300px" className="mt-2" />
+    <div className="flex items-center justify-between mb-8">
+        <div>
+            <Skeleton height={32} width="200px" className="mb-2" />
+            <Skeleton height={16} width="300px" />
         </div>
         <Skeleton width={120} height={44} borderRadius="12px" />
     </div>
@@ -85,7 +84,7 @@ export const PageHeaderSkeleton: React.FC = () => (
 
 // Classroom page skeleton
 export const ClassroomGridSkeleton: React.FC = () => (
-    <div className="skeleton-classroom-grid">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: 6 }).map((_, i) => (
             <CardSkeleton key={i} />
         ))}
@@ -94,17 +93,25 @@ export const ClassroomGridSkeleton: React.FC = () => (
 
 // Dashboard skeleton
 export const DashboardSkeleton: React.FC = () => (
-    <div className="skeleton-dashboard">
+    <div className="space-y-8">
         <PageHeaderSkeleton />
-        <div className="skeleton-stats-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
                 <StatCardSkeleton key={i} />
             ))}
         </div>
-        <div className="skeleton-sections">
-            <div className="skeleton-section">
-                <Skeleton height={24} width="150px" className="mb-3" />
-                <div className="skeleton-list">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl border border-rose-100 p-6">
+                <Skeleton height={24} width="150px" className="mb-4" />
+                <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <ListItemSkeleton key={i} />
+                    ))}
+                </div>
+            </div>
+            <div className="bg-white rounded-xl border border-rose-100 p-6">
+                <Skeleton height={24} width="150px" className="mb-4" />
+                <div className="space-y-3">
                     {Array.from({ length: 3 }).map((_, i) => (
                         <ListItemSkeleton key={i} />
                     ))}
