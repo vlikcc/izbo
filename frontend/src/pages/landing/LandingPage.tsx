@@ -34,14 +34,14 @@ export const LandingPage: React.FC = () => {
                             <a href="#about" className="text-gray-600 hover:text-rose-500 transition-colors font-medium">
                                 Hakkında
                             </a>
-                            <Link 
-                                to="/login" 
+                            <Link
+                                to="/login"
                                 className="px-4 py-2 text-rose-600 font-medium hover:text-rose-700 transition-colors"
                             >
                                 Giriş Yap
                             </Link>
-                            <Link 
-                                to="/register" 
+                            <Link
+                                to="/register"
                                 className="px-5 py-2.5 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
                             >
                                 Kayıt Ol
@@ -73,7 +73,7 @@ export const LandingPage: React.FC = () => {
                                             İzbo
                                         </span>
                                     </div>
-                                    <button 
+                                    <button
                                         className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-rose-50 text-gray-400"
                                         onClick={closeMobileMenu}
                                     >
@@ -87,15 +87,15 @@ export const LandingPage: React.FC = () => {
                                     <a href="#about" onClick={closeMobileMenu} className="py-3 text-gray-600 hover:text-rose-500 font-medium">
                                         Hakkında
                                     </a>
-                                    <Link 
-                                        to="/login" 
+                                    <Link
+                                        to="/login"
                                         onClick={closeMobileMenu}
                                         className="py-3 text-center border border-rose-200 text-rose-600 font-medium rounded-xl hover:bg-rose-50 transition-colors"
                                     >
                                         Giriş Yap
                                     </Link>
-                                    <Link 
-                                        to="/register" 
+                                    <Link
+                                        to="/register"
                                         onClick={closeMobileMenu}
                                         className="py-3 text-center bg-gradient-to-r from-rose-500 to-rose-400 text-white font-medium rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all"
                                     >
@@ -125,29 +125,29 @@ export const LandingPage: React.FC = () => {
                                 <span>✨</span>
                                 <span>Yeni Nesil Eğitim Platformu</span>
                             </div>
-                            
+
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
                                 Eğitimi{' '}
                                 <span className="bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
                                     Dönüştürün
                                 </span>
                             </h1>
-                            
+
                             <p className="text-lg text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0">
                                 Canlı dersler, interaktif sınavlar, ödevler ve daha fazlası.
                                 Öğrenciler ve öğretmenler için tasarlanmış kapsamlı eğitim platformu.
                             </p>
-                            
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
-                                <Link 
-                                    to="/register" 
+
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-16">
+                                <Link
+                                    to="/register"
                                     className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-2xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-xl shadow-rose-200 hover:-translate-y-1"
                                 >
                                     <span>Hemen Başla</span>
                                     <span>→</span>
                                 </Link>
-                                <Link 
-                                    to="/login" 
+                                <Link
+                                    to="/login"
                                     className="inline-flex items-center justify-center px-8 py-4 bg-white border border-rose-200 text-gray-700 font-semibold rounded-2xl hover:bg-rose-50 hover:border-rose-300 transition-all"
                                 >
                                     Giriş Yap
@@ -155,7 +155,7 @@ export const LandingPage: React.FC = () => {
                             </div>
 
                             {/* Stats */}
-                            <div className="flex items-center justify-center lg:justify-start gap-8">
+                            <div className="flex items-center justify-center lg:justify-start gap-10">
                                 <div className="text-center">
                                     <div className="text-2xl font-bold text-gray-900">1000+</div>
                                     <div className="text-sm text-gray-500">Aktif Öğrenci</div>
@@ -239,7 +239,7 @@ export const LandingPage: React.FC = () => {
                             { icon: '🔔', title: 'Anlık Bildirimler', desc: 'Önemli duyurulardan ve ödevlerden anında haberdar olun' },
                             { icon: '📁', title: 'Dosya Paylaşımı', desc: 'Ders materyallerini ve kaynakları güvenle paylaşın' },
                         ].map((feature, index) => (
-                            <div 
+                            <div
                                 key={index}
                                 className="group bg-white rounded-2xl border border-rose-100 p-6 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-100/50 transition-all duration-300 hover:-translate-y-1"
                             >
@@ -283,8 +283,8 @@ export const LandingPage: React.FC = () => {
                                     </li>
                                 ))}
                             </ul>
-                            <Link 
-                                to="/register" 
+                            <Link
+                                to="/register"
                                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
                             >
                                 <span>Ücretsiz Deneyin</span>
@@ -328,15 +328,15 @@ export const LandingPage: React.FC = () => {
                         <p className="text-lg text-rose-100 mb-8 max-w-2xl mx-auto">
                             Binlerce öğrenci ve eğitmen İzbo ile öğrenme deneyimini dönüştürüyor. Siz de aramıza katılın!
                         </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Link 
-                                to="/register" 
+                        <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                            <Link
+                                to="/register"
                                 className="inline-flex items-center justify-center px-8 py-4 bg-white text-rose-600 font-semibold rounded-2xl hover:bg-rose-50 transition-all shadow-lg"
                             >
                                 Ücretsiz Kayıt Ol
                             </Link>
-                            <Link 
-                                to="/login" 
+                            <Link
+                                to="/login"
                                 className="inline-flex items-center justify-center px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-all"
                             >
                                 Giriş Yap

@@ -57,8 +57,8 @@ export const ForgotPasswordPage: React.FC = () => {
                             <p className="text-gray-500 mb-6">
                                 Şifre sıfırlama bağlantısı <strong className="text-gray-700">{email}</strong> adresine gönderildi.
                             </p>
-                            <Link 
-                                to="/login" 
+                            <Link
+                                to="/login"
                                 className="inline-flex items-center justify-center w-full px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200"
                             >
                                 Giriş Sayfasına Dön
@@ -94,8 +94,8 @@ export const ForgotPasswordPage: React.FC = () => {
                                 />
                             </div>
 
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 className="w-full px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={loading}
                             >
@@ -155,7 +155,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <div className="w-full max-w-md relative">
-                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-rose-100 p-8">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-rose-100 p-10">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-400 to-rose-500 rounded-2xl mb-4 shadow-lg shadow-rose-200">
@@ -167,7 +167,7 @@ export const LoginPage: React.FC = () => {
                         <p className="text-gray-500 text-sm mt-1">Eğitim ve Sınav Platformu</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-8">
                         <h2 className="text-xl font-semibold text-gray-800 text-center">Giriş Yap</h2>
 
                         {error && (
@@ -208,15 +208,15 @@ export const LoginPage: React.FC = () => {
                             />
                         </div>
 
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className="w-full px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={loading}
                         >
                             {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
                         </button>
 
-                        <div className="text-center space-y-2">
+                        <div className="text-center space-y-3 pt-2">
                             <Link to="/forgot-password" className="text-sm text-rose-500 hover:text-rose-600 font-medium">
                                 Şifremi Unuttum
                             </Link>
@@ -297,7 +297,7 @@ export const RegisterPage: React.FC = () => {
             </div>
 
             <div className="w-full max-w-md relative">
-                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-rose-100 p-8">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-rose-100 p-10">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-400 to-rose-500 rounded-2xl mb-4 shadow-lg shadow-rose-200">
@@ -309,7 +309,7 @@ export const RegisterPage: React.FC = () => {
                         <p className="text-gray-500 text-sm mt-1">Eğitim ve Sınav Platformu</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <h2 className="text-xl font-semibold text-gray-800 text-center">Kayıt Ol</h2>
 
                         {error && (
@@ -420,8 +420,8 @@ export const RegisterPage: React.FC = () => {
                             />
                         </div>
 
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className="w-full px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-rose-500 transition-all shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={loading}
                         >
