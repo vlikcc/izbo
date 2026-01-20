@@ -53,14 +53,27 @@ export const CustomLiveRoomPage: React.FC = () => {
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
+    // WebRTC States
+    const peersRef = useRef<{ [key: string]: RTCPeerConnection }>({});
+    const [remoteStreams, setRemoteStreams] = useState<{ [key: string]: MediaStream }>({});
+
     // Screen Share States
     const [isScreenSharing, setIsScreenSharing] = useState(false);
     const cameraStreamRef = useRef<MediaStream | null>(null);
+
+    // ICE Configuration
+    const rtcConfig: RTCConfiguration = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+    };
 
     useEffect(() => {
         startLocalStream();
         return () => {
             localStream?.getTracks().forEach(track => track.stop());
+            Object.values(peersRef.current).forEach(peer => peer.close());
         };
     }, []);
 
@@ -96,32 +109,116 @@ export const CustomLiveRoomPage: React.FC = () => {
             connection.start()
                 .then(() => {
                     console.log('Connected to SignalR');
-                    // Join Session Group
                     connection.invoke('JoinSession', sessionId);
 
-                    // Listeners
+                    // --- Chat & Presence ---
                     connection.on('ReceiveMessage', (data: ChatMessage) => {
                         setMessages(prev => [...prev, data]);
                     });
 
-                    connection.on('ParticipantJoined', (participant: Participant) => {
+                    connection.on('ParticipantLeft', (data: { userId: string }) => {
+                        setParticipants(prev => prev.filter(p => p.userId !== data.userId));
+
+                        // Close Peer Connection
+                        if (peersRef.current[data.userId]) {
+                            peersRef.current[data.userId].close();
+                            delete peersRef.current[data.userId];
+                        }
+
+                        // Remove Remote Stream
+                        setRemoteStreams(prev => {
+                            const newStreams = { ...prev };
+                            delete newStreams[data.userId];
+                            return newStreams;
+                        });
+                    });
+
+                    connection.on('HandRaised', (data: { userId: string, userName: string }) => {
+                        console.log(`${data.userName} raised hand`);
+                        setParticipants(prev => prev.map(p =>
+                            p.userId === data.userId ? { ...p, handRaised: true } : p
+                        ));
+                    });
+
+                    connection.on('HandLowered', (data: { userId: string }) => {
+                        setParticipants(prev => prev.map(p =>
+                            p.userId === data.userId ? { ...p, handRaised: false } : p
+                        ));
+                    });
+
+                    // --- WebRTC Signaling ---
+
+                    // 1. Existing participants receive 'ParticipantJoined' and initiate Offer to the new participant.
+                    connection.on('ParticipantJoined', async (participant: Participant) => {
                         setParticipants(prev => {
                             if (!prev.find(p => p.userId === participant.userId)) {
                                 return [...prev, participant];
                             }
                             return prev;
                         });
-                        // Optional notification
-                        console.log(`${participant.userName} joined`);
+
+                        // Initiate connection only if it's not us
+                        if (participant.userId !== user?.id) {
+                            console.log('Initiating offer to', participant.userName);
+                            const peer = createPeerConnection(participant.userId, connection);
+                            peersRef.current[participant.userId] = peer;
+
+                            // Add local tracks
+                            localStream?.getTracks().forEach(track => {
+                                peer.addTrack(track, localStream);
+                            });
+
+                            const offer = await peer.createOffer();
+                            await peer.setLocalDescription(offer);
+                            connection.invoke('SendOffer', sessionId, participant.userId, JSON.stringify(offer));
+                        }
                     });
 
-                    connection.on('ParticipantLeft', (data: { userId: string }) => {
-                        setParticipants(prev => prev.filter(p => p.userId !== data.userId));
+                    connection.on('ReceiveOffer', async (data: { fromUserId: string, fromUserName: string, offer: string }) => {
+                        console.log('Received offer from', data.fromUserId);
+
+                        // Add participant if missing (for the callee)
+                        setParticipants(prev => {
+                            if (!prev.find(p => p.userId === data.fromUserId)) {
+                                return [...prev, {
+                                    userId: data.fromUserId,
+                                    userName: data.fromUserName,
+                                    joinedAt: new Date().toISOString()
+                                }];
+                            }
+                            return prev;
+                        });
+
+                        const offer = JSON.parse(data.offer);
+                        const peer = createPeerConnection(data.fromUserId, connection);
+                        peersRef.current[data.fromUserId] = peer;
+
+                        // Add local tracks
+                        localStream?.getTracks().forEach(track => {
+                            peer.addTrack(track, localStream!);
+                        });
+
+                        await peer.setRemoteDescription(offer);
+                        const answer = await peer.createAnswer();
+                        await peer.setLocalDescription(answer);
+                        connection.invoke('SendAnswer', sessionId, data.fromUserId, JSON.stringify(answer));
                     });
 
-                    connection.on('HandRaised', (data: { userId: string, userName: string }) => {
-                        // Mark participant hand raised or show toast
-                        console.log(`${data.userName} raised hand`);
+                    connection.on('ReceiveAnswer', async (data: { fromUserId: string, answer: string }) => {
+                        console.log('Received answer from', data.fromUserId);
+                        const answer = JSON.parse(data.answer);
+                        const peer = peersRef.current[data.fromUserId];
+                        if (peer) {
+                            await peer.setRemoteDescription(answer);
+                        }
+                    });
+
+                    connection.on('ReceiveIceCandidate', async (data: { fromUserId: string, candidate: string }) => {
+                        const candidate = JSON.parse(data.candidate);
+                        const peer = peersRef.current[data.fromUserId];
+                        if (peer) {
+                            await peer.addIceCandidate(candidate);
+                        }
                     });
 
                 })
@@ -131,7 +228,27 @@ export const CustomLiveRoomPage: React.FC = () => {
                 connection.stop();
             };
         }
-    }, [connection, sessionId]);
+    }, [connection, sessionId, localStream]); // Dependency on localStream to add tracks
+
+    const createPeerConnection = (targetUserId: string, signalRConnection: HubConnection) => {
+        const peer = new RTCPeerConnection(rtcConfig);
+
+        peer.onicecandidate = (event) => {
+            if (event.candidate) {
+                signalRConnection.invoke('SendIceCandidate', sessionId, targetUserId, JSON.stringify(event.candidate));
+            }
+        };
+
+        peer.ontrack = (event) => {
+            console.log('Received remote track from', targetUserId);
+            setRemoteStreams(prev => ({
+                ...prev,
+                [targetUserId]: event.streams[0]
+            }));
+        };
+
+        return peer;
+    };
 
 
     const startLocalStream = async () => {
@@ -166,19 +283,26 @@ export const CustomLiveRoomPage: React.FC = () => {
 
     const toggleScreenShare = async () => {
         if (isScreenSharing) {
-            // Stop screen share and revert to camera
-            if (localVideoRef.current && cameraStreamRef.current) {
-                localVideoRef.current.srcObject = cameraStreamRef.current;
+            // Revert to camera
+            if (cameraStreamRef.current) {
+                const videoTrack = cameraStreamRef.current.getVideoTracks()[0];
+
+                // Update local video
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = cameraStreamRef.current;
+                }
                 setLocalStream(cameraStreamRef.current);
 
-                // Stop screen share tracks
-                if (localStream) {
-                    localStream.getTracks().forEach(track => {
-                        if (track.kind === 'video' && track.label.includes('screen')) {
-                            track.stop();
-                        }
-                    });
-                }
+                // Replace track in all peer connections
+                Object.values(peersRef.current).forEach(peer => {
+                    const sender = peer.getSenders().find(s => s.track?.kind === 'video');
+                    if (sender) {
+                        sender.replaceTrack(videoTrack);
+                    }
+                });
+
+                // Stop screen share tracks if active
+                localStream?.getVideoTracks().forEach(t => t.label.includes('screen') && t.stop());
             }
             setIsScreenSharing(false);
         } else {
@@ -188,12 +312,17 @@ export const CustomLiveRoomPage: React.FC = () => {
                     video: true,
                     audio: true
                 });
+                const screenTrack = screenStream.getVideoTracks()[0];
 
-                // Handle user stopping via browser UI
-                screenStream.getVideoTracks()[0].onended = () => {
-                    if (localVideoRef.current && cameraStreamRef.current) {
-                        localVideoRef.current.srcObject = cameraStreamRef.current;
+                // Handle stop via browser UI
+                screenTrack.onended = () => {
+                    if (cameraStreamRef.current) {
+                        if (localVideoRef.current) localVideoRef.current.srcObject = cameraStreamRef.current;
                         setLocalStream(cameraStreamRef.current);
+                        Object.values(peersRef.current).forEach(peer => {
+                            const sender = peer.getSenders().find(s => s.track?.kind === 'video');
+                            if (sender) sender.replaceTrack(cameraStreamRef.current!.getVideoTracks()[0]);
+                        });
                         setIsScreenSharing(false);
                     }
                 };
@@ -202,6 +331,15 @@ export const CustomLiveRoomPage: React.FC = () => {
                     localVideoRef.current.srcObject = screenStream;
                 }
                 setLocalStream(screenStream);
+
+                // Replace track in all peer connections
+                Object.values(peersRef.current).forEach(peer => {
+                    const sender = peer.getSenders().find(s => s.track?.kind === 'video');
+                    if (sender) {
+                        sender.replaceTrack(screenTrack);
+                    }
+                });
+
                 setIsScreenSharing(true);
             } catch (err) {
                 console.error("Error sharing screen:", err);
@@ -230,17 +368,14 @@ export const CustomLiveRoomPage: React.FC = () => {
         }
     };
 
+    // ... helper handlers ...
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
+        if (e.key === 'Enter') sendMessage();
     };
 
     const handleLeave = () => {
         if (confirm("Dersten ayrılmak istediğinize emin misiniz?")) {
-            if (connection) {
-                connection.invoke('LeaveSession', sessionId);
-            }
+            if (connection) connection.invoke('LeaveSession', sessionId);
             navigate('/app/live');
         }
     };
@@ -253,7 +388,6 @@ export const CustomLiveRoomPage: React.FC = () => {
                     <div className="live-badge">CANLI</div>
                     <div className="session-title">Canlı Ders: {sessionId?.substring(0, 8)}...</div>
                     <div className="participant-count">👥 {participants.length + 1} katılımcı</div>
-                    <div className="role-badge">Öğretmen</div>
                 </div>
                 <div className="header-right">
                     <button className="leave-btn" onClick={handleLeave}>Dersten Ayrıl</button>
@@ -263,30 +397,33 @@ export const CustomLiveRoomPage: React.FC = () => {
             {/* Main Content Area */}
             <div className="live-content">
                 {/* Video Grid */}
-                <div className={`video-grid ${!isSidebarOpen ? 'full-width' : ''} single-user`}>
+                <div className={`video-grid ${!isSidebarOpen ? 'full-width' : ''} ${Object.keys(remoteStreams).length > 0 ? 'multi-user' : 'single-user'}`}>
                     {/* Local User */}
-                    <div className="video-container">
-                        <video
-                            ref={localVideoRef}
-                            autoPlay
-                            muted
-                            playsInline
-                            className="video-feed"
-                        />
-                        <div className="user-label">
-                            {user?.firstName} {user?.lastName} (Sen)
-                        </div>
-                        {isMicMuted && (
-                            <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: '#dc2626', padding: '0.25rem', borderRadius: '50%' }}>
-                                <Icons.MicOff />
-                            </div>
-                        )}
-                        {isHandRaised && (
-                            <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#eab308', padding: '0.25rem', borderRadius: '50%' }}>
-                                <Icons.Hand />
-                            </div>
-                        )}
+                    <div className="video-container local-user">
+                        <video ref={localVideoRef} autoPlay muted playsInline className="video-feed" />
+                        <div className="user-label">{user?.firstName} {user?.lastName} (Sen)</div>
+                        {isMicMuted && <div className="status-icon mic-off"><Icons.MicOff /></div>}
+                        {isHandRaised && <div className="status-icon hand-raised"><Icons.Hand /></div>}
                     </div>
+
+                    {/* Remote Users */}
+                    {Object.entries(remoteStreams).map(([userId, stream]) => {
+                        const participant = participants.find(p => p.userId === userId);
+                        return (
+                            <div key={userId} className="video-container remote-user">
+                                <video
+                                    autoPlay
+                                    playsInline
+                                    className="video-feed"
+                                    ref={el => {
+                                        if (el) el.srcObject = stream;
+                                    }}
+                                />
+                                <div className="user-label">{participant?.userName || 'Misafir'}</div>
+                                {participant?.handRaised && <div className="status-icon hand-raised"><Icons.Hand /></div>}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Sidebar */}
