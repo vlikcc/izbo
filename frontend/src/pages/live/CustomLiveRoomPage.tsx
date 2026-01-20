@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
 import './LiveClassroom.css';
 
 // Simple Icons
@@ -44,6 +44,7 @@ export const CustomLiveRoomPage: React.FC = () => {
 
     // SignalR & Data States
     const [connection, setConnection] = useState<HubConnection | null>(null);
+    const [_isConnected, setIsConnected] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [messageInput, setMessageInput] = useState('');
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -106,9 +107,28 @@ export const CustomLiveRoomPage: React.FC = () => {
 
     useEffect(() => {
         if (connection && sessionId) {
+            // Set up connection state handlers
+            connection.onclose(() => {
+                console.log('SignalR connection closed');
+                setIsConnected(false);
+            });
+
+            connection.onreconnecting(() => {
+                console.log('SignalR reconnecting...');
+                setIsConnected(false);
+            });
+
+            connection.onreconnected(() => {
+                console.log('SignalR reconnected');
+                setIsConnected(true);
+                // Re-join session after reconnection
+                connection.invoke('JoinSession', sessionId);
+            });
+
             connection.start()
                 .then(() => {
                     console.log('Connected to SignalR');
+                    setIsConnected(true);
                     connection.invoke('JoinSession', sessionId);
 
                     // --- Chat & Presence ---
@@ -360,11 +380,20 @@ export const CustomLiveRoomPage: React.FC = () => {
 
     const sendMessage = async () => {
         if (!messageInput.trim() || !connection) return;
+
+        // Check if connection is in Connected state
+        if (connection.state !== HubConnectionState.Connected) {
+            console.error('Cannot send message: Connection is not in Connected state. Current state:', connection.state);
+            alert('Bağlantı kurulurken bekleyin...');
+            return;
+        }
+
         try {
             await connection.invoke('SendMessage', sessionId, messageInput);
             setMessageInput('');
         } catch (e) {
-            console.error(e);
+            console.error('Failed to send message:', e);
+            alert('Mesaj gönderilemedi. Bağlantıyı kontrol edin.');
         }
     };
 

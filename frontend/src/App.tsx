@@ -6,6 +6,9 @@ import { LandingPage } from './pages/landing';
 import { LoginPage, RegisterPage } from './pages/auth';
 import { ClassroomsPage, ClassroomDetailPage } from './pages/classrooms';
 import { ExamsPage } from './pages/exams';
+import { ExamBuilderPage } from './pages/exams/ExamBuilderPage';
+import { LiveQuizPresenterPage } from './pages/exams/LiveQuizPresenterPage';
+import { LiveQuizVoterPage } from './pages/exams/LiveQuizVoterPage';
 import { HomeworkPage } from './pages/homework';
 import LivePage from './pages/live/LivePage';
 import CustomLiveRoomPage from './pages/live/CustomLiveRoomPage';
@@ -61,6 +64,7 @@ function App() {
           <Route path="classrooms/:id" element={<ClassroomDetailPage />} />
           <Route path="homework" element={<HomeworkPage />} />
           <Route path="exams" element={<ExamsPage />} />
+          <Route path="exams/:id/builder" element={<ExamBuilderPage />} />
           <Route path="live" element={<LivePage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
@@ -71,6 +75,24 @@ function App() {
           element={
             <ProtectedRoute>
               <CustomLiveRoomPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Live Quiz Routes (Full Screen) */}
+        <Route
+          path="/quiz/presenter/:id"
+          element={
+            <ProtectedRoute>
+              <LiveQuizPresenterPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quiz/join/:code?"
+          element={
+            <ProtectedRoute>
+              <LiveQuizVoterPage />
             </ProtectedRoute>
           }
         />

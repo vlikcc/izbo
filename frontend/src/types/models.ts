@@ -18,6 +18,19 @@ export interface Exam {
     createdAt: string;
 }
 
+export interface CreateExamRequest {
+    classroomId: string; // If creating from global context, might need selection
+    title: string;
+    description?: string;
+    durationMinutes: number;
+    startTime: string;
+    endTime: string;
+    shuffleQuestions: boolean;
+    shuffleOptions: boolean;
+    showResults: boolean;
+    passingScore?: number;
+}
+
 export interface ExamSession {
     id: string;
     examId: string;
@@ -74,4 +87,41 @@ export interface LiveSession {
     meetingUrl?: string;
     recordingUrl?: string;
     status: string;
+}
+
+// Question Types
+export type QuestionType = 'MultipleChoice' | 'TrueFalse' | 'ShortAnswer';
+
+export interface Question {
+    id: string;
+    examId: string;
+    orderIndex: number;
+    type: QuestionType;
+    content: string;
+    imageUrl?: string;
+    options?: string[];
+    correctAnswer?: string;
+    points: number;
+    explanation?: string;
+}
+
+export interface CreateQuestionRequest {
+    orderIndex: number;
+    type: QuestionType;
+    content: string;
+    imageUrl?: string;
+    options?: string[];
+    correctAnswer?: string;
+    points: number;
+    explanation?: string;
+}
+
+export interface UpdateQuestionRequest {
+    orderIndex?: number;
+    content?: string;
+    imageUrl?: string;
+    options?: string[];
+    correctAnswer?: string;
+    points?: number;
+    explanation?: string;
 }

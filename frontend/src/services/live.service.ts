@@ -35,8 +35,8 @@ export const liveService = {
         scheduledStartTime: string;
         scheduledEndTime: string;
         meetingUrl?: string;
-    }): Promise<void> {
-        const { classroomId, meetingUrl, ...rest } = data;
+    }): Promise<LiveSession> {
+        const { classroomId, ...rest } = data;
         // Backend DTO only accepts: title, description, scheduledStartTime, scheduledEndTime
         // Convert datetime-local format to ISO string for proper backend parsing
         const sessionData = {
@@ -45,10 +45,11 @@ export const liveService = {
             scheduledStartTime: new Date(rest.scheduledStartTime).toISOString(),
             scheduledEndTime: new Date(rest.scheduledEndTime).toISOString(),
         };
-        const response = await api.post<ApiResponse<unknown>>(`/api/classrooms/${classroomId}/sessions`, sessionData);
-        if (!response.data.success) {
-            throw new Error(response.data.message || 'Failed to create session');
+        const response = await api.post<ApiResponse<LiveSession>>(`/api/classrooms/${classroomId}/sessions`, sessionData);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
         }
+        throw new Error(response.data.message || 'Failed to create session');
     },
 
     async startSession(sessionId: string): Promise<void> {

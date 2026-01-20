@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Modal, Input } from '../../components/ui';
+import { SessionShareModal } from '../../components/live/SessionShareModal';
 import { liveService } from '../../services/live.service';
 import { classroomService } from '../../services/classroom.service';
 import { useAuthStore } from '../../stores/authStore';
@@ -16,6 +17,10 @@ export const LivePage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+
+    // Share modal state
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [createdSession, setCreatedSession] = useState<{ id: string; title: string } | null>(null);
 
     const [formData, setFormData] = useState({
         classroomId: '',
@@ -126,7 +131,7 @@ export const LivePage: React.FC = () => {
 
         setIsSubmitting(true);
         try {
-            await liveService.createSession({
+            const newSession = await liveService.createSession({
                 classroomId: formData.classroomId,
                 title: formData.title,
                 description: formData.description || undefined,
@@ -136,6 +141,10 @@ export const LivePage: React.FC = () => {
             });
             handleCloseModal();
             fetchSessions();
+
+            // Open share modal with created session info
+            setCreatedSession({ id: newSession.id, title: formData.title });
+            setIsShareModalOpen(true);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Canlı ders oluşturulamadı');
         } finally {
@@ -360,6 +369,19 @@ export const LivePage: React.FC = () => {
                     </div>
                 </form>
             </Modal>
+
+            {/* Share Session Modal */}
+            {createdSession && (
+                <SessionShareModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => {
+                        setIsShareModalOpen(false);
+                        setCreatedSession(null);
+                    }}
+                    sessionId={createdSession.id}
+                    sessionTitle={createdSession.title}
+                />
+            )}
         </div>
     );
 };

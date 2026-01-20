@@ -1,0 +1,115 @@
+.session-share-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 8px 0;
+}
+
+/* Success Message */
+.share-success {
+    text-align: center;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(var(--color-success-rgb), 0.1), rgba(var(--color-success-rgb), 0.05));
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(var(--color-success-rgb), 0.2);
+}
+
+.share-success-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.share-success h3 {
+    margin: 0 0 8px 0;
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--color-success-600);
+}
+
+.share-session-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    color: var(--color-gray-700);
+    font-weight: 500;
+}
+
+/* QR Code Section */
+.share-qr-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.share-qr-container {
+    padding: 16px;
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 2px solid var(--color-gray-200);
+}
+
+.share-qr-hint {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    text-align: center;
+}
+
+/* Link Section */
+.share-link-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.share-link-label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-gray-700);
+}
+
+.share-link-container {
+    display: flex;
+    gap: 8px;
+}
+
+.share-link-input {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: var(--font-size-sm);
+    font-family: 'Courier New', monospace;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-md);
+    color: var(--color-gray-700);
+    outline: none;
+}
+
+.share-link-input:focus {
+    border-color: var(--color-primary-500);
+}
+
+/* Actions */
+.share-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-gray-200);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .share-link-container {
+        flex-direction: column;
+    }
+
+    .share-actions {
+        flex-direction: column;
+    }
+
+    .share-actions button {
+        width: 100%;
+    }
+}

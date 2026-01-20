@@ -1,0 +1,213 @@
+/* Exam Builder Page Styles */
+
+.exam-builder {
+    min-height: 100vh;
+    background: var(--color-gray-50);
+}
+
+/* Header */
+.exam-builder-header {
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-gray-100);
+    padding: var(--space-4) var(--space-6);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.exam-builder-header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.exam-builder-back {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-gray-600);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.exam-builder-back:hover {
+    color: var(--color-primary-600);
+}
+
+.exam-builder-title {
+    flex: 1;
+}
+
+.exam-builder-title h1 {
+    font-size: var(--font-size-xl);
+    color: var(--color-gray-900);
+    margin: 0;
+}
+
+.exam-builder-title p {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-500);
+    margin: 0;
+}
+
+.exam-builder-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+/* Stats Bar */
+.exam-stats-bar {
+    max-width: 1200px;
+    margin: var(--space-4) auto;
+    padding: 0 var(--space-6);
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.exam-stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.exam-stat-icon {
+    font-size: 1.25rem;
+}
+
+.exam-stat-value {
+    font-weight: 700;
+    color: var(--color-gray-900);
+}
+
+.exam-stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-500);
+}
+
+/* Content Area */
+.exam-builder-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-6);
+}
+
+/* Questions List */
+.questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+/* Empty State */
+.questions-empty {
+    text-align: center;
+    padding: var(--space-12);
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    border: 2px dashed var(--color-gray-200);
+}
+
+.questions-empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-4);
+}
+
+.questions-empty-title {
+    font-size: var(--font-size-xl);
+    color: var(--color-gray-700);
+    margin-bottom: var(--space-2);
+}
+
+.questions-empty-text {
+    color: var(--color-gray-500);
+    margin-bottom: var(--space-6);
+}
+
+/* Add Question Card */
+.add-question-card {
+    padding: var(--space-8);
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    border: 2px dashed var(--color-gray-200);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.add-question-card:hover {
+    border-color: var(--color-primary-300);
+    background: var(--color-primary-50);
+}
+
+.add-question-card-icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-2);
+}
+
+.add-question-card-text {
+    color: var(--color-gray-600);
+    font-weight: 500;
+}
+
+/* Loading */
+.exam-builder-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: var(--space-4);
+    color: var(--color-gray-500);
+}
+
+.exam-builder-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-gray-200);
+    border-top-color: var(--color-primary-500);
+    border-radius: var(--radius-full);
+    animation: spin 0.8s linear infinite;
+}
+
+/* Status Badge */
+.exam-status-badge {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.exam-status-badge.draft {
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+}
+
+.exam-status-badge.published {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+@media (max-width: 768px) {
+    .exam-builder-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .exam-builder-actions {
+        width: 100%;
+    }
+
+    .exam-stats-bar {
+        flex-direction: column;
+    }
+}

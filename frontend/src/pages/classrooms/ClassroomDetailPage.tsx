@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button } from '../../components/ui';
+import { CreateExamModal } from '../../components/exams/CreateExamModal';
 import { classroomService } from '../../services/classroom.service';
 import { homeworkService } from '../../services/homework.service';
 import { examService } from '../../services/exam.service';
@@ -34,6 +35,9 @@ export const ClassroomDetailPage: React.FC = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
     const [isEnrolling, setIsEnrolling] = useState(false);
+
+    // Create Exam Modal
+    const [isCreateExamModalOpen, setIsCreateExamModalOpen] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -316,7 +320,7 @@ export const ClassroomDetailPage: React.FC = () => {
                     <div className="tab-content animate-slideUp">
                         <div className="section-header">
                             <h3>Sınav Listesi</h3>
-                            {isInstructor && <Button variant="primary" size="sm">+ Yeni Sınav</Button>}
+                            {isInstructor && <Button variant="primary" size="sm" onClick={() => setIsCreateExamModalOpen(true)}>+ Yeni Sınav</Button>}
                         </div>
                         {exams.length > 0 ? (
                             <div className="list-grid">
@@ -452,6 +456,15 @@ export const ClassroomDetailPage: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <CreateExamModal
+                isOpen={isCreateExamModalOpen}
+                onClose={() => setIsCreateExamModalOpen(false)}
+                onSuccess={() => {
+                    if (id) fetchData(id);
+                }}
+                classroomId={id}
+            />
         </div>
     );
 };

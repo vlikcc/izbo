@@ -1,29 +1,34 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Button } from '../../components/ui';
+import { CreateExamModal } from '../../components/exams/CreateExamModal';
 import { examService } from '../../services/exam.service';
 import { useAuthStore } from '../../stores/authStore';
 import type { Exam } from '../../types';
 import './Exams.css';
 
 export const ExamsPage: React.FC = () => {
+    const navigate = useNavigate();
     const { user } = useAuthStore();
     const [exams, setExams] = useState<Exam[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    const fetchExams = async () => {
+        setIsLoading(true);
+        try {
+            const response = await examService.getExams(undefined, 1, 20);
+            setExams(response.items);
+        } catch (error) {
+            console.error('Failed to fetch exams:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchExams = async () => {
-            try {
-                const response = await examService.getExams(undefined, 1, 20);
-                setExams(response.items);
-            } catch (error) {
-                console.error('Failed to fetch exams:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchExams();
     }, []);
 
@@ -51,6 +56,10 @@ export const ExamsPage: React.FC = () => {
         }
     };
 
+    const handleEditExam = (examId: string) => {
+        navigate(`/app/exams/${examId}/builder`);
+    };
+
     return (
         <div className="page animate-fadeIn">
             <div className="page-header">
@@ -58,11 +67,20 @@ export const ExamsPage: React.FC = () => {
                     <h1 className="page-title">📝 Sınavlar</h1>
                     <p className="page-subtitle">Sınav takvimi ve sonuçlarınız</p>
                 </div>
-                {isInstructor && (
-                    <Button variant="primary" size="md">
-                        + Yeni Sınav Oluştur
+                <div className="page-header-actions">
+                    <Button
+                        variant="secondary"
+                        size="md"
+                        onClick={() => navigate('/quiz/join')}
+                    >
+                        🎯 Quiz'e Katıl
                     </Button>
-                )}
+                    {isInstructor && (
+                        <Button variant="primary" size="md" onClick={() => setIsCreateModalOpen(true)}>
+                            + Yeni Sınav Oluştur
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {isLoading ? (
@@ -113,7 +131,18 @@ export const ExamsPage: React.FC = () => {
                                 )}
                                 {isInstructor && (
                                     <>
-                                        <Button variant="outline" size="sm">Düzenle</Button>
+                                        {exam.status === 'Published' && exam.questionCount > 0 && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => navigate(`/quiz/presenter/${exam.id}`)}
+                                            >
+                                                🎯 Canlı Başlat
+                                            </Button>
+                                        )}
+                                        <Button variant="outline" size="sm" onClick={() => handleEditExam(exam.id)}>
+                                            ✏️ Düzenle
+                                        </Button>
                                         <Button variant="ghost" size="sm">Sonuçlar</Button>
                                     </>
                                 )}
@@ -135,6 +164,12 @@ export const ExamsPage: React.FC = () => {
                     </div>
                 </Card>
             )}
+
+            <CreateExamModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={fetchExams}
+            />
         </div>
     );
 };
