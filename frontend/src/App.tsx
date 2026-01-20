@@ -1,43 +1,32 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { MainLayout } from './components/layout';
 import { LandingPage } from './pages/landing';
 import { LoginPage, RegisterPage } from './pages/auth';
-import { DashboardPage } from './pages/dashboard';
-import { ClassroomsPage } from './pages/classrooms';
+import { ClassroomsPage, ClassroomDetailPage } from './pages/classrooms';
 import { ExamsPage } from './pages/exams';
 import { HomeworkPage } from './pages/homework';
-import { LivePage } from './pages/live';
+import LivePage from './pages/live/LivePage';
+import CustomLiveRoomPage from './pages/live/CustomLiveRoomPage';
 import { ProfilePage } from './pages/profile';
 import './index.css';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
+  const location = useLocation();
 
   if (isLoading) {
     return (
-      <div className="app-loading">
-        <div className="app-loading-spinner" />
-        <span>Yükleniyor...</span>
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent"></div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-// Public Route (redirect if authenticated)
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuthStore();
-
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;
@@ -53,28 +42,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing Page - Public */}
+        {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-        {/* Auth Routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <RegisterPage />
-            </PublicRoute>
-          }
-        />
-
-        {/* Protected Routes */}
+        {/* Protected Application Routes */}
         <Route
           path="/app"
           element={
@@ -83,25 +56,27 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/app/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
+          <Route index element={<Navigate to="/app/classrooms" replace />} />
           <Route path="classrooms" element={<ClassroomsPage />} />
-          <Route path="exams" element={<ExamsPage />} />
+          <Route path="classrooms/:id" element={<ClassroomDetailPage />} />
           <Route path="homework" element={<HomeworkPage />} />
+          <Route path="exams" element={<ExamsPage />} />
           <Route path="live" element={<LivePage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
 
-        {/* Legacy redirects */}
-        <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
-        <Route path="/classrooms" element={<Navigate to="/app/classrooms" replace />} />
-        <Route path="/exams" element={<Navigate to="/app/exams" replace />} />
-        <Route path="/homework" element={<Navigate to="/app/homework" replace />} />
-        <Route path="/live" element={<Navigate to="/app/live" replace />} />
-        <Route path="/profile" element={<Navigate to="/app/profile" replace />} />
+        {/* Full Screen Live Room (No Layout) */}
+        <Route
+          path="/live/:sessionId"
+          element={
+            <ProtectedRoute>
+              <CustomLiveRoomPage />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Catch all - redirect to landing */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
     </BrowserRouter>
   );

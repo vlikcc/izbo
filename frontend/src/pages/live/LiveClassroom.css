@@ -1,0 +1,294 @@
+.live-classroom-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #0f1014;
+    /* Dark background from image */
+    color: white;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+}
+
+/* Header */
+.live-header {
+    height: 60px;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #1a1b21;
+    border-bottom: 1px solid #2e3038;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.live-badge {
+    background-color: #ef4444;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.live-badge::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    background-color: white;
+    border-radius: 50%;
+}
+
+.session-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.participant-count {
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+.role-badge {
+    background-color: #6366f1;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.leave-btn {
+    background-color: #dc2626;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.leave-btn:hover {
+    background-color: #b91c1c;
+}
+
+/* Main Content */
+.live-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+.video-grid {
+    flex: 1;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-auto-rows: minmax(200px, 1fr);
+    gap: 1rem;
+    background-color: #0f1014;
+    justify-content: center;
+    align-content: center;
+}
+
+.video-grid.single-user {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-container {
+    position: relative;
+    background-color: #2e3038;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    max-height: 80vh;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 1200px;
+    /* Limit size for single view */
+}
+
+.video-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    /* Mirror effect */
+}
+
+.user-label {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+/* Sidebar (Chat) */
+.live-sidebar {
+    width: 350px;
+    background-color: #1a1b21;
+    border-left: 1px solid #2e3038;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid #2e3038;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.chat-message {
+    font-size: 0.9rem;
+}
+
+.chat-author {
+    font-weight: 600;
+    color: #a5b4fc;
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+}
+
+.chat-text {
+    color: #e5e7eb;
+    background-color: #374151;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    display: inline-block;
+    margin-top: 0.25rem;
+}
+
+.chat-input-area {
+    padding: 1rem;
+    border-top: 1px solid #2e3038;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chat-input {
+    flex: 1;
+    background-color: #374151;
+    border: none;
+    border-radius: 0.375rem;
+    color: white;
+    padding: 0.5rem;
+}
+
+.send-btn {
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+/* Bottom Controls */
+.controls-bar {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(30, 30, 35, 0.9);
+    padding: 0.75rem 1.5rem;
+    border-radius: 1rem;
+    display: flex;
+    gap: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    backdrop-filter: blur(10px);
+}
+
+.control-btn {
+    background-color: #374151;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.7rem;
+    gap: 2px;
+}
+
+.control-btn:hover {
+    background-color: #4b5563;
+    transform: translateY(-2px);
+}
+
+.control-btn.active {
+    background-color: #ef4444;
+    /* Red for muted/off */
+}
+
+.control-btn.active.hand {
+    background-color: #eab308;
+    /* Yellow for hand raise */
+}
+
+.control-icon {
+    font-size: 1.25rem;
+}
+
+.control-label {
+    font-size: 0.65rem;
+    opacity: 0.8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.live-classroom-container {
+    animation: fadeIn 0.3s ease-out;
+}

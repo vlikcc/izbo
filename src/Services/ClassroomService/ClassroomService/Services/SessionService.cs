@@ -18,6 +18,7 @@ public interface ISessionService
     Task<bool> StartSessionAsync(Guid sessionId);
     Task<bool> EndSessionAsync(Guid sessionId);
     Task<List<ClassSessionDto>> GetLiveSessionsAsync();
+    Task<string> GetJitsiTokenAsync(Guid sessionId, Guid userId, string userName, string email, bool isModerator);
 }
 
 public class SessionService : ISessionService
@@ -100,7 +101,7 @@ public class SessionService : ISessionService
 
         var sessions = await _context.ClassSessions
             .Where(s => allClassroomIds.Contains(s.ClassroomId) &&
-                       s.ScheduledStartTime > DateTime.UtcNow &&
+                       s.ScheduledEndTime > DateTime.UtcNow &&
                        s.Status == SessionStatus.Scheduled)
             .OrderBy(s => s.ScheduledStartTime)
             .Take(10)
@@ -197,6 +198,82 @@ public class SessionService : ISessionService
             .ToListAsync();
 
         return sessions.Select(MapToDto).ToList();
+    }
+
+public async Task<string> GetJitsiTokenAsync(Guid sessionId, Guid userId, string userName, string email, bool isModerator)
+    {
+        var session = await _context.ClassSessions.FindAsync(sessionId);
+        if (session == null) return string.Empty;
+
+        // In a real scenario, these should be in your configuration (appsettings.json)
+        // For JaaS (8x8):
+        // var appId = _configuration["Jitsi:AppId"];
+        // var appSecret = _configuration["Jitsi:AppSecret"];
+        
+        // Using placeholders. The user MUST replace these with valid credentials for moderator rights to work on meet.jit.si (if using JaaS) 
+        // OR configure their self-hosted Jitsi to accept this secret.
+        var appId = "vpaas-magic-cookie-sum-sample-app-id"; 
+        var appSecret = "YOUR_JITSI_SECRET_KEY_CHANGE_ME"; 
+
+        return GenerateJitsiJwtToken(
+            appId, 
+            appSecret, 
+            $"eduplatform-live-{sessionId}", 
+            userName, 
+            email, 
+            userId.ToString(), 
+            isModerator
+        );
+    }
+
+    private string GenerateJitsiJwtToken(string appId, string appSecret, string roomName, string userName, string email, string userId, bool isModerator)
+    {
+        // Requires: using System.IdentityModel.Tokens.Jwt; using Microsoft.IdentityModel.Tokens; using System.Security.Claims; using System.Text;
+        var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var key = System.Text.Encoding.ASCII.GetBytes(appSecret);
+
+        var userContext = new Dictionary<string, object>
+        {
+            { "name", userName },
+            { "email", email },
+            { "id", userId },
+            { "avatar", "" },
+            { "moderator", isModerator }
+        };
+
+        var context = new Dictionary<string, object>
+        {
+            { "user", userContext },
+            { "features", new Dictionary<string, object> { 
+                { "recording", true }, 
+                { "livestreaming", true }, 
+                { "transcription", true }, 
+                { "outbound-call", true } 
+            }}
+        };
+
+        var tokenDescriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
+        {
+            Subject = new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim("aud", "jitsi"),
+                new System.Security.Claims.Claim("iss", "chat"),
+                new System.Security.Claims.Claim("sub", appId),
+                new System.Security.Claims.Claim("room", roomName)
+            }),
+            Expires = DateTime.UtcNow.AddHours(2),
+            SigningCredentials = new Microsoft.IdentityModel.Tokens.SigningCredentials(
+                new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
+                Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256Signature
+            ),
+            Claims = new Dictionary<string, object>
+            {
+                { "context", context }
+            }
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 
     private static string GenerateMeetingUrl(Guid sessionId)

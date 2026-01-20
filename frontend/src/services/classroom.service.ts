@@ -72,6 +72,21 @@ export const classroomService = {
         }
         throw new Error(response.data.message || 'Failed to fetch sessions');
     },
+
+    async enrollStudent(classroomId: string, studentId: string): Promise<void> {
+        const response = await api.post<ApiResponse<boolean>>(`/api/classrooms/${classroomId}/enroll`, { studentId });
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to enroll student');
+        }
+    },
+
+    async getSessionToken(sessionId: string): Promise<string> {
+        const response = await api.get<ApiResponse<string>>(`/api/classrooms/sessions/${sessionId}/token`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        return '';
+    },
 };
 
 export default classroomService;

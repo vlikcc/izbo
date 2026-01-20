@@ -61,6 +61,7 @@
     margin-bottom: var(--space-4);
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -145,4 +146,449 @@
     .classrooms-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Classroom Detail Page Styles */
+.classroom-header {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.classroom-back-btn {
+    margin-bottom: 1rem;
+}
+
+.classroom-cover {
+    height: 200px;
+    background-color: var(--color-primary-600);
+    background-size: cover;
+    background-position: center;
+    border-radius: var(--radius-lg);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+}
+
+.classroom-cover-icon {
+    font-size: 4rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.2;
+}
+
+.classroom-cover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+}
+
+.classroom-info {
+    position: relative;
+    z-index: 2;
+    padding: 2rem;
+    color: white;
+    width: 100%;
+}
+
+.classroom-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.classroom-description {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin: 0.5rem 0;
+    max-width: 800px;
+}
+
+.classroom-meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Tabs */
+.classroom-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--color-gray-200);
+    margin-bottom: 2rem;
+    overflow-x: auto;
+}
+
+.classroom-tab {
+    padding: 0.8rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-gray-500);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.classroom-tab:hover {
+    color: var(--color-primary-600);
+}
+
+.classroom-tab.active {
+    color: var(--color-primary-600);
+    border-bottom-color: var(--color-primary-600);
+}
+
+/* Content Grid */
+.content-grid.two-column {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .content-grid.two-column {
+        grid-template-columns: 1fr;
+    }
+}
+
+.section-block {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--color-gray-800);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.empty-state-card,
+.empty-large {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--color-gray-500);
+}
+
+.empty-large {
+    font-size: 1.1rem;
+    gap: 1rem;
+    padding: 4rem !important;
+}
+
+.empty-large span {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+
+/* Mini Session Card */
+.mini-session-card {
+    margin-bottom: 0.8rem;
+    border: 1px solid var(--color-gray-200) !important;
+}
+
+.mini-session-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.mini-session-time {
+    font-size: 0.85rem;
+    color: var(--color-gray-500);
+    margin-bottom: 0.8rem;
+}
+
+/* Class Code */
+.class-code-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-gray-50);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--color-gray-300);
+}
+
+.class-code-box code {
+    font-family: monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-primary-700);
+}
+
+/* List Items (Homework/Exam) */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.list-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.list-item-icon {
+    width: 48px;
+    height: 48px;
+    background-color: var(--color-primary-50);
+    color: var(--color-primary-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    font-size: 1.5rem;
+}
+
+.list-item-info {
+    flex: 1;
+}
+
+.list-item-info h4 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.list-item-info p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+    color: var(--color-gray-600);
+}
+
+.due-date,
+.exam-date {
+    font-size: 0.8rem;
+    color: var(--color-gray-500);
+}
+
+/* Participants Table */
+.participants-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.participants-table th,
+.participants-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.participants-table th {
+    background-color: var(--color-gray-50);
+    font-weight: 600;
+    color: var(--color-gray-600);
+    font-size: 0.9rem;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.user-avatar-sm {
+    width: 32px;
+    height: 32px;
+    background-color: var(--color-secondary-100);
+    color: var(--color-secondary-700);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.passive {
+    background-color: #f3f4f6;
+    color: #4b5563;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-container {
+    background-color: white;
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--color-gray-900);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--color-gray-500);
+}
+
+.modal-content {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--color-gray-200);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* Search Styles */
+.search-box {
+    margin-bottom: 1rem;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+}
+
+.search-results {
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.search-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.search-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-gray-100);
+    transition: background-color 0.2s;
+}
+
+.search-item:hover {
+    background-color: var(--color-gray-50);
+}
+
+.search-item.selected {
+    background-color: var(--color-primary-50);
+}
+
+.user-avatar-xs {
+    width: 32px;
+    height: 32px;
+    background-color: var(--color-secondary-100);
+    color: var(--color-secondary-700);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-right: 0.75rem;
+}
+
+.user-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--color-gray-900);
+}
+
+.user-email {
+    font-size: 0.8rem;
+    color: var(--color-gray-500);
+}
+
+.check-icon {
+    color: var(--color-primary-600);
+    font-weight: bold;
+}
+
+.search-loading,
+.no-results,
+.search-hint {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--color-gray-500);
+    font-size: 0.9rem;
 }

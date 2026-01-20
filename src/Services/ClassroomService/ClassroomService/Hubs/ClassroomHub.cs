@@ -107,4 +107,28 @@ public class ClassroomHub : Hub
         var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         await Clients.Group($"session_{sessionId}").SendAsync("HandLowered", new { userId });
     }
+
+    // WebRTC Signaling
+    public async Task SendOffer(string sessionId, string toUserId, string offer)
+    {
+        var fromUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        // We need to send this to the specific user. 
+        // In a real app we'd map UserId -> ConnectionId
+        // For simplicity/demo with SignalR groups, we'll blast to group but clients filter. 
+        // BETTER: Use User(toUserId) if SignalR UserIdentifier is set up correctly (it usually is with JwtBearer).
+        
+        await Clients.User(toUserId).SendAsync("ReceiveOffer", new { fromUserId, offer });
+    }
+
+    public async Task SendAnswer(string sessionId, string toUserId, string answer)
+    {
+        var fromUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        await Clients.User(toUserId).SendAsync("ReceiveAnswer", new { fromUserId, answer });
+    }
+
+    public async Task SendIceCandidate(string sessionId, string toUserId, string candidate)
+    {
+        var fromUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        await Clients.User(toUserId).SendAsync("ReceiveIceCandidate", new { fromUserId, candidate });
+    }
 }

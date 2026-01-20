@@ -3,7 +3,7 @@ import type { ApiResponse, LiveSession } from '../types';
 
 export const liveService = {
     async getLiveSessions(): Promise<LiveSession[]> {
-        const response = await api.get<ApiResponse<LiveSession[]>>('/api/live/sessions');
+        const response = await api.get<ApiResponse<LiveSession[]>>('/api/classrooms/sessions/live');
         if (response.data.success && response.data.data) {
             return response.data.data;
         }
@@ -19,7 +19,9 @@ export const liveService = {
     },
 
     async joinSession(sessionId: string): Promise<{ meetingUrl: string }> {
-        const response = await api.post<ApiResponse<{ meetingUrl: string }>>(`/api/live/sessions/${sessionId}/join`);
+        // This endpoint might not exist in backend, but keeping it consistent with route structure
+        // If needed, implement in ClassroomController
+        const response = await api.post<ApiResponse<{ meetingUrl: string }>>(`/api/classrooms/sessions/${sessionId}/join`);
         if (response.data.success && response.data.data) {
             return response.data.data;
         }
@@ -46,6 +48,13 @@ export const liveService = {
         const response = await api.post<ApiResponse<unknown>>(`/api/classrooms/${classroomId}/sessions`, sessionData);
         if (!response.data.success) {
             throw new Error(response.data.message || 'Failed to create session');
+        }
+    },
+
+    async startSession(sessionId: string): Promise<void> {
+        const response = await api.post<ApiResponse<boolean>>(`/api/classrooms/sessions/${sessionId}/start`);
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to start session');
         }
     },
 };

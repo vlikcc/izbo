@@ -104,7 +104,7 @@ export const ClassroomsPage: React.FC = () => {
             ) : classrooms.length > 0 ? (
                 <div className="classrooms-grid">
                     {classrooms.map(classroom => (
-                        <Link key={classroom.id} to={`/classrooms/${classroom.id}`} className="classroom-card-link">
+                        <Link key={classroom.id} to={`/app/classrooms/${classroom.id}`} className="classroom-card-link">
                             <Card variant="default" padding="none" hoverable className="classroom-card">
                                 <div
                                     className="classroom-card-cover"

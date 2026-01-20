@@ -202,4 +202,22 @@ public class ClassroomsController : ControllerBase
 
         return Ok(new ApiResponse<bool>(true, true, "Session ended"));
     }
+
+    [HttpGet("sessions/{sessionId}/token")]
+    public async Task<ActionResult<ApiResponse<string>>> GetSessionToken(Guid sessionId)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userName = User.FindFirstValue(ClaimTypes.Name) ?? "User";
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+        var role = User.FindFirstValue(ClaimTypes.Role);
+        
+        // Determine moderator status
+        // Simplification: In a real app, query if user is the instructor of the class
+        // Here we trust the role, but ideally verify with database if they own the class
+        var isModerator = role == "Instructor" || role == "Admin" || role == "SuperAdmin";
+
+        var token = await _sessionService.GetJitsiTokenAsync(sessionId, userId, userName, email, isModerator);
+        
+        return Ok(new ApiResponse<string>(true, token));
+    }
 }

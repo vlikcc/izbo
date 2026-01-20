@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Button, Modal, Input } from '../../components/ui';
 import { liveService } from '../../services/live.service';
 import { classroomService } from '../../services/classroom.service';
@@ -8,6 +9,7 @@ import './Live.css';
 
 export const LivePage: React.FC = () => {
     const { user } = useAuthStore();
+    const navigate = useNavigate();
     const [sessions, setSessions] = useState<LiveSession[]>([]);
     const [classrooms, setClassrooms] = useState<Classroom[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -77,14 +79,8 @@ export const LivePage: React.FC = () => {
         }
     };
 
-    const handleJoinSession = async (sessionId: string) => {
-        try {
-            const { meetingUrl } = await liveService.joinSession(sessionId);
-            window.open(meetingUrl, '_blank');
-        } catch (error) {
-            console.error('Failed to join session:', error);
-            alert('Oturuma katılırken bir hata oluştu');
-        }
+    const handleJoinSession = (sessionId: string) => {
+        navigate(`/live/${sessionId}`);
     };
 
     const handleOpenModal = () => {
@@ -147,8 +143,25 @@ export const LivePage: React.FC = () => {
         }
     };
 
+    const handleStartSession = async (sessionId: string) => {
+        if (!confirm('Canlı dersi başlatmak istediğinize emin misiniz?')) return;
+
+        try {
+            await liveService.startSession(sessionId);
+            // Wait a bit and refresh
+            setTimeout(() => {
+                fetchSessions();
+                navigate(`/live/${sessionId}`);
+            }, 500);
+        } catch (error) {
+            console.error('Failed to start session:', error);
+            alert('Ders başlatılamadı');
+        }
+    };
+
     return (
         <div className="page animate-fadeIn">
+            {/* ... Existing header ... */}
             <div className="page-header">
                 <div className="page-header-content">
                     <h1 className="page-title">🎥 Canlı Dersler</h1>
@@ -168,47 +181,82 @@ export const LivePage: React.FC = () => {
                 </div>
             ) : sessions.length > 0 ? (
                 <div className="live-grid">
-                    {sessions.map(session => (
-                        <Card key={session.id} variant="default" padding="none" hoverable className="live-card">
-                            <div className="live-card-header">
-                                <div className="live-card-icon">🎥</div>
-                                {getSessionStatus(session)}
-                            </div>
+                    {sessions.map(session => {
+                        const status = getSessionStatus(session);
+                        const isLive = session.status === 'Live';
+                        // Check if it's "Active time" even if not started yet
+                        const now = new Date();
+                        const start = new Date(session.scheduledStartTime);
+                        const end = new Date(session.scheduledEndTime);
+                        const isActiveTime = now >= start && now <= end;
 
-                            <div className="live-card-content">
-                                <h3 className="live-card-title">{session.title}</h3>
-                                {session.description && (
-                                    <p className="live-card-desc">{session.description}</p>
-                                )}
-
-                                <div className="live-card-time">
-                                    <span className="live-card-time-icon">📅</span>
-                                    <span>{formatDate(session.scheduledStartTime)}</span>
+                        return (
+                            <Card key={session.id} variant="default" padding="none" hoverable className="live-card">
+                                <div className="live-card-header">
+                                    <div className="live-card-icon">🎥</div>
+                                    {/* Use logical status for display */}
+                                    {status}
                                 </div>
-                            </div>
 
-                            <div className="live-card-footer">
-                                {session.status === 'Live' ? (
-                                    <Button
-                                        variant="primary"
-                                        size="md"
-                                        fullWidth
-                                        onClick={() => handleJoinSession(session.id)}
-                                    >
-                                        Katıl 🎥
-                                    </Button>
-                                ) : session.recordingUrl ? (
-                                    <Button variant="outline" size="md" fullWidth>
-                                        Kaydı İzle 📹
-                                    </Button>
-                                ) : (
-                                    <Button variant="secondary" size="md" fullWidth disabled>
-                                        Henüz başlamadı
-                                    </Button>
-                                )}
-                            </div>
-                        </Card>
-                    ))}
+                                <div className="live-card-content">
+                                    <h3 className="live-card-title">{session.title}</h3>
+                                    {session.description && (
+                                        <p className="live-card-desc">{session.description}</p>
+                                    )}
+
+                                    <div className="live-card-time">
+                                        <span className="live-card-time-icon">📅</span>
+                                        <span>{formatDate(session.scheduledStartTime)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="live-card-footer">
+                                    {isLive ? (
+                                        <Button
+                                            variant="primary"
+                                            size="md"
+                                            fullWidth
+                                            onClick={() => handleJoinSession(session.id)}
+                                        >
+                                            Katıl 🎥
+                                        </Button>
+                                    ) : (
+                                        <>
+                                            {isInstructor && session.status === 'Scheduled' && (
+                                                <Button
+                                                    variant="secondary"
+                                                    size="md"
+                                                    fullWidth
+                                                    onClick={() => handleStartSession(session.id)}
+                                                    style={{ marginBottom: '8px' }}
+                                                >
+                                                    Dersi Başlat 🚀
+                                                </Button>
+                                            )}
+
+                                            {!isInstructor && isActiveTime && !isLive && (
+                                                <Button variant="secondary" size="md" fullWidth disabled>
+                                                    Öğretmen Bekleniyor...
+                                                </Button>
+                                            )}
+
+                                            {!isActiveTime && !session.recordingUrl && session.status !== 'Live' && (
+                                                <Button variant="secondary" size="md" fullWidth disabled>
+                                                    Henüz başlamadı
+                                                </Button>
+                                            )}
+
+                                            {session.recordingUrl && (
+                                                <Button variant="outline" size="md" fullWidth>
+                                                    Kaydı İzle 📹
+                                                </Button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </Card>
+                        )
+                    })}
                 </div>
             ) : (
                 <Card variant="default" padding="lg" className="live-empty animate-slideUp">

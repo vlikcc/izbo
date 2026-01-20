@@ -16,6 +16,14 @@ export const userService = {
             throw new Error(response.data.message || 'Failed to change password');
         }
     },
+
+    async searchUsers(query: string): Promise<User[]> {
+        const response = await api.get<ApiResponse<User[]>>(`/api/users/search?q=${encodeURIComponent(query)}`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        return [];
+    },
 };
 
 export default userService;
