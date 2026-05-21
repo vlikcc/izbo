@@ -1,0 +1,17 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$APP_DOMAIN} {
+	encode gzip
+	reverse_proxy frontend:80
+}
+
+{$API_DOMAIN} {
+	encode gzip
+	reverse_proxy apigateway:8080 {
+		transport http {
+			versions 1.1
+		}
+	}
+}

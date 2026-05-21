@@ -1,7 +1,9 @@
+using Serilog;
 using LiveSessionService.Hubs;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddEduPlatformLogging();
 
 // Configure to listen on port 80
 builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(80));
@@ -23,14 +25,17 @@ builder.Services.AddAuthorization();
 // SignalR
 builder.Services.AddSignalR(options =>
 {
-    options.EnableDetailedErrors = true;
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
     options.MaximumReceiveMessageSize = 102400; // 100KB for WebRTC signaling
 });
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -43,5 +48,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<LiveSessionHub>("/hubs/live");
+app.MapHealthChecks("/health");
 
 app.Run();

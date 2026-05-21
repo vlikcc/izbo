@@ -1,0 +1,392 @@
+# Production stack for VPS deployment.
+# Usage: docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+
+name: eduplatform-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    volumes:
+      - minio_data:/data
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  authservice:
+    build:
+      context: .
+      dockerfile: src/Services/AuthService/AuthService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_auth;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JWT__Secret: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL:?FRONTEND_URL is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  userservice:
+    build:
+      context: .
+      dockerfile: src/Services/UserService/UserService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_user;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  classroomservice:
+    build:
+      context: .
+      dockerfile: src/Services/ClassroomService/ClassroomService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_classroom;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  homeworkservice:
+    build:
+      context: .
+      dockerfile: src/Services/HomeworkService/HomeworkService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_homework;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  examservice:
+    build:
+      context: .
+      dockerfile: src/Services/ExamService/ExamService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_exam;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  livesessionservice:
+    build:
+      context: .
+      dockerfile: src/Services/LiveSessionService/LiveSessionService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  notificationservice:
+    build:
+      context: .
+      dockerfile: src/Services/NotificationService/NotificationService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_notification;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  fileservice:
+    build:
+      context: .
+      dockerfile: src/Services/FileService/FileService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_file;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+      MinIO__Endpoint: minio:9000
+      MinIO__AccessKey: ${MINIO_ROOT_USER}
+      MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
+      MinIO__BucketName: ${MINIO_BUCKET:-eduplatform}
+      MinIO__UseSsl: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  apigateway:
+    build:
+      context: .
+      dockerfile: src/ApiGateway/ApiGateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+      Api__PublicUrl: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
+    depends_on:
+      authservice:
+        condition: service_healthy
+      userservice:
+        condition: service_healthy
+      classroomservice:
+        condition: service_healthy
+      homeworkservice:
+        condition: service_healthy
+      examservice:
+        condition: service_healthy
+      livesessionservice:
+        condition: service_healthy
+      notificationservice:
+        condition: service_healthy
+      fileservice:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL is required}
+    restart: unless-stopped
+    depends_on:
+      apigateway:
+        condition: service_healthy
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN is required}
+      API_DOMAIN: ${API_DOMAIN:?API_DOMAIN is required}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - apigateway
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  caddy_data:
+  caddy_config:

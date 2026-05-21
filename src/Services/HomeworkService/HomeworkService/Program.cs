@@ -1,9 +1,11 @@
 using HomeworkService.Data;
 using HomeworkService.Services;
+using Serilog;
 using Microsoft.EntityFrameworkCore;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddEduPlatformLogging();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -28,8 +30,10 @@ builder.Services.AddScoped<IHomeworkManagementService, HomeworkManagementService
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
+builder.Services.AddEduPlatformHealthChecks(builder.Configuration);
 
 var app = builder.Build();
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -41,12 +45,8 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
-// Auto-create database schema
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<HomeworkDbContext>();
-    db.Database.EnsureCreated();
-}
+app.ApplyMigrations<HomeworkDbContext>();
 
 app.Run();

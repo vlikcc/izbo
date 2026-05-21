@@ -1,9 +1,12 @@
+using Serilog;
 using AuthService.Data;
 using AuthService.Services;
 using Microsoft.EntityFrameworkCore;
+using Shared.Configuration;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddEduPlatformLogging();
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -26,11 +29,14 @@ builder.Services.AddAuthorization();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthenticationService>();
+builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
+builder.Services.AddEduPlatformHealthChecks(builder.Configuration);
 
 var app = builder.Build();
+app.UseSerilogRequestLogging();
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())
@@ -43,12 +49,9 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
-// Auto-create database schema
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-    db.Database.EnsureCreated();
-}
+app.ApplyMigrations<AuthDbContext>();
+await AuthDataSeeder.SeedAsync(app.Services);
 
 app.Run();

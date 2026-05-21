@@ -6,11 +6,15 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies (devDependencies required for tsc/vite build)
+ENV NODE_ENV=development
 RUN npm ci
 
-# Copy source code
+# Copy source code (node_modules excluded via .dockerignore)
 COPY . .
+
+ARG VITE_API_URL=https://api.example.com
+ENV VITE_API_URL=$VITE_API_URL
 
 # Build the application
 RUN npm run build

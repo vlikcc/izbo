@@ -1,0 +1,15 @@
+**/.git
+**/.vs
+**/.idea
+**/.vscode
+**/.DS_Store
+**/bin/
+**/obj/
+**/node_modules/
+frontend/dist/
+.env
+.env.*
+*.md
+tests/
+backups/
+.cursor/

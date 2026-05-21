@@ -1,3 +1,4 @@
+using Serilog;
 using ExamService.Data;
 using ExamService.Hubs;
 using ExamService.Services;
@@ -5,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddEduPlatformLogging();
 
 // Add services
 builder.Services.AddControllers();
@@ -44,8 +46,10 @@ builder.Services.AddScoped<IExamSessionService, ExamSessionService>();
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
+builder.Services.AddEduPlatformHealthChecks(builder.Configuration, includeRedis: true);
 
 var app = builder.Build();
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -58,12 +62,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ExamHub>("/hubs/exam");
+app.MapHealthChecks("/health");
 
-// Auto-create database schema
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ExamDbContext>();
-    db.Database.EnsureCreated();
-}
+app.ApplyMigrations<ExamDbContext>();
 
 app.Run();

@@ -1,3 +1,4 @@
+using Serilog;
 using Microsoft.EntityFrameworkCore;
 using NotificationService.Data;
 using NotificationService.Hubs;
@@ -5,6 +6,7 @@ using NotificationService.Services;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddEduPlatformLogging();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -32,8 +34,10 @@ builder.Services.AddScoped<INotificationManagementService, NotificationManagemen
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
+builder.Services.AddEduPlatformHealthChecks(builder.Configuration);
 
 var app = builder.Build();
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -46,12 +50,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHealthChecks("/health");
 
-// Auto-create database schema
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
-    db.Database.EnsureCreated();
-}
+app.ApplyMigrations<NotificationDbContext>();
 
 app.Run();

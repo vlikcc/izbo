@@ -1,3 +1,4 @@
+using Serilog;
 using ClassroomService.Data;
 using ClassroomService.Hubs;
 using ClassroomService.Services;
@@ -5,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddEduPlatformLogging();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -33,8 +35,10 @@ builder.Services.AddScoped<ISessionService, SessionService>();
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
+builder.Services.AddEduPlatformHealthChecks(builder.Configuration);
 
 var app = builder.Build();
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -47,12 +51,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ClassroomHub>("/hubs/classroom");
+app.MapHealthChecks("/health");
 
-// Auto-create database schema
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ClassroomDbContext>();
-    db.Database.EnsureCreated();
-}
+app.ApplyMigrations<ClassroomDbContext>();
 
 app.Run();
