@@ -88,6 +88,8 @@ services:
     build:
       context: .
       dockerfile: src/Services/AuthService/AuthService/Dockerfile
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=80
@@ -96,6 +98,9 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Seed__Enabled=${SEED_ENABLED:-true}
+      - Seed__Email=${SEED_ADMIN_EMAIL:-admin@eduplatform.local}
+      - Seed__Password=${SEED_ADMIN_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,6 +109,8 @@ services:
     build:
       context: .
       dockerfile: src/Services/UserService/UserService/Dockerfile
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=80
@@ -112,6 +119,9 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Seed__Enabled=${SEED_ENABLED:-true}
+      - Seed__Email=${SEED_ADMIN_EMAIL:-admin@eduplatform.local}
+      - Seed__Password=${SEED_ADMIN_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

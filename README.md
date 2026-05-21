@@ -29,11 +29,11 @@ docker compose --profile dev up -d --build
 
 | Alan | Değer |
 |------|--------|
-| E-posta | `admin@eduplatform.local` |
-| Şifre | `` |
+| E-posta | `.env` içindeki `SEED_ADMIN_EMAIL` (örnek: `admin@eduplatform.local`) |
+| Şifre | `.env` içindeki `SEED_ADMIN_PASSWORD` (repoda tutulmaz) |
 | Rol | `SuperAdmin` |
 
-Production’da seed kapalıdır; açmak için `Seed__Enabled=true` ve güçlü `Seed__Password` ortam değişkenlerini kullanın.
+Yerel Docker: `cp .env.example .env` yapıp `SEED_ADMIN_PASSWORD` değerini kendiniz belirleyin. Production’da seed kapalıdır; açmak için `Seed__Enabled=true` ve güçlü `Seed__Password` kullanın.
 
 ## Production (VPS + Docker Compose)
 
