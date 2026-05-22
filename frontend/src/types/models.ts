@@ -46,6 +46,17 @@ export interface ExamSession {
 }
 
 // Homework Types
+export interface CreateHomeworkRequest {
+    classroomId: string;
+    title: string;
+    description: string;
+    attachmentUrl?: string;
+    maxScore: number;
+    dueDate: string;
+    allowLateSubmission: boolean;
+    latePenaltyPercent: number;
+}
+
 export interface Homework {
     id: string;
     classroomId: string;

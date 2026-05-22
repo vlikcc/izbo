@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Button } from '../../components/ui';
+import { CreateHomeworkModal } from '../../components/homework/CreateHomeworkModal';
 import { homeworkService } from '../../services/homework.service';
 import { useAuthStore } from '../../stores/authStore';
 import type { Homework } from '../../types';
@@ -9,21 +10,23 @@ export const HomeworkPage: React.FC = () => {
     const { user } = useAuthStore();
     const [homeworks, setHomeworks] = useState<Homework[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
 
-    useEffect(() => {
-        const fetchHomeworks = async () => {
-            try {
-                const response = await homeworkService.getHomeworks(undefined, 1, 20);
-                setHomeworks(response.items);
-            } catch (error) {
-                console.error('Failed to fetch homeworks:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const fetchHomeworks = async () => {
+        setIsLoading(true);
+        try {
+            const response = await homeworkService.getHomeworks(undefined, 1, 20);
+            setHomeworks(response.items);
+        } catch (error) {
+            console.error('Failed to fetch homeworks:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchHomeworks();
     }, []);
 
@@ -59,7 +62,7 @@ export const HomeworkPage: React.FC = () => {
                     <p className="page-subtitle">Ödevleriniz ve teslim durumları</p>
                 </div>
                 {isInstructor && (
-                    <Button variant="primary" size="md">
+                    <Button variant="primary" size="md" onClick={() => setIsCreateModalOpen(true)}>
                         + Yeni Ödev Oluştur
                     </Button>
                 )}
@@ -139,9 +142,25 @@ export const HomeworkPage: React.FC = () => {
                                 : 'Kayıtlı olduğunuz sınıflardaki ödevler burada görünecektir.'
                             }
                         </p>
+                        {isInstructor && (
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                style={{ marginTop: '16px' }}
+                                onClick={() => setIsCreateModalOpen(true)}
+                            >
+                                + Yeni Ödev Oluştur
+                            </Button>
+                        )}
                     </div>
                 </Card>
             )}
+
+            <CreateHomeworkModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={fetchHomeworks}
+            />
         </div>
     );
 };

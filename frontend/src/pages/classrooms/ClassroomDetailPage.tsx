@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button } from '../../components/ui';
 import { CreateExamModal } from '../../components/exams/CreateExamModal';
+import { CreateHomeworkModal } from '../../components/homework/CreateHomeworkModal';
 import { classroomService } from '../../services/classroom.service';
 import { homeworkService } from '../../services/homework.service';
 import { examService } from '../../services/exam.service';
@@ -38,6 +39,7 @@ export const ClassroomDetailPage: React.FC = () => {
 
     // Create Exam Modal
     const [isCreateExamModalOpen, setIsCreateExamModalOpen] = useState(false);
+    const [isCreateHomeworkModalOpen, setIsCreateHomeworkModalOpen] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -286,7 +288,15 @@ export const ClassroomDetailPage: React.FC = () => {
                     <div className="tab-content animate-slideUp">
                         <div className="section-header">
                             <h3>Ödev Listesi</h3>
-                            {isInstructor && <Button variant="primary" size="sm">+ Yeni Ödev</Button>}
+                            {isInstructor && (
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => setIsCreateHomeworkModalOpen(true)}
+                                >
+                                    + Yeni Ödev
+                                </Button>
+                            )}
                         </div>
                         {homeworks.length > 0 ? (
                             <div className="list-grid">
@@ -460,6 +470,14 @@ export const ClassroomDetailPage: React.FC = () => {
             <CreateExamModal
                 isOpen={isCreateExamModalOpen}
                 onClose={() => setIsCreateExamModalOpen(false)}
+                onSuccess={() => {
+                    if (id) fetchData(id);
+                }}
+                classroomId={id}
+            />
+            <CreateHomeworkModal
+                isOpen={isCreateHomeworkModalOpen}
+                onClose={() => setIsCreateHomeworkModalOpen(false)}
                 onSuccess={() => {
                     if (id) fetchData(id);
                 }}

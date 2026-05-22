@@ -21,7 +21,7 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<HomeworkDto>>> CreateHomework([FromBody] CreateHomeworkRequest request)
     {
         var result = await _homeworkService.CreateHomeworkAsync(request);
@@ -54,7 +54,7 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<HomeworkDto>>> UpdateHomework(Guid id, [FromBody] UpdateHomeworkRequest request)
     {
         var result = await _homeworkService.UpdateHomeworkAsync(id, request);
@@ -66,7 +66,7 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteHomework(Guid id)
     {
         var result = await _homeworkService.DeleteHomeworkAsync(id);
@@ -102,7 +102,7 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpGet("{id}/submissions")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<List<SubmissionDto>>>> GetSubmissions(Guid id)
     {
         var result = await _homeworkService.GetSubmissionsAsync(id);
@@ -110,7 +110,7 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpPost("submissions/{submissionId}/grade")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<SubmissionDto>>> GradeSubmission(Guid submissionId, [FromBody] GradeSubmissionRequest request)
     {
         var gradedBy = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

@@ -1,5 +1,5 @@
 import api from './api';
-import type { ApiResponse, PagedResponse, Homework, Submission } from '../types';
+import type { ApiResponse, PagedResponse, Homework, Submission, CreateHomeworkRequest } from '../types';
 
 export const homeworkService = {
     async getHomeworks(classroomId?: string, page = 1, pageSize = 20): Promise<PagedResponse<Homework>> {
@@ -11,6 +11,14 @@ export const homeworkService = {
             return response.data.data;
         }
         throw new Error(response.data.message || 'Failed to fetch homework');
+    },
+
+    async createHomework(data: CreateHomeworkRequest): Promise<Homework> {
+        const response = await api.post<ApiResponse<Homework>>('/api/homework', data);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        throw new Error(response.data.message || 'Ödev oluşturulamadı');
     },
 
     async getHomework(id: string): Promise<Homework> {
