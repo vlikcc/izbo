@@ -3,6 +3,7 @@ using FileService.Data;
 using FileService.Services;
 using Microsoft.EntityFrameworkCore;
 using Minio;
+using Shared.Authorization;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,6 +41,9 @@ builder.Services.AddJwtAuthentication(
 );
 
 builder.Services.AddAuthorization();
+
+// Files attached to a classroom are readable by its members, which requires the classroom lookup.
+builder.Services.AddClassroomAccessClient(builder.Configuration);
 
 // Services
 builder.Services.AddScoped<IFileManagementService, FileManagementService>();

@@ -2,6 +2,7 @@ using HomeworkService.Data;
 using HomeworkService.Services;
 using Serilog;
 using Microsoft.EntityFrameworkCore;
+using Shared.Authorization;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,9 @@ builder.Services.AddJwtAuthentication(
 );
 
 builder.Services.AddAuthorization();
+
+// Assignments are scoped to classrooms owned by ClassroomService, so authorization needs that lookup.
+builder.Services.AddClassroomAccessClient(builder.Configuration);
 
 // Services
 builder.Services.AddScoped<IHomeworkManagementService, HomeworkManagementService>();

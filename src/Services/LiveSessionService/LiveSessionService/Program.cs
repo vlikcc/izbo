@@ -1,5 +1,6 @@
-using Serilog;
 using LiveSessionService.Hubs;
+using Serilog;
+using Shared.Authorization;
 using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,8 @@ builder.Services.AddJwtAuthentication(
 );
 
 builder.Services.AddAuthorization();
+builder.Services.AddClassroomAccessClient(builder.Configuration);
+builder.Services.AddSingleton<ISessionRegistry, InMemorySessionRegistry>();
 
 // SignalR
 builder.Services.AddSignalR(options =>

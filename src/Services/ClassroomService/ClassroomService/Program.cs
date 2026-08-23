@@ -1,4 +1,5 @@
 using Serilog;
+using ClassroomService.Configuration;
 using ClassroomService.Data;
 using ClassroomService.Hubs;
 using ClassroomService.Services;
@@ -28,6 +29,8 @@ builder.Services.AddAuthorization();
 
 // SignalR
 builder.Services.AddSignalR();
+
+builder.Services.Configure<JitsiOptions>(builder.Configuration.GetSection(JitsiOptions.SectionName));
 
 // Services
 builder.Services.AddScoped<IClassroomManagementService, ClassroomManagementService>();

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Authorization;
 using Shared.DTOs;
 using Shared.Models;
-using System.Security.Claims;
 using UserService.Services;
 
 namespace UserService.Controllers;
@@ -21,11 +21,12 @@ public class UsersController : ControllerBase
         _logger = logger;
     }
 
+    private Caller Caller => User.GetCaller();
+
     [HttpGet("me")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> GetCurrentUser()
+    public async Task<ActionResult<ApiResponse<UserDto>>> GetCurrentUser(CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var result = await _userService.GetUserAsync(userId);
+        var result = await _userService.GetUserAsync(Caller.UserId, cancellationToken);
 
         if (result == null)
             return NotFound(new ApiResponse<UserDto>(false, null, "User not found"));
@@ -33,10 +34,27 @@ public class UsersController : ControllerBase
         return Ok(new ApiResponse<UserDto>(true, result));
     }
 
+    /// <summary>
+    /// The public profile of any user. Previously this endpoint returned the full record, so every
+    /// authenticated user could read anyone's e-mail address and phone number by guessing an id.
+    /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> GetUser(Guid id)
+    public async Task<ActionResult<ApiResponse<PublicUserDto>>> GetUser(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _userService.GetUserAsync(id);
+        var result = await _userService.GetPublicUserAsync(id, cancellationToken);
+
+        if (result == null)
+            return NotFound(new ApiResponse<PublicUserDto>(false, null, "User not found"));
+
+        return Ok(new ApiResponse<PublicUserDto>(true, result));
+    }
+
+    /// <summary>The full record, including contact details. Administrators only; use "me" for yourself.</summary>
+    [HttpGet("{id}/details")]
+    [Authorize(Roles = UserRoles.Administrators)]
+    public async Task<ActionResult<ApiResponse<UserDto>>> GetUserDetails(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _userService.GetUserAsync(id, cancellationToken);
 
         if (result == null)
             return NotFound(new ApiResponse<UserDto>(false, null, "User not found"));
@@ -45,25 +63,25 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = UserRoles.Administrators)]
     public async Task<ActionResult<ApiResponse<PagedResponse<UserDto>>>> GetUsers(
         [FromQuery] string? role,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
         UserRole? userRole = null;
-        if (!string.IsNullOrEmpty(role) && Enum.TryParse<UserRole>(role, out var r))
+        if (!string.IsNullOrEmpty(role) && Enum.TryParse<UserRole>(role, ignoreCase: true, out var r))
             userRole = r;
 
-        var result = await _userService.GetUsersAsync(userRole, new PagedRequest(page, pageSize));
+        var result = await _userService.GetUsersAsync(userRole, new PagedRequest(page, pageSize), cancellationToken);
         return Ok(new ApiResponse<PagedResponse<UserDto>>(true, result));
     }
 
     [HttpPut("me")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> UpdateCurrentUser([FromBody] UpdateUserRequest request)
+    public async Task<ActionResult<ApiResponse<UserDto>>> UpdateCurrentUser([FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var result = await _userService.UpdateUserAsync(userId, request);
+        var result = await _userService.UpdateUserAsync(Caller.UserId, request, cancellationToken);
 
         if (result == null)
             return NotFound(new ApiResponse<UserDto>(false, null, "User not found"));
@@ -72,10 +90,10 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
+    [Authorize(Roles = UserRoles.Administrators)]
+    public async Task<ActionResult<ApiResponse<UserDto>>> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        var result = await _userService.UpdateUserAsync(id, request);
+        var result = await _userService.UpdateUserAsync(id, request, cancellationToken);
 
         if (result == null)
             return NotFound(new ApiResponse<UserDto>(false, null, "User not found"));
@@ -84,10 +102,10 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}/role")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<bool>>> UpdateUserRole(Guid id, [FromBody] UpdateRoleRequest request)
+    [Authorize(Roles = UserRoles.Administrators)]
+    public async Task<ActionResult<ApiResponse<bool>>> UpdateUserRole(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken cancellationToken)
     {
-        var result = await _userService.UpdateUserRoleAsync(id, request);
+        var result = await _userService.UpdateUserRoleAsync(id, request, Caller, cancellationToken);
 
         if (!result)
             return BadRequest(new ApiResponse<bool>(false, false, "Failed to update role"));
@@ -96,41 +114,49 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id}/deactivate")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeactivateUser(Guid id)
+    [Authorize(Roles = UserRoles.Administrators)]
+    public async Task<ActionResult<ApiResponse<bool>>> DeactivateUser(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _userService.DeactivateUserAsync(id);
+        var result = await _userService.SetUserActiveAsync(id, isActive: false, Caller, cancellationToken);
 
         if (!result)
-            return NotFound(new ApiResponse<bool>(false, false, "User not found"));
+            return BadRequest(new ApiResponse<bool>(false, false, "User could not be deactivated"));
 
         return Ok(new ApiResponse<bool>(true, true, "User deactivated"));
     }
 
     [HttpPost("{id}/activate")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<bool>>> ActivateUser(Guid id)
+    [Authorize(Roles = UserRoles.Administrators)]
+    public async Task<ActionResult<ApiResponse<bool>>> ActivateUser(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _userService.ActivateUserAsync(id);
+        var result = await _userService.SetUserActiveAsync(id, isActive: true, Caller, cancellationToken);
 
         if (!result)
-            return NotFound(new ApiResponse<bool>(false, false, "User not found"));
+            return BadRequest(new ApiResponse<bool>(false, false, "User could not be activated"));
 
         return Ok(new ApiResponse<bool>(true, true, "User activated"));
     }
 
+    /// <summary>
+    /// Used by instructors to find students to enrol. Restricted to content managers so students cannot
+    /// enumerate the user directory.
+    /// </summary>
     [HttpGet("search")]
-    public async Task<ActionResult<ApiResponse<List<UserDto>>>> SearchUsers([FromQuery] string q, [FromQuery] int limit = 20)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<List<PublicUserDto>>>> SearchUsers(
+        [FromQuery] string q,
+        [FromQuery] int limit = 20,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _userService.SearchUsersAsync(q, limit);
-        return Ok(new ApiResponse<List<UserDto>>(true, result));
+        var result = await _userService.SearchUsersAsync(q, limit, cancellationToken);
+        return Ok(new ApiResponse<List<PublicUserDto>>(true, result));
     }
 
     [HttpGet("stats")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<Dictionary<UserRole, int>>>> GetStats()
+    [Authorize(Roles = UserRoles.Administrators)]
+    public async Task<ActionResult<ApiResponse<Dictionary<UserRole, int>>>> GetStats(CancellationToken cancellationToken)
     {
-        var result = await _userService.GetUserStatsAsync();
+        var result = await _userService.GetUserStatsAsync(cancellationToken);
         return Ok(new ApiResponse<Dictionary<UserRole, int>>(true, result));
     }
 }

@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using NotificationService.Hubs;
 using NotificationService.Services;
+using Shared.Authorization;
 using Shared.DTOs;
 using Shared.Models;
-using System.Security.Claims;
 
 namespace NotificationService.Controllers;
 
@@ -31,7 +31,7 @@ public class NotificationsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ApiResponse<List<NotificationDto>>>> GetNotifications([FromQuery] bool unreadOnly = false)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = User.GetCaller().UserId;
         var result = await _notificationService.GetUserNotificationsAsync(userId, unreadOnly);
         return Ok(new ApiResponse<List<NotificationDto>>(true, result));
     }
@@ -39,7 +39,7 @@ public class NotificationsController : ControllerBase
     [HttpGet("unread-count")]
     public async Task<ActionResult<ApiResponse<int>>> GetUnreadCount()
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = User.GetCaller().UserId;
         var count = await _notificationService.GetUnreadCountAsync(userId);
         return Ok(new ApiResponse<int>(true, count));
     }
@@ -47,7 +47,7 @@ public class NotificationsController : ControllerBase
     [HttpPost("{id}/read")]
     public async Task<ActionResult<ApiResponse<bool>>> MarkAsRead(Guid id)
     {
-        var result = await _notificationService.MarkAsReadAsync(id);
+        var result = await _notificationService.MarkAsReadAsync(id, User.GetCaller().UserId);
 
         if (!result)
             return NotFound(new ApiResponse<bool>(false, false, "Notification not found"));
@@ -58,7 +58,7 @@ public class NotificationsController : ControllerBase
     [HttpPost("read-all")]
     public async Task<ActionResult<ApiResponse<bool>>> MarkAllAsRead()
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = User.GetCaller().UserId;
         var result = await _notificationService.MarkAllAsReadAsync(userId);
         return Ok(new ApiResponse<bool>(true, result, "All marked as read"));
     }
@@ -66,7 +66,7 @@ public class NotificationsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteNotification(Guid id)
     {
-        var result = await _notificationService.DeleteNotificationAsync(id);
+        var result = await _notificationService.DeleteNotificationAsync(id, User.GetCaller().UserId);
 
         if (!result)
             return NotFound(new ApiResponse<bool>(false, false, "Notification not found"));
@@ -77,7 +77,7 @@ public class NotificationsController : ControllerBase
     [HttpGet("preferences")]
     public async Task<ActionResult<ApiResponse<NotificationPreferenceDto>>> GetPreferences()
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = User.GetCaller().UserId;
         var result = await _notificationService.GetPreferencesAsync(userId);
 
         if (result == null)
@@ -92,14 +92,14 @@ public class NotificationsController : ControllerBase
     [HttpPut("preferences")]
     public async Task<ActionResult<ApiResponse<NotificationPreferenceDto>>> UpdatePreferences([FromBody] UpdateNotificationPreferenceRequest request)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = User.GetCaller().UserId;
         var result = await _notificationService.UpdatePreferencesAsync(userId, request);
         return Ok(new ApiResponse<NotificationPreferenceDto>(true, result, "Preferences updated"));
     }
 
     // Admin/System endpoint to send notifications
     [HttpPost("send")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = UserRoles.Administrators)]
     public async Task<ActionResult<ApiResponse<NotificationDto>>> SendNotification([FromBody] SendNotificationRequest request)
     {
         if (!Enum.TryParse<NotificationType>(request.Type, out var type))
@@ -109,7 +109,7 @@ public class NotificationsController : ControllerBase
             request.UserId, type, request.Title, request.Message, request.ActionUrl);
 
         // Send real-time notification
-        await _hubContext.Clients.Group($"user_{request.UserId}")
+        await _hubContext.Clients.Group(NotificationHub.UserGroup(request.UserId))
             .SendAsync("NewNotification", notification);
 
         return Ok(new ApiResponse<NotificationDto>(true, notification, "Notification sent"));
@@ -117,7 +117,7 @@ public class NotificationsController : ControllerBase
 
     // Broadcast to all users
     [HttpPost("broadcast")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = UserRoles.Administrators)]
     public async Task<ActionResult<ApiResponse<bool>>> BroadcastNotification([FromBody] BroadcastNotificationRequest request)
     {
         await _hubContext.Clients.All.SendAsync("BroadcastNotification", new

@@ -130,6 +130,8 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Jitsi__AppId: ${JITSI_APP_ID:-}
+      Jitsi__AppSecret: ${JITSI_APP_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -159,8 +161,11 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Services__ClassroomService: http://classroomservice
     depends_on:
       postgres:
+        condition: service_healthy
+      classroomservice:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
@@ -189,10 +194,13 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Services__ClassroomService: http://classroomservice
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      classroomservice:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
@@ -218,6 +226,10 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Services__ClassroomService: http://classroomservice
+    depends_on:
+      classroomservice:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
       interval: 30s
@@ -273,6 +285,7 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Services__ClassroomService: http://classroomservice
       MinIO__Endpoint: minio:9000
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
@@ -283,6 +296,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+      classroomservice:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
       interval: 30s

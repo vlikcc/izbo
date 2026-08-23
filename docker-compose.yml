@@ -138,6 +138,8 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Jitsi__AppId=${JITSI_APP_ID:-}
+      - Jitsi__AppSecret=${JITSI_APP_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -154,6 +156,7 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Services__ClassroomService=http://classroomservice
     depends_on:
       postgres:
         condition: service_healthy
@@ -171,6 +174,7 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Services__ClassroomService=http://classroomservice
     depends_on:
       postgres:
         condition: service_healthy
@@ -187,6 +191,7 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Services__ClassroomService=http://classroomservice
 
   notificationservice:
     build:
@@ -216,6 +221,7 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Services__ClassroomService=http://classroomservice
       - MinIO__Endpoint=minio:9000
       - MinIO__AccessKey=minioadmin
       - MinIO__SecretKey=minioadmin

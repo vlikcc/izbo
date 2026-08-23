@@ -1,8 +1,8 @@
 using ExamService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Authorization;
 using Shared.DTOs;
-using System.Security.Claims;
 
 namespace ExamService.Controllers;
 
@@ -20,12 +20,13 @@ public class ExamsController : ControllerBase
         _logger = logger;
     }
 
+    private Caller Caller => User.GetCaller();
+
     [HttpPost]
-    [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<ApiResponse<ExamDto>>> CreateExam([FromBody] CreateExamRequest request)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<ExamDto>>> CreateExam([FromBody] CreateExamRequest request, CancellationToken cancellationToken)
     {
-        var instructorId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var result = await _examService.CreateExamAsync(request, instructorId);
+        var result = await _examService.CreateExamAsync(request, Caller, cancellationToken);
 
         if (result == null)
             return BadRequest(new ApiResponse<ExamDto>(false, null, "Failed to create exam"));
@@ -37,16 +38,17 @@ public class ExamsController : ControllerBase
     public async Task<ActionResult<ApiResponse<PagedResponse<ExamDto>>>> GetExams(
         [FromQuery] Guid? classroomId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _examService.GetExamsAsync(classroomId, new PagedRequest(page, pageSize));
+        var result = await _examService.GetExamsAsync(classroomId, new PagedRequest(page, pageSize), Caller, cancellationToken);
         return Ok(new ApiResponse<PagedResponse<ExamDto>>(true, result));
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<ApiResponse<ExamDto>>> GetExam(Guid id)
+    public async Task<ActionResult<ApiResponse<ExamDto>>> GetExam(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _examService.GetExamAsync(id);
+        var result = await _examService.GetExamAsync(id, Caller, cancellationToken);
 
         if (result == null)
             return NotFound(new ApiResponse<ExamDto>(false, null, "Exam not found"));
@@ -55,10 +57,10 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<ApiResponse<ExamDto>>> UpdateExam(Guid id, [FromBody] UpdateExamRequest request)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<ExamDto>>> UpdateExam(Guid id, [FromBody] UpdateExamRequest request, CancellationToken cancellationToken)
     {
-        var result = await _examService.UpdateExamAsync(id, request);
+        var result = await _examService.UpdateExamAsync(id, request, Caller, cancellationToken);
 
         if (result == null)
             return NotFound(new ApiResponse<ExamDto>(false, null, "Exam not found"));
@@ -67,10 +69,10 @@ public class ExamsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteExam(Guid id)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteExam(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _examService.DeleteExamAsync(id);
+        var result = await _examService.DeleteExamAsync(id, Caller, cancellationToken);
 
         if (!result)
             return NotFound(new ApiResponse<bool>(false, false, "Exam not found"));
@@ -79,10 +81,10 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPost("{id}/publish")]
-    [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<ApiResponse<bool>>> PublishExam(Guid id)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<bool>>> PublishExam(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _examService.PublishExamAsync(id);
+        var result = await _examService.PublishExamAsync(id, Caller, cancellationToken);
 
         if (!result)
             return BadRequest(new ApiResponse<bool>(false, false, "Cannot publish exam. Make sure it has questions."));
@@ -91,18 +93,22 @@ public class ExamsController : ControllerBase
     }
 
     [HttpGet("{id}/questions")]
-    [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<ApiResponse<List<QuestionWithAnswerDto>>>> GetQuestions(Guid id)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<List<QuestionWithAnswerDto>>>> GetQuestions(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _examService.GetQuestionsAsync(id);
+        var result = await _examService.GetQuestionsAsync(id, Caller, cancellationToken);
+
+        if (result == null)
+            return NotFound(new ApiResponse<List<QuestionWithAnswerDto>>(false, null, "Exam not found"));
+
         return Ok(new ApiResponse<List<QuestionWithAnswerDto>>(true, result));
     }
 
     [HttpPost("{id}/questions")]
-    [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<ApiResponse<QuestionWithAnswerDto>>> AddQuestion(Guid id, [FromBody] CreateQuestionRequest request)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<QuestionWithAnswerDto>>> AddQuestion(Guid id, [FromBody] CreateQuestionRequest request, CancellationToken cancellationToken)
     {
-        var result = await _examService.AddQuestionAsync(id, request);
+        var result = await _examService.AddQuestionAsync(id, request, Caller, cancellationToken);
 
         if (result == null)
             return NotFound(new ApiResponse<QuestionWithAnswerDto>(false, null, "Exam not found"));
@@ -111,10 +117,10 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPut("questions/{questionId}")]
-    [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<ApiResponse<bool>>> UpdateQuestion(Guid questionId, [FromBody] UpdateQuestionRequest request)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<bool>>> UpdateQuestion(Guid questionId, [FromBody] UpdateQuestionRequest request, CancellationToken cancellationToken)
     {
-        var result = await _examService.UpdateQuestionAsync(questionId, request);
+        var result = await _examService.UpdateQuestionAsync(questionId, request, Caller, cancellationToken);
 
         if (!result)
             return NotFound(new ApiResponse<bool>(false, false, "Question not found"));
@@ -123,10 +129,10 @@ public class ExamsController : ControllerBase
     }
 
     [HttpDelete("questions/{questionId}")]
-    [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteQuestion(Guid questionId)
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteQuestion(Guid questionId, CancellationToken cancellationToken)
     {
-        var result = await _examService.DeleteQuestionAsync(questionId);
+        var result = await _examService.DeleteQuestionAsync(questionId, Caller, cancellationToken);
 
         if (!result)
             return NotFound(new ApiResponse<bool>(false, false, "Question not found"));
