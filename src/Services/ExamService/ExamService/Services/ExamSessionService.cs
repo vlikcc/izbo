@@ -314,7 +314,7 @@ public class ExamSessionService : IExamSessionService
         return BuildStartExamResponse(session, exam, (int)(remainingMinutes * 60));
     }
 
-    private StartExamResponse BuildStartExamResponse(ExamSession session, Exam exam, int? remainingSeconds = null)
+    private static StartExamResponse BuildStartExamResponse(ExamSession session, Exam exam, int? remainingSeconds = null)
     {
         var questions = exam.Questions.OrderBy(q => q.OrderIndex).ToList();
 
@@ -391,7 +391,7 @@ public class ExamSessionService : IExamSessionService
         });
     }
 
-    private bool EvaluateAnswer(Question question, string? studentAnswer)
+    private static bool EvaluateAnswer(Question question, string? studentAnswer)
     {
         if (string.IsNullOrEmpty(studentAnswer) || string.IsNullOrEmpty(question.CorrectAnswer))
             return false;

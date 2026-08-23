@@ -82,17 +82,17 @@ public class SessionService : ISessionService
         return sessions.Select(MapToDto).ToList();
     }
 
-    public async Task<List<ClassSessionDto>> GetUpcomingSessionsAsync(Guid userId)
+    public async Task<List<ClassSessionDto>> GetUpcomingSessionsAsync(Guid studentId)
     {
         // 1. Öğrenci olarak kayıtlı olduğu sınıflar
         var enrolledClassroomIds = await _context.Enrollments
-            .Where(e => e.StudentId == userId && e.IsActive)
+            .Where(e => e.StudentId == studentId && e.IsActive)
             .Select(e => e.ClassroomId)
             .ToListAsync();
 
         // 2. Eğitmen olduğu sınıflar
         var ownedClassroomIds = await _context.Classrooms
-            .Where(c => c.InstructorId == userId && c.IsActive)
+            .Where(c => c.InstructorId == studentId && c.IsActive)
             .Select(c => c.Id)
             .ToListAsync();
         
@@ -226,7 +226,7 @@ public async Task<string> GetJitsiTokenAsync(Guid sessionId, Guid userId, string
         );
     }
 
-    private string GenerateJitsiJwtToken(string appId, string appSecret, string roomName, string userName, string email, string userId, bool isModerator)
+    private static string GenerateJitsiJwtToken(string appId, string appSecret, string roomName, string userName, string email, string userId, bool isModerator)
     {
         // Requires: using System.IdentityModel.Tokens.Jwt; using Microsoft.IdentityModel.Tokens; using System.Security.Claims; using System.Text;
         var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();

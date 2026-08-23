@@ -158,7 +158,7 @@ public class ExamManagementService : IExamManagementService
         var exam = await _context.Exams.Include(e => e.Questions).FirstOrDefaultAsync(e => e.Id == examId);
         if (exam == null) return false;
 
-        if (!exam.Questions.Any())
+        if (exam.Questions.Count == 0)
         {
             _logger.LogWarning("Cannot publish exam {ExamId}: no questions", examId);
             return false;

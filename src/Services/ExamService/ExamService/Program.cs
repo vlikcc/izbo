@@ -4,6 +4,7 @@ using ExamService.Hubs;
 using ExamService.Services;
 using Microsoft.EntityFrameworkCore;
 using Shared.Extensions;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
@@ -37,7 +38,7 @@ builder.Services.AddAuthorization();
 // SignalR
 builder.Services.AddSignalR().AddStackExchangeRedis(builder.Configuration.GetConnectionString("Redis")!, options =>
 {
-    options.Configuration.ChannelPrefix = "ExamHub";
+    options.Configuration.ChannelPrefix = RedisChannel.Literal("ExamHub");
 });
 
 // Services

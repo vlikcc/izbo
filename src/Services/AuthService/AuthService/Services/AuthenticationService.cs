@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Shared.DTOs;
 using Shared.Models;
+using Shared.Text;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -38,9 +39,11 @@ public class AuthenticationService : IAuthService
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
     {
-        if (await _context.Users.AnyAsync(u => u.Email == request.Email.ToLower()))
+        var email = NormalizeEmail(request.Email);
+
+        if (await _context.Users.AnyAsync(u => u.Email == email))
         {
-            _logger.LogWarning("Registration failed: Email {Email} already exists", request.Email);
+            _logger.LogWarning("Registration failed: Email {Email} already exists", email);
             return null;
         }
 
@@ -56,7 +59,7 @@ public class AuthenticationService : IAuthService
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = request.Email.ToLower(),
+            Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             FirstName = request.FirstName,
             LastName = request.LastName,
@@ -75,17 +78,18 @@ public class AuthenticationService : IAuthService
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email.ToLower());
+        var email = NormalizeEmail(request.Email);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
-            _logger.LogWarning("Login failed for email {Email}", request.Email);
+            _logger.LogWarning("Login failed for email {Email}", email);
             return null;
         }
 
         if (!user.IsActive)
         {
-            _logger.LogWarning("Login failed: User {Email} is deactivated", request.Email);
+            _logger.LogWarning("Login failed: User {Email} is deactivated", email);
             return null;
         }
 
@@ -145,6 +149,8 @@ public class AuthenticationService : IAuthService
         await _context.SaveChangesAsync();
         return true;
     }
+
+    private static string NormalizeEmail(string email) => EmailNormalizer.Normalize(email);
 
     private async Task<AuthResponse> GenerateAuthResponseAsync(User user)
     {

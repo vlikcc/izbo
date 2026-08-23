@@ -144,7 +144,7 @@ public class ExamHub : Hub
     // Voter: Join a quiz using code
     public async Task JoinQuiz(string quizCode)
     {
-        var code = quizCode.ToUpper();
+        var code = quizCode.ToUpperInvariant();
         if (!_quizCodes.TryGetValue(code, out var examId))
         {
             await Clients.Caller.SendAsync("Error", "Quiz bulunamadı. Kodu kontrol edin.");

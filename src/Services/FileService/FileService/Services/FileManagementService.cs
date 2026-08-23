@@ -49,7 +49,7 @@ public class FileManagementService : IFileManagementService
         }
 
         var fileId = Guid.NewGuid();
-        var storagePath = $"{type.ToString().ToLower()}/{fileId}/{fileName}";
+        var storagePath = $"{type.ToString().ToLowerInvariant()}/{fileId}/{fileName}";
 
         // Upload to MinIO
         await _minioClient.PutObjectAsync(new PutObjectArgs()
