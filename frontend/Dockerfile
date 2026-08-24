@@ -25,10 +25,13 @@ FROM nginx:alpine
 # Copy built files
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Placed under templates/ so the image's entrypoint substitutes the CSP origins before nginx starts.
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
-# Expose port
+# Defaults keep a plain `docker run` working; deployments override them with their real origins.
+ENV CSP_CONNECT_SRC="https: wss:" \
+    CSP_FRAME_SRC="https:"
+
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

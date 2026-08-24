@@ -9,6 +9,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
+builder.Services.AddForwardedHeaders();
 
 // Load Ocelot configuration
 var ocelotFile = builder.Environment.IsProduction() ? "ocelot.Production.json" : "ocelot.json";
@@ -53,17 +54,8 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-// CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins(builder.Configuration["Frontend:Url"] ?? "http://localhost:3000")
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
-    });
-});
+// CORS — same origin/method/header allowlist as the downstream services.
+builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
 
 // Ocelot
 builder.Services.AddOcelot();
@@ -89,6 +81,7 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
+app.UseForwardedHeadersFromProxy();
 app.UseRateLimiter();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();

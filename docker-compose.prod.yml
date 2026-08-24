@@ -364,6 +364,10 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:?VITE_API_URL is required}
     restart: unless-stopped
+    environment:
+      # nginx substitutes these into Content-Security-Policy at container start.
+      CSP_CONNECT_SRC: ${CSP_CONNECT_SRC:-https://${API_DOMAIN} wss://${API_DOMAIN}}
+      CSP_FRAME_SRC: ${CSP_FRAME_SRC:-https://${VITE_JITSI_DOMAIN:-meet.jit.si}}
     depends_on:
       apigateway:
         condition: service_healthy

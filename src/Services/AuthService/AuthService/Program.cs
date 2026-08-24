@@ -32,7 +32,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IAuthService, AuthenticationService>();
 builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 
-// Credential endpoints carry stricter, Redis-backed limits than the gateway's global one.
+// Credential endpoints carry stricter, Redis-backed limits than the gateway's global one. They are
+// partitioned by client address, which is only correct once forwarded headers are honoured.
+builder.Services.AddForwardedHeaders();
 builder.Services.AddAuthRateLimiting(builder.Configuration.GetConnectionString("Redis"));
 
 // CORS
@@ -49,6 +51,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeadersFromProxy();
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();
 app.UseAuthentication();
