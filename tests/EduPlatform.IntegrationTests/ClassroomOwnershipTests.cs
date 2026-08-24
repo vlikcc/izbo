@@ -73,7 +73,7 @@ public class ClassroomOwnershipTests
     private ClassroomDbContext CreateDb()
     {
         var options = new DbContextOptionsBuilder<ClassroomDbContext>()
-            .UseNpgsql(_postgres.ConnectionString)
+            .UseNpgsql(_postgres.ConnectionStringFor("classroom_ownership"))
             .Options;
         return new ClassroomDbContext(options);
     }

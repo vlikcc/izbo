@@ -88,6 +88,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+      - name: Restore
+        run: dotnet restore EduPlatform.sln
       - name: Install EF tools
         run: dotnet tool install --global dotnet-ef --version 10.0.0
       - name: Validate Auth migrations
@@ -187,7 +189,14 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
       - uses: github/codeql-action/init@v3
         with:
           languages: csharp, javascript
+      - name: Build
+        run: |
+          dotnet restore EduPlatform.sln
+          dotnet build EduPlatform.sln -c Release --no-restore
       - uses: github/codeql-action/analyze@v3

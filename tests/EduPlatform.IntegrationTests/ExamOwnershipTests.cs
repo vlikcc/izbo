@@ -87,7 +87,7 @@ public class ExamOwnershipTests
     private ExamDbContext CreateDb()
     {
         var options = new DbContextOptionsBuilder<ExamDbContext>()
-            .UseNpgsql(_postgres.ConnectionString)
+            .UseNpgsql(_postgres.ConnectionStringFor("exam_ownership"))
             .Options;
         return new ExamDbContext(options);
     }

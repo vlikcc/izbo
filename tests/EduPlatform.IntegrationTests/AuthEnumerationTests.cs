@@ -62,7 +62,7 @@ public class AuthEnumerationTests
     private AuthDbContext CreateDb()
     {
         var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseNpgsql(_postgres.ConnectionString)
+            .UseNpgsql(_postgres.ConnectionStringFor("auth_enumeration"))
             .Options;
         return new AuthDbContext(options);
     }

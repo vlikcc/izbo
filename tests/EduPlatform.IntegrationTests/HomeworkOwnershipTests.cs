@@ -50,7 +50,7 @@ public class HomeworkOwnershipTests
     private HomeworkDbContext CreateDb()
     {
         var options = new DbContextOptionsBuilder<HomeworkDbContext>()
-            .UseNpgsql(_postgres.ConnectionString)
+            .UseNpgsql(_postgres.ConnectionStringFor("homework_ownership"))
             .Options;
         return new HomeworkDbContext(options);
     }
