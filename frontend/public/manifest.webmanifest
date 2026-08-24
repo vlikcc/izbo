@@ -1,0 +1,18 @@
+{
+  "name": "EduPlatform",
+  "short_name": "EduPlatform",
+  "description": "Sanal sınıflar, sınavlar ve canlı dersler",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FA5252",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

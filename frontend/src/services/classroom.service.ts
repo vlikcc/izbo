@@ -1,6 +1,33 @@
 import api from './api';
 import type { ApiResponse, PagedResponse, Classroom, ClassSession, Enrollment } from '../types';
 
+export interface Announcement {
+    id: string;
+    classroomId: string;
+    authorId: string;
+    title: string;
+    body: string;
+    createdAt: string;
+}
+
+export interface ClassroomComment {
+    id: string;
+    classroomId: string;
+    targetType: string;
+    targetId: string;
+    authorId: string;
+    body: string;
+    createdAt: string;
+}
+
+export interface AttendanceRecord {
+    id: string;
+    sessionId: string;
+    userId: string;
+    joinedAt: string;
+    leftAt?: string;
+}
+
 export const classroomService = {
     async getClassrooms(page = 1, pageSize = 20): Promise<PagedResponse<Classroom>> {
         const response = await api.get<ApiResponse<PagedResponse<Classroom>>>(`/api/classrooms?page=${page}&pageSize=${pageSize}`);
@@ -86,6 +113,54 @@ export const classroomService = {
             return response.data.data;
         }
         return '';
+    },
+
+    async getAnnouncements(classroomId: string): Promise<Announcement[]> {
+        const response = await api.get<ApiResponse<Announcement[]>>(`/api/classrooms/${classroomId}/announcements`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        return [];
+    },
+
+    async createAnnouncement(classroomId: string, data: { title: string; body: string }): Promise<Announcement> {
+        const response = await api.post<ApiResponse<Announcement>>(`/api/classrooms/${classroomId}/announcements`, data);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        throw new Error(response.data.message || 'Duyuru oluşturulamadı');
+    },
+
+    async deleteAnnouncement(classroomId: string, announcementId: string): Promise<void> {
+        const response = await api.delete<ApiResponse<boolean>>(`/api/classrooms/${classroomId}/announcements/${announcementId}`);
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Duyuru silinemedi');
+        }
+    },
+
+    async getComments(classroomId: string, targetType: string, targetId: string): Promise<ClassroomComment[]> {
+        const params = new URLSearchParams({ targetType, targetId });
+        const response = await api.get<ApiResponse<ClassroomComment[]>>(`/api/classrooms/${classroomId}/comments?${params}`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        return [];
+    },
+
+    async addComment(classroomId: string, data: { targetType: string; targetId: string; body: string }): Promise<ClassroomComment> {
+        const response = await api.post<ApiResponse<ClassroomComment>>(`/api/classrooms/${classroomId}/comments`, data);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        throw new Error(response.data.message || 'Yorum eklenemedi');
+    },
+
+    async getAttendance(sessionId: string): Promise<AttendanceRecord[]> {
+        const response = await api.get<ApiResponse<AttendanceRecord[]>>(`/api/classrooms/sessions/${sessionId}/attendance`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        return [];
     },
 };
 

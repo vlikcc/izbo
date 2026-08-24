@@ -125,7 +125,7 @@ export const ExamsPage: React.FC = () => {
 
                             <div className="exam-actions">
                                 {!isInstructor && new Date() >= new Date(exam.startTime) && new Date() <= new Date(exam.endTime) && (
-                                    <Button variant="primary" size="md">
+                                    <Button variant="primary" size="md" onClick={() => navigate(`/app/exams/${exam.id}/take`)}>
                                         Sınava Başla
                                     </Button>
                                 )}
@@ -143,7 +143,7 @@ export const ExamsPage: React.FC = () => {
                                         <Button variant="outline" size="sm" onClick={() => handleEditExam(exam.id)}>
                                             ✏️ Düzenle
                                         </Button>
-                                        <Button variant="ghost" size="sm">Sonuçlar</Button>
+                                        <Button variant="ghost" size="sm" onClick={() => navigate(`/app/gradebook`)}>Sonuçlar</Button>
                                     </>
                                 )}
                             </div>

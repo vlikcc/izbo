@@ -1,5 +1,6 @@
 import api from './api';
 import type { ApiResponse, PagedResponse, Exam, ExamSession, CreateExamRequest, Question, CreateQuestionRequest, UpdateQuestionRequest } from '../types';
+import type { ExamResult, StartExamResponse } from '../types/examSession';
 
 export const examService = {
     async getExams(classroomId?: string, page = 1, pageSize = 20): Promise<PagedResponse<Exam>> {
@@ -83,12 +84,46 @@ export const examService = {
         return [];
     },
 
-    async startExam(examId: string): Promise<{ sessionId: string; expiresAt: string }> {
-        const response = await api.post<ApiResponse<{ sessionId: string; expiresAt: string }>>(`/api/exam-sessions/${examId}/start`);
+    async startExam(examId: string): Promise<StartExamResponse> {
+        const response = await api.post<ApiResponse<StartExamResponse>>(`/api/exam-sessions/${examId}/start`);
         if (response.data.success && response.data.data) {
             return response.data.data;
         }
-        throw new Error(response.data.message || 'Failed to start exam');
+        throw new Error(response.data.message || 'Sınav başlatılamadı');
+    },
+
+    async saveAnswer(sessionId: string, questionId: string, answer: string): Promise<void> {
+        const response = await api.post<ApiResponse<boolean>>(`/api/exam-sessions/${sessionId}/answer`, {
+            questionId,
+            answer,
+        });
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Cevap kaydedilemedi');
+        }
+    },
+
+    async submitExam(sessionId: string): Promise<ExamResult> {
+        const response = await api.post<ApiResponse<ExamResult>>(`/api/exam-sessions/${sessionId}/submit`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        throw new Error(response.data.message || 'Sınav teslim edilemedi');
+    },
+
+    async getExamSessions(examId: string): Promise<ExamSession[]> {
+        const response = await api.get<ApiResponse<ExamSession[]>>(`/api/exam-sessions/exam/${examId}`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        return [];
+    },
+
+    async getResult(sessionId: string): Promise<ExamResult> {
+        const response = await api.get<ApiResponse<ExamResult>>(`/api/exam-sessions/${sessionId}/result`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        throw new Error(response.data.message || 'Sonuç bulunamadı');
     },
 };
 
