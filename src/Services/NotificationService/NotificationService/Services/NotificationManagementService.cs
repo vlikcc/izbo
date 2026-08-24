@@ -45,7 +45,7 @@ public class NotificationManagementService : INotificationManagementService
         _context.Notifications.Add(notification);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Notification created for user {UserId}: {Title}", userId, title);
+        _logger.LogInformation("Notification {NotificationId} created for user {UserId}", notification.Id, userId);
 
         return MapToDto(notification);
     }

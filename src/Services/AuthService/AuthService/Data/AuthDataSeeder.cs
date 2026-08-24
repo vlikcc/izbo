@@ -30,9 +30,9 @@ public static class AuthDataSeeder
 
         // The seeded account is a SuperAdmin, so it is the last place to accept a password the policy
         // would reject from an ordinary user.
-        if (PasswordPolicy.Validate(options.Password) is { } passwordError)
+        if (PasswordPolicy.Validate(options.Password) is not null)
         {
-            logger.LogError("Admin seed skipped: Seed:Password does not meet the password policy. {Reason}", passwordError);
+            logger.LogError("Admin seed skipped: Seed:Password does not meet the password policy.");
             return;
         }
 
@@ -40,7 +40,7 @@ public static class AuthDataSeeder
 
         if (await context.Users.AnyAsync(u => u.Email == email || u.Id == options.AdminUserId))
         {
-            logger.LogInformation("Admin user already exists ({Email}), skipping seed.", email);
+            logger.LogInformation("Admin user already exists, skipping seed.");
             return;
         }
 
@@ -49,8 +49,7 @@ public static class AuthDataSeeder
         await context.SaveChangesAsync();
 
         logger.LogInformation(
-            "Seeded admin user {Email} with role {Role}. Change the password after first login in production.",
-            admin.Email,
+            "Seeded admin user with role {Role}. Change the password after first login in production.",
             admin.Role);
     }
 }

@@ -28,13 +28,13 @@ public static class UserDataSeeder
 
         if (await context.Users.AnyAsync(u => u.Email == email || u.Id == options.AdminUserId))
         {
-            logger.LogInformation("Admin profile already exists in UserService ({Email}), skipping seed.", email);
+            logger.LogInformation("Admin profile already exists in UserService, skipping seed.");
             return;
         }
 
         context.Users.Add(AdminUserFactory.Create(options));
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Seeded admin profile in UserService for {Email}.", email);
+        logger.LogInformation("Seeded admin profile in UserService.");
     }
 }
