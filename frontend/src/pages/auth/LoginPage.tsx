@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Input, Card } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import './Auth.css';
 
 export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login, isLoading, error, clearError } = useAuthStore();
+    const notice = (location.state as { notice?: string } | null)?.notice;
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -49,6 +51,12 @@ export const LoginPage: React.FC = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="auth-form">
+                        {notice && !error && (
+                            <div className="auth-notice">
+                                {notice}
+                            </div>
+                        )}
+
                         {error && (
                             <div className="auth-error">
                                 {error}

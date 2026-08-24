@@ -1,8 +1,11 @@
 using AuthService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Net.Http.Headers;
+using Shared.Authorization;
 using Shared.DTOs;
-using System.Security.Claims;
+using Shared.RateLimiting;
 
 namespace AuthService.Controllers;
 
@@ -10,6 +13,13 @@ namespace AuthService.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
+    /// <summary>
+    /// Sent whether or not the address was already registered, so registration cannot be used to discover
+    /// which addresses have accounts. A duplicate attempt creates nothing and grants nothing.
+    /// </summary>
+    private const string RegistrationAccepted =
+        "Kayıt talebiniz alındı. Giriş ekranından hesabınıza giriş yapabilirsiniz.";
+
     private readonly IAuthService _authService;
     private readonly ILogger<AuthController> _logger;
 
@@ -20,74 +30,91 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<ApiResponse<AuthResponse>>> Register([FromBody] RegisterRequest request)
+    [EnableRateLimiting(AuthRateLimits.Registration)]
+    public async Task<ActionResult<ApiResponse<bool>>> Register(
+        [FromBody] RegisterRequest request,
+        CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(new ApiResponse<AuthResponse>(false, null, "Invalid request", ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()));
+        var result = await _authService.RegisterAsync(request, Client(), cancellationToken);
 
-        var result = await _authService.RegisterAsync(request);
+        // Only the password verdict is reported, because it reveals nothing about the address.
+        if (result.Outcome == RegistrationOutcome.PasswordRejected)
+        {
+            return BadRequest(new ApiResponse<bool>(false, false, result.Error));
+        }
 
-        if (result == null)
-            return Conflict(new ApiResponse<AuthResponse>(false, null, "Email already exists"));
-
-        return Ok(new ApiResponse<AuthResponse>(true, result, "Registration successful"));
+        return Ok(new ApiResponse<bool>(true, true, RegistrationAccepted));
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<ApiResponse<AuthResponse>>> Login([FromBody] LoginRequest request)
+    [EnableRateLimiting(AuthRateLimits.Login)]
+    public async Task<ActionResult<ApiResponse<AuthResponse>>> Login(
+        [FromBody] LoginRequest request,
+        CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(new ApiResponse<AuthResponse>(false, null, "Invalid request"));
-
-        var result = await _authService.LoginAsync(request);
+        var result = await _authService.LoginAsync(request, Client(), cancellationToken);
 
         if (result == null)
-            return Unauthorized(new ApiResponse<AuthResponse>(false, null, "Invalid email or password"));
+            return Unauthorized(new ApiResponse<AuthResponse>(false, null, "E-posta veya parola hatalı"));
 
-        return Ok(new ApiResponse<AuthResponse>(true, result, "Login successful"));
+        return Ok(new ApiResponse<AuthResponse>(true, result, "Giriş başarılı"));
     }
 
     [HttpPost("refresh")]
-    public async Task<ActionResult<ApiResponse<AuthResponse>>> RefreshToken([FromBody] RefreshTokenRequest request)
+    [EnableRateLimiting(AuthRateLimits.Refresh)]
+    public async Task<ActionResult<ApiResponse<AuthResponse>>> RefreshToken(
+        [FromBody] RefreshTokenRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var result = await _authService.RefreshTokenAsync(request.RefreshToken, Client(), cancellationToken);
 
         if (result == null)
-            return Unauthorized(new ApiResponse<AuthResponse>(false, null, "Invalid or expired refresh token"));
+            return Unauthorized(new ApiResponse<AuthResponse>(false, null, "Oturum süresi doldu, tekrar giriş yapın"));
 
-        return Ok(new ApiResponse<AuthResponse>(true, result, "Token refreshed"));
+        return Ok(new ApiResponse<AuthResponse>(true, result, "Token yenilendi"));
     }
 
     [Authorize]
     [HttpPost("logout")]
-    public async Task<ActionResult<ApiResponse<bool>>> Logout([FromBody] RefreshTokenRequest request)
+    public async Task<ActionResult<ApiResponse<bool>>> Logout(
+        [FromBody] RefreshTokenRequest request,
+        CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var result = await _authService.LogoutAsync(userId, request.RefreshToken);
+        ArgumentNullException.ThrowIfNull(request);
 
-        return Ok(new ApiResponse<bool>(true, result, "Logged out successfully"));
+        var result = await _authService.LogoutAsync(User.GetCaller().UserId, request.RefreshToken, cancellationToken);
+
+        return Ok(new ApiResponse<bool>(true, result, "Çıkış yapıldı"));
     }
 
     [Authorize]
     [HttpPost("revoke-all")]
-    public async Task<ActionResult<ApiResponse<bool>>> RevokeAllTokens()
+    public async Task<ActionResult<ApiResponse<bool>>> RevokeAllTokens(CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var result = await _authService.RevokeAllTokensAsync(userId);
+        var result = await _authService.RevokeAllTokensAsync(User.GetCaller().UserId, cancellationToken);
 
-        return Ok(new ApiResponse<bool>(true, result, "All tokens revoked"));
+        return Ok(new ApiResponse<bool>(true, result, "Tüm oturumlar kapatıldı"));
     }
 
     [Authorize]
     [HttpGet("me")]
     public ActionResult<ApiResponse<object>> GetCurrentUser()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var email = User.FindFirstValue(ClaimTypes.Email);
-        var role = User.FindFirstValue(ClaimTypes.Role);
-        var firstName = User.FindFirstValue("firstName");
-        var lastName = User.FindFirstValue("lastName");
+        var caller = User.GetCaller();
 
-        return Ok(new ApiResponse<object>(true, new { userId, email, role, firstName, lastName }));
+        return Ok(new ApiResponse<object>(true, new
+        {
+            userId = caller.UserId,
+            email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value,
+            role = caller.Role.ToString(),
+            firstName = User.FindFirst("firstName")?.Value,
+            lastName = User.FindFirst("lastName")?.Value
+        }));
     }
+
+    private ClientFingerprint Client() => new(
+        HttpContext.Connection.RemoteIpAddress?.ToString(),
+        Request.Headers[HeaderNames.UserAgent].ToString());
 }

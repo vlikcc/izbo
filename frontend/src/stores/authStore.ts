@@ -10,7 +10,8 @@ interface AuthState {
 
     // Actions
     login: (email: string, password: string) => Promise<void>;
-    register: (data: { email: string; password: string; firstName: string; lastName: string; role?: string }) => Promise<void>;
+    /** Resolves with the message to show; registration does not start a session. */
+    register: (data: { email: string; password: string; firstName: string; lastName: string; role?: string }) => Promise<string>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
     clearError: () => void;
@@ -39,11 +40,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     register: async (data) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await authService.register(data);
-            set({ user: response.user, isAuthenticated: true, isLoading: false });
+            const message = await authService.register(data);
+            set({ isLoading: false });
+            return message;
         } catch (error) {
             set({
-                error: error instanceof Error ? error.message : 'Registration failed',
+                error: error instanceof Error ? error.message : 'Kayıt tamamlanamadı',
                 isLoading: false
             });
             throw error;

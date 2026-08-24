@@ -94,6 +94,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=80
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_auth;Username=postgres;Password=postgres
+      - ConnectionStrings__Redis=redis:6379
       - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers

@@ -68,12 +68,15 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "80"
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_auth;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
       JWT__Secret: ${JWT_SECRET:?JWT_SECRET is required}
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL:?FRONTEND_URL is required}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]

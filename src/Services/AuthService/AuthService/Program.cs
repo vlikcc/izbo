@@ -1,9 +1,10 @@
-using Serilog;
 using AuthService.Data;
 using AuthService.Services;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using Shared.Configuration;
 using Shared.Extensions;
+using Shared.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
@@ -31,6 +32,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IAuthService, AuthenticationService>();
 builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 
+// Credential endpoints carry stricter, Redis-backed limits than the gateway's global one.
+builder.Services.AddAuthRateLimiting(builder.Configuration.GetConnectionString("Redis"));
+
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
 builder.Services.AddEduPlatformHealthChecks(builder.Configuration);
@@ -46,6 +50,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

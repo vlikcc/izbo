@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Shared.Configuration;
+using Shared.Security;
 using Shared.Seed;
+using Shared.Text;
 
 namespace AuthService.Data;
 
@@ -26,7 +28,15 @@ public static class AuthDataSeeder
             return;
         }
 
-        var email = options.Email.Trim().ToLowerInvariant();
+        // The seeded account is a SuperAdmin, so it is the last place to accept a password the policy
+        // would reject from an ordinary user.
+        if (PasswordPolicy.Validate(options.Password) is { } passwordError)
+        {
+            logger.LogError("Admin seed skipped: Seed:Password does not meet the password policy. {Reason}", passwordError);
+            return;
+        }
+
+        var email = EmailNormalizer.Normalize(options.Email);
 
         if (await context.Users.AnyAsync(u => u.Email == email || u.Id == options.AdminUserId))
         {
