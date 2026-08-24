@@ -153,6 +153,7 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
+          load: true
           push: false
           tags: ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:ci
           cache-from: type=gha,scope=${{ matrix.name }}
