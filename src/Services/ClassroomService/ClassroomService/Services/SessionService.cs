@@ -16,22 +16,22 @@ namespace ClassroomService.Services;
 
 public interface ISessionService
 {
-    Task<ClassSessionDto?> CreateSessionAsync(Guid classroomId, CreateSessionRequest request, Caller caller);
-    Task<ClassSessionDto?> GetSessionAsync(Guid sessionId, Caller caller);
-    Task<List<ClassSessionDto>?> GetClassroomSessionsAsync(Guid classroomId, Caller caller);
-    Task<List<ClassSessionDto>> GetUpcomingSessionsAsync(Guid studentId);
-    Task<ClassSessionDto?> UpdateSessionAsync(Guid sessionId, UpdateSessionRequest request, Caller caller);
-    Task<bool> DeleteSessionAsync(Guid sessionId, Caller caller);
-    Task<bool> StartSessionAsync(Guid sessionId, Caller caller);
-    Task<bool> EndSessionAsync(Guid sessionId, Caller caller);
-    Task<List<ClassSessionDto>> GetLiveSessionsAsync(Caller caller);
-    Task<string?> GetJitsiTokenAsync(Guid sessionId, Caller caller, string userName, string email);
+    Task<ClassSessionDto?> CreateSessionAsync(Guid classroomId, CreateSessionRequest request, Caller caller, CancellationToken cancellationToken = default);
+    Task<ClassSessionDto?> GetSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default);
+    Task<List<ClassSessionDto>?> GetClassroomSessionsAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default);
+    Task<List<ClassSessionDto>> GetUpcomingSessionsAsync(Guid studentId, CancellationToken cancellationToken = default);
+    Task<ClassSessionDto?> UpdateSessionAsync(Guid sessionId, UpdateSessionRequest request, Caller caller, CancellationToken cancellationToken = default);
+    Task<bool> DeleteSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default);
+    Task<bool> StartSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default);
+    Task<bool> EndSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default);
+    Task<List<ClassSessionDto>> GetLiveSessionsAsync(Caller caller, CancellationToken cancellationToken = default);
+    Task<string?> GetJitsiTokenAsync(Guid sessionId, Caller caller, string userName, string email, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// The caller's access to the classroom owning <paramref name="sessionId"/>, or <c>null</c> when no
     /// such session exists. Session membership is not modelled separately from classroom membership.
     /// </summary>
-    Task<ClassroomAccess?> GetSessionAccessAsync(Guid sessionId, Caller caller);
+    Task<ClassroomAccess?> GetSessionAccessAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default);
 }
 
 public class SessionService : ISessionService
@@ -55,11 +55,11 @@ public class SessionService : ISessionService
         _logger = logger;
     }
 
-    public async Task<ClassSessionDto?> CreateSessionAsync(Guid classroomId, CreateSessionRequest request, Caller caller)
+    public async Task<ClassSessionDto?> CreateSessionAsync(Guid classroomId, CreateSessionRequest request, Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!await CanManageClassroomAsync(classroomId, caller))
+        if (!await CanManageClassroomAsync(classroomId, caller, cancellationToken))
         {
             return null;
         }
@@ -77,27 +77,27 @@ public class SessionService : ISessionService
         };
 
         _context.ClassSessions.Add(session);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         await _hubContext.Clients.Group($"classroom_{classroomId}")
-            .SendAsync("SessionScheduled", MapToDto(session));
+            .SendAsync("SessionScheduled", MapToDto(session), cancellationToken);
 
         _logger.LogInformation("Session {SessionId} created for classroom {ClassroomId}", session.Id, classroomId);
 
         return MapToDto(session);
     }
 
-    public async Task<ClassSessionDto?> GetSessionAsync(Guid sessionId, Caller caller)
+    public async Task<ClassSessionDto?> GetSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var session = await _context.ClassSessions.AsNoTracking().FirstOrDefaultAsync(s => s.Id == sessionId);
+        var session = await _context.ClassSessions.AsNoTracking().FirstOrDefaultAsync(s => s.Id == sessionId, cancellationToken);
         if (session == null) return null;
 
-        return await CanViewClassroomAsync(session.ClassroomId, caller) ? MapToDto(session) : null;
+        return await CanViewClassroomAsync(session.ClassroomId, caller, cancellationToken) ? MapToDto(session) : null;
     }
 
-    public async Task<List<ClassSessionDto>?> GetClassroomSessionsAsync(Guid classroomId, Caller caller)
+    public async Task<List<ClassSessionDto>?> GetClassroomSessionsAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default)
     {
-        if (!await CanViewClassroomAsync(classroomId, caller))
+        if (!await CanViewClassroomAsync(classroomId, caller, cancellationToken))
         {
             return null;
         }
@@ -110,12 +110,12 @@ public class SessionService : ISessionService
                 s.Id, s.ClassroomId, s.Title, s.Description,
                 s.ScheduledStartTime, s.ScheduledEndTime,
                 s.MeetingUrl, s.RecordingUrl, s.Status.ToString()))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<ClassSessionDto>> GetUpcomingSessionsAsync(Guid studentId)
+    public async Task<List<ClassSessionDto>> GetUpcomingSessionsAsync(Guid studentId, CancellationToken cancellationToken = default)
     {
-        var classroomIds = await GetAccessibleClassroomIdsAsync(studentId);
+        var classroomIds = await GetAccessibleClassroomIdsAsync(studentId, cancellationToken);
 
         return await _context.ClassSessions
             .AsNoTracking()
@@ -128,14 +128,14 @@ public class SessionService : ISessionService
                 s.Id, s.ClassroomId, s.Title, s.Description,
                 s.ScheduledStartTime, s.ScheduledEndTime,
                 s.MeetingUrl, s.RecordingUrl, s.Status.ToString()))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<ClassSessionDto?> UpdateSessionAsync(Guid sessionId, UpdateSessionRequest request, Caller caller)
+    public async Task<ClassSessionDto?> UpdateSessionAsync(Guid sessionId, UpdateSessionRequest request, Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var session = await FindManageableSessionAsync(sessionId, caller);
+        var session = await FindManageableSessionAsync(sessionId, caller, cancellationToken);
         if (session == null) return null;
 
         if (request.Title != null) session.Title = request.Title;
@@ -143,31 +143,31 @@ public class SessionService : ISessionService
         if (request.ScheduledStartTime.HasValue) session.ScheduledStartTime = DateTime.SpecifyKind(request.ScheduledStartTime.Value, DateTimeKind.Utc);
         if (request.ScheduledEndTime.HasValue) session.ScheduledEndTime = DateTime.SpecifyKind(request.ScheduledEndTime.Value, DateTimeKind.Utc);
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         await _hubContext.Clients.Group($"classroom_{session.ClassroomId}")
-            .SendAsync("SessionUpdated", MapToDto(session));
+            .SendAsync("SessionUpdated", MapToDto(session), cancellationToken);
 
         return MapToDto(session);
     }
 
-    public async Task<bool> DeleteSessionAsync(Guid sessionId, Caller caller)
+    public async Task<bool> DeleteSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var session = await FindManageableSessionAsync(sessionId, caller);
+        var session = await FindManageableSessionAsync(sessionId, caller, cancellationToken);
         if (session == null) return false;
 
         session.Status = SessionStatus.Cancelled;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         await _hubContext.Clients.Group($"classroom_{session.ClassroomId}")
-            .SendAsync("SessionCancelled", sessionId);
+            .SendAsync("SessionCancelled", sessionId, cancellationToken);
 
         return true;
     }
 
-    public async Task<bool> StartSessionAsync(Guid sessionId, Caller caller)
+    public async Task<bool> StartSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var session = await FindManageableSessionAsync(sessionId, caller);
+        var session = await FindManageableSessionAsync(sessionId, caller, cancellationToken);
         if (session == null || session.Status != SessionStatus.Scheduled)
             return false;
 
@@ -175,7 +175,7 @@ public class SessionService : ISessionService
         session.ActualStartTime = DateTime.UtcNow;
         session.MeetingUrl = GenerateMeetingUrl(sessionId);
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         await _hubContext.Clients.Group($"classroom_{session.ClassroomId}")
             .SendAsync("SessionStarted", new
@@ -183,33 +183,33 @@ public class SessionService : ISessionService
                 sessionId,
                 session.Title,
                 session.MeetingUrl
-            });
+            }, cancellationToken);
 
         _logger.LogInformation("Session {SessionId} started by {UserId}", sessionId, caller.UserId);
 
         return true;
     }
 
-    public async Task<bool> EndSessionAsync(Guid sessionId, Caller caller)
+    public async Task<bool> EndSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var session = await FindManageableSessionAsync(sessionId, caller);
+        var session = await FindManageableSessionAsync(sessionId, caller, cancellationToken);
         if (session == null || session.Status != SessionStatus.Live)
             return false;
 
         session.Status = SessionStatus.Ended;
         session.ActualEndTime = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         await _hubContext.Clients.Group($"classroom_{session.ClassroomId}")
-            .SendAsync("SessionEnded", sessionId);
+            .SendAsync("SessionEnded", sessionId, cancellationToken);
 
         _logger.LogInformation("Session {SessionId} ended by {UserId}", sessionId, caller.UserId);
 
         return true;
     }
 
-    public async Task<List<ClassSessionDto>> GetLiveSessionsAsync(Caller caller)
+    public async Task<List<ClassSessionDto>> GetLiveSessionsAsync(Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(caller);
 
@@ -220,7 +220,7 @@ public class SessionService : ISessionService
         // Students and instructors only see live sessions of classrooms they belong to.
         if (!caller.IsPlatformAdmin)
         {
-            var classroomIds = await GetAccessibleClassroomIdsAsync(caller.UserId);
+            var classroomIds = await GetAccessibleClassroomIdsAsync(caller.UserId, cancellationToken);
             query = query.Where(s => classroomIds.Contains(s.ClassroomId));
         }
 
@@ -229,20 +229,20 @@ public class SessionService : ISessionService
                 s.Id, s.ClassroomId, s.Title, s.Description,
                 s.ScheduledStartTime, s.ScheduledEndTime,
                 s.MeetingUrl, s.RecordingUrl, s.Status.ToString()))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<string?> GetJitsiTokenAsync(Guid sessionId, Caller caller, string userName, string email)
+    public async Task<string?> GetJitsiTokenAsync(Guid sessionId, Caller caller, string userName, string email, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(caller);
 
         var session = await _context.ClassSessions
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == sessionId);
+            .FirstOrDefaultAsync(s => s.Id == sessionId, cancellationToken);
 
         if (session == null) return null;
 
-        var access = await GetClassroomAccessAsync(session.ClassroomId, caller);
+        var access = await GetClassroomAccessAsync(session.ClassroomId, caller, cancellationToken);
         if (access is null || !access.CanView)
         {
             _logger.LogWarning(
@@ -269,7 +269,7 @@ public class SessionService : ISessionService
             isModerator: access.IsInstructor);
     }
 
-    public async Task<ClassroomAccess?> GetSessionAccessAsync(Guid sessionId, Caller caller)
+    public async Task<ClassroomAccess?> GetSessionAccessAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(caller);
 
@@ -277,35 +277,35 @@ public class SessionService : ISessionService
             .AsNoTracking()
             .Where(s => s.Id == sessionId)
             .Select(s => (Guid?)s.ClassroomId)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
-        return classroomId is null ? null : await GetClassroomAccessAsync(classroomId.Value, caller);
+        return classroomId is null ? null : await GetClassroomAccessAsync(classroomId.Value, caller, cancellationToken);
     }
 
-    private async Task<List<Guid>> GetAccessibleClassroomIdsAsync(Guid userId)
+    private async Task<List<Guid>> GetAccessibleClassroomIdsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var enrolled = await _context.Enrollments
             .AsNoTracking()
             .Where(e => e.StudentId == userId && e.IsActive && e.Classroom!.IsActive)
             .Select(e => e.ClassroomId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var owned = await _context.Classrooms
             .AsNoTracking()
             .Where(c => c.InstructorId == userId && c.IsActive)
             .Select(c => c.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return enrolled.Union(owned).ToList();
     }
 
-    private async Task<ClassroomAccess?> GetClassroomAccessAsync(Guid classroomId, Caller caller)
+    private async Task<ClassroomAccess?> GetClassroomAccessAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default)
     {
         var classroom = await _context.Classrooms
             .AsNoTracking()
             .Where(c => c.Id == classroomId && c.IsActive)
             .Select(c => new { c.InstructorId })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (classroom == null) return null;
 
@@ -316,20 +316,20 @@ public class SessionService : ISessionService
 
         var isEnrolled = await _context.Enrollments
             .AsNoTracking()
-            .AnyAsync(e => e.ClassroomId == classroomId && e.StudentId == caller.UserId && e.IsActive);
+            .AnyAsync(e => e.ClassroomId == classroomId && e.StudentId == caller.UserId && e.IsActive, cancellationToken);
 
         return new ClassroomAccess(classroom.InstructorId == caller.UserId, isEnrolled);
     }
 
-    private async Task<bool> CanViewClassroomAsync(Guid classroomId, Caller caller)
+    private async Task<bool> CanViewClassroomAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var access = await GetClassroomAccessAsync(classroomId, caller);
+        var access = await GetClassroomAccessAsync(classroomId, caller, cancellationToken);
         return access?.CanView == true;
     }
 
-    private async Task<bool> CanManageClassroomAsync(Guid classroomId, Caller caller)
+    private async Task<bool> CanManageClassroomAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var access = await GetClassroomAccessAsync(classroomId, caller);
+        var access = await GetClassroomAccessAsync(classroomId, caller, cancellationToken);
         if (access?.IsInstructor == true)
         {
             return true;
@@ -345,12 +345,12 @@ public class SessionService : ISessionService
     /// Loads a session only when the caller owns its classroom, so sessions of other instructors'
     /// classrooms cannot be started, ended or modified.
     /// </summary>
-    private async Task<ClassSession?> FindManageableSessionAsync(Guid sessionId, Caller caller)
+    private async Task<ClassSession?> FindManageableSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var session = await _context.ClassSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+        var session = await _context.ClassSessions.FirstOrDefaultAsync(s => s.Id == sessionId, cancellationToken);
         if (session == null) return null;
 
-        return await CanManageClassroomAsync(session.ClassroomId, caller) ? session : null;
+        return await CanManageClassroomAsync(session.ClassroomId, caller, cancellationToken) ? session : null;
     }
 
     private static string GenerateJitsiJwtToken(string appId, string appSecret, string roomName, string userName, string email, string userId, bool isModerator)

@@ -22,6 +22,7 @@ public class ExamSessionController : ControllerBase
 
     private Caller Caller => User.GetCaller();
 
+    [HttpPost("{examId}/start")]
     [HttpPost("start/{examId}")]
     public async Task<ActionResult<ApiResponse<StartExamResponse>>> StartExam(Guid examId, CancellationToken cancellationToken)
     {

@@ -135,6 +135,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=80
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_classroom;Username=postgres;Password=postgres
+      - ConnectionStrings__Redis=redis:6379
       - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
@@ -192,6 +193,7 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - ConnectionStrings__Redis=redis:6379
       - Services__ClassroomService=http://classroomservice
 
   notificationservice:
@@ -202,6 +204,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=80
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_notification;Username=postgres;Password=postgres
+      - ConnectionStrings__Redis=redis:6379
       - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers

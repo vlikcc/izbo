@@ -6,6 +6,26 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/auth/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "authservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/auth/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -24,6 +44,29 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/users/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "userservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/users/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -45,6 +88,29 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/classrooms/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "classroomservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/classrooms/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -66,6 +132,29 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/homework/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "homeworkservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/homework/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -87,6 +176,29 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/exams/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "examservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/exams/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -108,6 +220,29 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/exam-sessions/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "examservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/exam-sessions/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -129,6 +264,29 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/live/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "livesessionservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/live/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -150,6 +308,29 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/notifications/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "notificationservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/notifications/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -171,6 +352,29 @@
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/files/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "fileservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/files/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             ],
@@ -230,6 +434,142 @@
             "DownstreamHostAndPorts": [
                 {
                     "Host": "livesessionservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/hubs/notifications/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/hubs/notifications/{everything}",
+            "DownstreamScheme": "ws",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "notificationservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/openapi/auth/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/swagger/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "authservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/openapi/users/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/swagger/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "userservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/openapi/classrooms/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/swagger/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "classroomservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/openapi/homework/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/swagger/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "homeworkservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/openapi/exams/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/swagger/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "examservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/openapi/live/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/swagger/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "livesessionservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/openapi/notifications/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/swagger/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "notificationservice",
+                    "Port": 80
+                }
+            ]
+        },
+        {
+            "UpstreamPathTemplate": "/openapi/files/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/swagger/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "fileservice",
                     "Port": 80
                 }
             ]

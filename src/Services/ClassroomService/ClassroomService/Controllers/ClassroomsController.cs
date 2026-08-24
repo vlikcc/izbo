@@ -44,23 +44,32 @@ public class ClassroomsController : ControllerBase
     public async Task<ActionResult<ApiResponse<PagedResponse<ClassroomDto>>>> GetClassrooms(
         [FromQuery] Guid? instructorId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool sortDescending = false,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _classroomService.GetClassroomsAsync(instructorId, new PagedRequest(page, pageSize));
+        var result = await _classroomService.GetClassroomsAsync(
+            instructorId,
+            new PagedRequest(page, pageSize, sortBy, sortDescending),
+            cancellationToken);
         return Ok(new ApiResponse<PagedResponse<ClassroomDto>>(true, result));
     }
 
     [HttpGet("my-classrooms")]
     public async Task<ActionResult<ApiResponse<PagedResponse<ClassroomDto>>>> GetMyClassrooms(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool sortDescending = false,
+        CancellationToken cancellationToken = default)
     {
         var caller = Caller;
-        var paging = new PagedRequest(page, pageSize);
+        var paging = new PagedRequest(page, pageSize, sortBy, sortDescending);
 
         var result = caller.CanManageContent
-            ? await _classroomService.GetClassroomsAsync(caller.UserId, paging)
-            : await _classroomService.GetStudentClassroomsAsync(caller.UserId, paging);
+            ? await _classroomService.GetClassroomsAsync(caller.UserId, paging, cancellationToken)
+            : await _classroomService.GetStudentClassroomsAsync(caller.UserId, paging, cancellationToken);
 
         return Ok(new ApiResponse<PagedResponse<ClassroomDto>>(true, result));
     }

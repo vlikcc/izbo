@@ -3,33 +3,35 @@ using Microsoft.EntityFrameworkCore;
 using Shared.Authorization;
 using Shared.DTOs;
 using Shared.Models;
+using Shared.Paging;
+using System.Linq.Expressions;
 
 namespace ClassroomService.Services;
 
 public interface IClassroomManagementService
 {
-    Task<ClassroomDto?> CreateClassroomAsync(CreateClassroomRequest request, Guid instructorId);
-    Task<ClassroomDto?> GetClassroomAsync(Guid id, Caller caller);
-    Task<PagedResponse<ClassroomDto>> GetClassroomsAsync(Guid? instructorId, PagedRequest request);
-    Task<PagedResponse<ClassroomDto>> GetStudentClassroomsAsync(Guid studentId, PagedRequest request);
-    Task<ClassroomDto?> UpdateClassroomAsync(Guid id, UpdateClassroomRequest request, Caller caller);
-    Task<bool> DeleteClassroomAsync(Guid id, Caller caller);
-    Task<bool> EnrollStudentAsync(Guid classroomId, Guid studentId, Caller caller);
-    Task<bool> EnrollStudentsBulkAsync(Guid classroomId, List<Guid> studentIds, Caller caller);
-    Task<bool> UnenrollStudentAsync(Guid classroomId, Guid studentId, Caller caller);
-    Task<List<EnrollmentDto>?> GetEnrollmentsAsync(Guid classroomId, Caller caller);
+    Task<ClassroomDto?> CreateClassroomAsync(CreateClassroomRequest request, Guid instructorId, CancellationToken cancellationToken = default);
+    Task<ClassroomDto?> GetClassroomAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
+    Task<PagedResponse<ClassroomDto>> GetClassroomsAsync(Guid? instructorId, PagedRequest request, CancellationToken cancellationToken = default);
+    Task<PagedResponse<ClassroomDto>> GetStudentClassroomsAsync(Guid studentId, PagedRequest request, CancellationToken cancellationToken = default);
+    Task<ClassroomDto?> UpdateClassroomAsync(Guid id, UpdateClassroomRequest request, Caller caller, CancellationToken cancellationToken = default);
+    Task<bool> DeleteClassroomAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
+    Task<bool> EnrollStudentAsync(Guid classroomId, Guid studentId, Caller caller, CancellationToken cancellationToken = default);
+    Task<bool> EnrollStudentsBulkAsync(Guid classroomId, List<Guid> studentIds, Caller caller, CancellationToken cancellationToken = default);
+    Task<bool> UnenrollStudentAsync(Guid classroomId, Guid studentId, Caller caller, CancellationToken cancellationToken = default);
+    Task<List<EnrollmentDto>?> GetEnrollmentsAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resolves the caller's relationship to a classroom. Other services call this over HTTP because
     /// ClassroomService is the only owner of the enrollment tables.
     /// </summary>
-    Task<ClassroomAccess?> GetAccessAsync(Guid classroomId, Caller caller);
+    Task<ClassroomAccess?> GetAccessAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Every classroom the caller teaches or is enrolled in. Other services use this to scope list
     /// queries over classroom-scoped content they store themselves.
     /// </summary>
-    Task<List<Guid>> GetAccessibleClassroomIdsAsync(Caller caller);
+    Task<List<Guid>> GetAccessibleClassroomIdsAsync(Caller caller, CancellationToken cancellationToken = default);
 }
 
 public class ClassroomManagementService : IClassroomManagementService
@@ -43,7 +45,7 @@ public class ClassroomManagementService : IClassroomManagementService
         _logger = logger;
     }
 
-    public async Task<ClassroomDto?> CreateClassroomAsync(CreateClassroomRequest request, Guid instructorId)
+    public async Task<ClassroomDto?> CreateClassroomAsync(CreateClassroomRequest request, Guid instructorId, CancellationToken cancellationToken = default)
     {
         var classroom = new Classroom
         {
@@ -57,14 +59,14 @@ public class ClassroomManagementService : IClassroomManagementService
         };
 
         _context.Classrooms.Add(classroom);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Classroom {ClassroomId} created by instructor {InstructorId}", classroom.Id, instructorId);
 
         return MapToDto(classroom);
     }
 
-    public async Task<ClassroomAccess?> GetAccessAsync(Guid classroomId, Caller caller)
+    public async Task<ClassroomAccess?> GetAccessAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(caller);
 
@@ -72,7 +74,7 @@ public class ClassroomManagementService : IClassroomManagementService
             .AsNoTracking()
             .Where(c => c.Id == classroomId && c.IsActive)
             .Select(c => new { c.InstructorId })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (classroom == null)
         {
@@ -88,12 +90,12 @@ public class ClassroomManagementService : IClassroomManagementService
 
         var isEnrolled = await _context.Enrollments
             .AsNoTracking()
-            .AnyAsync(e => e.ClassroomId == classroomId && e.StudentId == caller.UserId && e.IsActive);
+            .AnyAsync(e => e.ClassroomId == classroomId && e.StudentId == caller.UserId && e.IsActive, cancellationToken);
 
         return new ClassroomAccess(isInstructor, isEnrolled);
     }
 
-    public async Task<List<Guid>> GetAccessibleClassroomIdsAsync(Caller caller)
+    public async Task<List<Guid>> GetAccessibleClassroomIdsAsync(Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(caller);
 
@@ -103,27 +105,27 @@ public class ClassroomManagementService : IClassroomManagementService
                 .AsNoTracking()
                 .Where(c => c.IsActive)
                 .Select(c => c.Id)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         var enrolled = await _context.Enrollments
             .AsNoTracking()
             .Where(e => e.StudentId == caller.UserId && e.IsActive && e.Classroom!.IsActive)
             .Select(e => e.ClassroomId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var owned = await _context.Classrooms
             .AsNoTracking()
             .Where(c => c.InstructorId == caller.UserId && c.IsActive)
             .Select(c => c.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return enrolled.Union(owned).ToList();
     }
 
-    public async Task<ClassroomDto?> GetClassroomAsync(Guid id, Caller caller)
+    public async Task<ClassroomDto?> GetClassroomAsync(Guid id, Caller caller, CancellationToken cancellationToken = default)
     {
-        var access = await GetAccessAsync(id, caller);
+        var access = await GetAccessAsync(id, caller, cancellationToken);
         if (access is null || !access.CanView)
         {
             return null;
@@ -132,12 +134,12 @@ public class ClassroomManagementService : IClassroomManagementService
         var classroom = await _context.Classrooms
             .AsNoTracking()
             .Include(c => c.Enrollments)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         return classroom != null ? MapToDto(classroom) : null;
     }
 
-    public async Task<PagedResponse<ClassroomDto>> GetClassroomsAsync(Guid? instructorId, PagedRequest request)
+    public async Task<PagedResponse<ClassroomDto>> GetClassroomsAsync(Guid? instructorId, PagedRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -148,12 +150,12 @@ public class ClassroomManagementService : IClassroomManagementService
         if (instructorId.HasValue)
             query = query.Where(c => c.InstructorId == instructorId.Value);
 
-        var totalCount = await query.CountAsync();
+        var paging = string.IsNullOrWhiteSpace(request.SortBy)
+            ? request with { SortBy = "createdAt", SortDescending = true }
+            : request;
 
-        var items = await query
-            .OrderByDescending(c => c.CreatedAt)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
+        var sorted = query.ApplySort(paging, ClassroomSort, "createdAt");
+        return await sorted
             .Select(c => new ClassroomDto(
                 c.Id,
                 c.Name,
@@ -164,18 +166,10 @@ public class ClassroomManagementService : IClassroomManagementService
                 c.Enrollments.Count(e => e.IsActive),
                 c.IsActive,
                 c.CreatedAt))
-            .ToListAsync();
-
-        return new PagedResponse<ClassroomDto>(
-            items,
-            request.Page,
-            request.PageSize,
-            totalCount,
-            (int)Math.Ceiling(totalCount / (double)request.PageSize)
-        );
+            .ToPagedResponseAsync(request, cancellationToken);
     }
 
-    public async Task<PagedResponse<ClassroomDto>> GetStudentClassroomsAsync(Guid studentId, PagedRequest request)
+    public async Task<PagedResponse<ClassroomDto>> GetStudentClassroomsAsync(Guid studentId, PagedRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -183,12 +177,8 @@ public class ClassroomManagementService : IClassroomManagementService
             .AsNoTracking()
             .Where(e => e.StudentId == studentId && e.IsActive && e.Classroom!.IsActive);
 
-        var totalCount = await query.CountAsync();
-
-        var items = await query
+        var itemsQuery = query
             .OrderByDescending(e => e.EnrolledAt)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
             .Select(e => new ClassroomDto(
                 e.Classroom!.Id,
                 e.Classroom.Name,
@@ -198,23 +188,16 @@ public class ClassroomManagementService : IClassroomManagementService
                 e.Classroom.CoverImageUrl,
                 e.Classroom.Enrollments.Count(x => x.IsActive),
                 e.Classroom.IsActive,
-                e.Classroom.CreatedAt))
-            .ToListAsync();
+                e.Classroom.CreatedAt));
 
-        return new PagedResponse<ClassroomDto>(
-            items,
-            request.Page,
-            request.PageSize,
-            totalCount,
-            (int)Math.Ceiling(totalCount / (double)request.PageSize)
-        );
+        return await itemsQuery.ToPagedResponseAsync(request, cancellationToken);
     }
 
-    public async Task<ClassroomDto?> UpdateClassroomAsync(Guid id, UpdateClassroomRequest request, Caller caller)
+    public async Task<ClassroomDto?> UpdateClassroomAsync(Guid id, UpdateClassroomRequest request, Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var classroom = await FindManageableAsync(id, caller);
+        var classroom = await FindManageableAsync(id, caller, cancellationToken: cancellationToken);
         if (classroom == null) return null;
 
         if (request.Name != null) classroom.Name = request.Name;
@@ -222,30 +205,30 @@ public class ClassroomManagementService : IClassroomManagementService
         if (request.CoverImageUrl != null) classroom.CoverImageUrl = request.CoverImageUrl;
         classroom.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return MapToDto(classroom);
     }
 
-    public async Task<bool> DeleteClassroomAsync(Guid id, Caller caller)
+    public async Task<bool> DeleteClassroomAsync(Guid id, Caller caller, CancellationToken cancellationToken = default)
     {
-        var classroom = await FindManageableAsync(id, caller);
+        var classroom = await FindManageableAsync(id, caller, cancellationToken: cancellationToken);
         if (classroom == null) return false;
 
         classroom.IsActive = false;
         classroom.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Classroom {ClassroomId} deactivated by {UserId}", id, caller.UserId);
         return true;
     }
 
-    public async Task<bool> EnrollStudentAsync(Guid classroomId, Guid studentId, Caller caller)
+    public async Task<bool> EnrollStudentAsync(Guid classroomId, Guid studentId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var classroom = await FindManageableAsync(classroomId, caller);
+        var classroom = await FindManageableAsync(classroomId, caller, cancellationToken: cancellationToken);
         if (classroom == null) return false;
 
         var existing = await _context.Enrollments
-            .FirstOrDefaultAsync(e => e.ClassroomId == classroomId && e.StudentId == studentId);
+            .FirstOrDefaultAsync(e => e.ClassroomId == classroomId && e.StudentId == studentId, cancellationToken);
 
         if (existing != null)
         {
@@ -254,7 +237,7 @@ public class ClassroomManagementService : IClassroomManagementService
 
             existing.IsActive = true;
             existing.EnrolledAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 
@@ -267,22 +250,22 @@ public class ClassroomManagementService : IClassroomManagementService
             IsActive = true
         });
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Student {StudentId} enrolled in classroom {ClassroomId}", studentId, classroomId);
         return true;
     }
 
-    public async Task<bool> EnrollStudentsBulkAsync(Guid classroomId, List<Guid> studentIds, Caller caller)
+    public async Task<bool> EnrollStudentsBulkAsync(Guid classroomId, List<Guid> studentIds, Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(studentIds);
 
-        var classroom = await FindManageableAsync(classroomId, caller);
+        var classroom = await FindManageableAsync(classroomId, caller, cancellationToken: cancellationToken);
         if (classroom == null) return false;
 
         var existing = await _context.Enrollments
             .Where(e => e.ClassroomId == classroomId && studentIds.Contains(e.StudentId))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         foreach (var enrollment in existing.Where(e => !e.IsActive))
         {
@@ -301,31 +284,31 @@ public class ClassroomManagementService : IClassroomManagementService
             IsActive = true
         }));
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("{Count} students enrolled in classroom {ClassroomId}", newStudentIds.Count, classroomId);
         return true;
     }
 
-    public async Task<bool> UnenrollStudentAsync(Guid classroomId, Guid studentId, Caller caller)
+    public async Task<bool> UnenrollStudentAsync(Guid classroomId, Guid studentId, Caller caller, CancellationToken cancellationToken = default)
     {
-        var classroom = await FindManageableAsync(classroomId, caller);
+        var classroom = await FindManageableAsync(classroomId, caller, cancellationToken: cancellationToken);
         if (classroom == null) return false;
 
         var enrollment = await _context.Enrollments
-            .FirstOrDefaultAsync(e => e.ClassroomId == classroomId && e.StudentId == studentId);
+            .FirstOrDefaultAsync(e => e.ClassroomId == classroomId && e.StudentId == studentId, cancellationToken);
 
         if (enrollment == null) return false;
 
         enrollment.IsActive = false;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
-    public async Task<List<EnrollmentDto>?> GetEnrollmentsAsync(Guid classroomId, Caller caller)
+    public async Task<List<EnrollmentDto>?> GetEnrollmentsAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default)
     {
         // The roster identifies other students, so only the owning instructor and admins may read it.
-        var classroom = await FindManageableAsync(classroomId, caller, track: false);
+        var classroom = await FindManageableAsync(classroomId, caller, track: false, cancellationToken);
         if (classroom == null) return null;
 
         return await _context.Enrollments
@@ -339,19 +322,19 @@ public class ClassroomManagementService : IClassroomManagementService
                 string.Empty,
                 e.EnrolledAt,
                 e.IsActive))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     /// <summary>
     /// Returns the classroom only when the caller may manage it. A classroom the caller does not own is
     /// reported as missing so callers cannot probe for classrooms belonging to other instructors.
     /// </summary>
-    private async Task<Classroom?> FindManageableAsync(Guid classroomId, Caller caller, bool track = true)
+    private async Task<Classroom?> FindManageableAsync(Guid classroomId, Caller caller, bool track = true, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(caller);
 
         var query = track ? _context.Classrooms : _context.Classrooms.AsNoTracking();
-        var classroom = await query.FirstOrDefaultAsync(c => c.Id == classroomId);
+        var classroom = await query.FirstOrDefaultAsync(c => c.Id == classroomId, cancellationToken);
 
         if (classroom == null)
         {
@@ -369,6 +352,13 @@ public class ClassroomManagementService : IClassroomManagementService
 
         return null;
     }
+
+    private static readonly IReadOnlyDictionary<string, Expression<Func<Classroom, object>>> ClassroomSort =
+        new Dictionary<string, Expression<Func<Classroom, object>>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["createdAt"] = c => c.CreatedAt,
+            ["name"] = c => c.Name
+        };
 
     private static ClassroomDto MapToDto(Classroom c) => new(
         c.Id,

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Shared.Authorization;
 using Shared.DTOs;
+using Shared.Exams;
 using Shared.Models;
 using System.Text.Json;
 
@@ -214,8 +215,8 @@ public class ExamSessionService : IExamSessionService
         {
             maxScore += question.Points;
             var studentAnswer = cachedAnswers.GetValueOrDefault(question.Id.ToString());
-            var isCorrect = EvaluateAnswer(question, studentAnswer);
-            var pointsAwarded = isCorrect ? question.Points : 0;
+            var isCorrect = AnswerEvaluator.IsCorrect(question.Type, question.CorrectAnswer, studentAnswer);
+            var pointsAwarded = AnswerEvaluator.Score(question.Type, question.Points, question.CorrectAnswer, studentAnswer);
             totalScore += pointsAwarded;
 
             // Save to database
@@ -478,21 +479,6 @@ public class ExamSessionService : IExamSessionService
             Math.Max(0, count + delta).ToString(System.Globalization.CultureInfo.InvariantCulture),
             new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) },
             cancellationToken);
-    }
-
-    private static bool EvaluateAnswer(Question question, string? studentAnswer)
-    {
-        if (string.IsNullOrEmpty(studentAnswer) || string.IsNullOrEmpty(question.CorrectAnswer))
-            return false;
-
-        return question.Type switch
-        {
-            QuestionType.MultipleChoice => studentAnswer.Trim().Equals(question.CorrectAnswer.Trim(), StringComparison.OrdinalIgnoreCase),
-            QuestionType.TrueFalse => studentAnswer.Trim().Equals(question.CorrectAnswer.Trim(), StringComparison.OrdinalIgnoreCase),
-            QuestionType.FillInBlank => studentAnswer.Trim().Equals(question.CorrectAnswer.Trim(), StringComparison.OrdinalIgnoreCase),
-            QuestionType.Essay => false, // Manual grading required
-            _ => false
-        };
     }
 
     private static ExamSessionDto MapToDto(ExamSession s) => new(

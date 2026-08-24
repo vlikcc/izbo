@@ -129,6 +129,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "80"
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_classroom;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
       JWT__Secret: ${JWT_SECRET}
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
@@ -229,9 +230,12 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      ConnectionStrings__Redis: redis:6379
       Services__ClassroomService: http://classroomservice
     depends_on:
       classroomservice:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
@@ -255,6 +259,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "80"
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_notification;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
       JWT__Secret: ${JWT_SECRET}
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
