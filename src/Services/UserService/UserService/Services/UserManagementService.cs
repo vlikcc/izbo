@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Shared.Audit;
 using Shared.Authorization;
 using Shared.DTOs;
 using Shared.Models;
@@ -20,16 +21,20 @@ public interface IUserManagementService
     Task<bool> SetUserActiveAsync(Guid id, bool isActive, Caller caller, CancellationToken cancellationToken = default);
     Task<List<PublicUserDto>> SearchUsersAsync(string query, int limit = 20, CancellationToken cancellationToken = default);
     Task<Dictionary<UserRole, int>> GetUserStatsAsync(CancellationToken cancellationToken = default);
+    Task<UserDto?> ExportUserAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> DeleteOwnAccountAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
 public class UserManagementService : IUserManagementService
 {
     private readonly UserDbContext _context;
+    private readonly IAuditLogger _audit;
     private readonly ILogger<UserManagementService> _logger;
 
-    public UserManagementService(UserDbContext context, ILogger<UserManagementService> logger)
+    public UserManagementService(UserDbContext context, IAuditLogger audit, ILogger<UserManagementService> logger)
     {
         _context = context;
+        _audit = audit;
         _logger = logger;
     }
 
@@ -55,7 +60,7 @@ public class UserManagementService : IUserManagementService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var query = _context.Users.AsNoTracking().Where(u => u.IsActive);
+        var query = _context.Users.AsNoTracking().Where(u => u.DeletedAt == null);
 
         if (role.HasValue)
             query = query.Where(u => u.Role == role.Value);
@@ -132,6 +137,9 @@ public class UserManagementService : IUserManagementService
         user.Role = newRole;
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
+        await _audit.WriteAsync(
+            new AuditRecord("RoleChanged", caller.UserId, "User", id.ToString(), newRole.ToString()),
+            cancellationToken);
 
         _logger.LogInformation(
             "User {TargetUserId} role changed to {Role} by {UserId}", id, newRole, caller.UserId);
@@ -162,6 +170,9 @@ public class UserManagementService : IUserManagementService
         user.IsActive = isActive;
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
+        await _audit.WriteAsync(
+            new AuditRecord(isActive ? "UserActivated" : "UserDeactivated", caller.UserId, "User", id.ToString()),
+            cancellationToken);
 
         _logger.LogInformation(
             "User {TargetUserId} {Action} by {UserId}", id, isActive ? "activated" : "deactivated", caller.UserId);
@@ -184,7 +195,7 @@ public class UserManagementService : IUserManagementService
 
         return await _context.Users
             .AsNoTracking()
-            .Where(u => u.IsActive &&
+            .Where(u => u.IsActive && u.DeletedAt == null &&
                 (EF.Functions.ILike(u.FirstName, $"%{term}%") ||
                  EF.Functions.ILike(u.LastName, $"%{term}%") ||
                  u.Email == email))
@@ -199,10 +210,36 @@ public class UserManagementService : IUserManagementService
     {
         return await _context.Users
             .AsNoTracking()
-            .Where(u => u.IsActive)
+            .Where(u => u.DeletedAt == null)
             .GroupBy(u => u.Role)
             .Select(g => new { Role = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Role, x => x.Count, cancellationToken);
+    }
+
+    public async Task<UserDto?> ExportUserAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        return user is null ? null : MapToDto(user);
+    }
+
+    public async Task<bool> DeleteOwnAccountAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (user is null)
+        {
+            return false;
+        }
+
+        user.IsActive = false;
+        user.DeletedAt = DateTime.UtcNow;
+        user.Email = $"deleted-{user.Id:N}@invalid.local";
+        user.FirstName = "Silinmiş";
+        user.LastName = "Kullanıcı";
+        user.PhoneNumber = null;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+        await _audit.WriteAsync(new AuditRecord("AccountDeleted", id, "User", id.ToString()), cancellationToken);
+        return true;
     }
 
     /// <summary>Short prefixes would match most of the directory, defeating the point of a search.</summary>

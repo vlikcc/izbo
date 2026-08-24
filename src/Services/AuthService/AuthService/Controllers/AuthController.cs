@@ -21,12 +21,12 @@ public class AuthController : ControllerBase
         "Kayıt talebiniz alındı. Giriş ekranından hesabınıza giriş yapabilirsiniz.";
 
     private readonly IAuthService _authService;
-    private readonly ILogger<AuthController> _logger;
+    private readonly IAccountEmailService _accountEmail;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, IAccountEmailService accountEmail)
     {
         _authService = authService;
-        _logger = logger;
+        _accountEmail = accountEmail;
     }
 
     [HttpPost("register")]
@@ -117,4 +117,54 @@ public class AuthController : ControllerBase
     private ClientFingerprint Client() => new(
         HttpContext.Connection.RemoteIpAddress?.ToString(),
         Request.Headers[HeaderNames.UserAgent].ToString());
+
+    [HttpPost("forgot-password")]
+    [EnableRateLimiting(AuthRateLimits.ForgotPassword)]
+    public async Task<ActionResult<ApiResponse<bool>>> ForgotPassword(
+        [FromBody] ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        await _accountEmail.RequestPasswordResetAsync(request.Email, cancellationToken);
+        return Ok(new ApiResponse<bool>(true, true, "Adres kayıtlıysa sıfırlama bağlantısı gönderildi."));
+    }
+
+    [HttpPost("reset-password")]
+    [EnableRateLimiting(AuthRateLimits.ForgotPassword)]
+    public async Task<ActionResult<ApiResponse<bool>>> ResetPassword(
+        [FromBody] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var ok = await _accountEmail.ResetPasswordAsync(request.Token, request.Password, cancellationToken);
+        if (!ok)
+        {
+            return BadRequest(new ApiResponse<bool>(false, false, "Sıfırlama bağlantısı geçersiz veya süresi doldu."));
+        }
+
+        return Ok(new ApiResponse<bool>(true, true, "Parola güncellendi"));
+    }
+
+    [HttpPost("verify-email")]
+    public async Task<ActionResult<ApiResponse<bool>>> VerifyEmail(
+        [FromBody] VerifyEmailRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var ok = await _accountEmail.VerifyEmailAsync(request.Token, cancellationToken);
+        if (!ok)
+        {
+            return BadRequest(new ApiResponse<bool>(false, false, "Doğrulama bağlantısı geçersiz."));
+        }
+
+        return Ok(new ApiResponse<bool>(true, true, "E-posta doğrulandı"));
+    }
+
+    [Authorize]
+    [HttpDelete("me")]
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteAccount(CancellationToken cancellationToken)
+    {
+        await _accountEmail.DeleteAccountAsync(User.GetCaller().UserId, cancellationToken);
+        return Ok(new ApiResponse<bool>(true, true, "Hesap silindi"));
+    }
 }

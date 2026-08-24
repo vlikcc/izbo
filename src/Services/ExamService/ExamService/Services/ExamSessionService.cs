@@ -18,6 +18,7 @@ public interface IExamSessionService
     Task<ExamResultDto?> SubmitExamAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default);
     Task<ExamSessionDto?> GetSessionAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default);
     Task<List<ExamSessionDto>> GetStudentSessionsAsync(Guid studentId, CancellationToken cancellationToken = default);
+    Task<List<ExamSessionDto>?> GetExamSessionsAsync(Guid examId, Caller caller, CancellationToken cancellationToken = default);
     Task<ExamResultDto?> GetResultAsync(Guid sessionId, Caller caller, CancellationToken cancellationToken = default);
     Task<int> GetActiveSessionCountAsync(Guid examId, Caller caller, CancellationToken cancellationToken = default);
 }
@@ -303,6 +304,29 @@ public class ExamSessionService : IExamSessionService
             .AsNoTracking()
             .Include(s => s.Exam)
             .Where(s => s.StudentId == studentId)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return sessions.Select(MapToDto).ToList();
+    }
+
+    public async Task<List<ExamSessionDto>?> GetExamSessionsAsync(Guid examId, Caller caller, CancellationToken cancellationToken = default)
+    {
+        var classroomId = await _context.Exams
+            .AsNoTracking()
+            .Where(e => e.Id == examId)
+            .Select(e => (Guid?)e.ClassroomId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (classroomId is null || !await _classroomAccess.CanManageAsync(classroomId.Value, caller, cancellationToken))
+        {
+            return null;
+        }
+
+        var sessions = await _context.ExamSessions
+            .AsNoTracking()
+            .Include(s => s.Exam)
+            .Where(s => s.ExamId == examId)
             .OrderByDescending(s => s.CreatedAt)
             .ToListAsync(cancellationToken);
 

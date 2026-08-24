@@ -95,4 +95,17 @@ public class ExamSessionController : ControllerBase
         var count = await _sessionService.GetActiveSessionCountAsync(examId, Caller, cancellationToken);
         return Ok(new ApiResponse<int>(true, count));
     }
+
+    [HttpGet("exam/{examId}")]
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<List<ExamSessionDto>>>> GetExamSessions(Guid examId, CancellationToken cancellationToken)
+    {
+        var result = await _sessionService.GetExamSessionsAsync(examId, Caller, cancellationToken);
+        if (result is null)
+        {
+            return NotFound(new ApiResponse<List<ExamSessionDto>>(false, null, "Exam not found"));
+        }
+
+        return Ok(new ApiResponse<List<ExamSessionDto>>(true, result));
+    }
 }

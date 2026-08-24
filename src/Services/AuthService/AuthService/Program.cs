@@ -1,17 +1,25 @@
 using AuthService.Data;
 using AuthService.Services;
-using Microsoft.EntityFrameworkCore;
+using Shared.Audit;
 using Shared.Configuration;
+using Shared.Email;
 using Shared.Extensions;
+using Shared.Messaging;
 using Shared.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformWebHost();
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
+builder.Services.AddEduPlatformAudit<AuthDbContext>();
 builder.Services.AddScoped<IAuthService, AuthenticationService>();
+builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();
+builder.Services.AddSingleton<RabbitMqMessageBus>();
+builder.Services.AddSingleton<IMessageBus>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddHostedService<OutboxProcessor>();
 builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 
 builder.Services.AddAuthRateLimiting(builder.Configuration.GetConnectionString("Redis"));

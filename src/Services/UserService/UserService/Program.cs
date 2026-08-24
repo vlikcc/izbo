@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+using Shared.Audit;
 using Shared.Configuration;
 using Shared.Extensions;
 using UserService.Data;
@@ -8,8 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformWebHost();
 
 builder.Services.AddDbContext<UserDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
+builder.Services.AddEduPlatformAudit<UserDbContext>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 

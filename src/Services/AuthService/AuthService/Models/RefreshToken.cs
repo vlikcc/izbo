@@ -57,4 +57,5 @@ public static class RevocationReasons
 
     /// <summary>An already-rotated token was presented again, so the whole chain is assumed compromised.</summary>
     public const string ReuseDetected = "reuse-detected";
+    public const string AccountDeleted = "account-deleted";
 }

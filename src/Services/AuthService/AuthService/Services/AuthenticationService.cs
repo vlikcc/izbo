@@ -2,6 +2,7 @@ using AuthService.Data;
 using AuthService.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Shared.Audit;
 using Shared.DTOs;
 using Shared.Models;
 using Shared.Security;
@@ -56,15 +57,21 @@ public class AuthenticationService : IAuthService
 
     private readonly AuthDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IAccountEmailService _accountEmail;
+    private readonly IAuditLogger _audit;
     private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
         AuthDbContext context,
         IConfiguration configuration,
+        IAccountEmailService accountEmail,
+        IAuditLogger audit,
         ILogger<AuthenticationService> logger)
     {
         _context = context;
         _configuration = configuration;
+        _accountEmail = accountEmail;
+        _audit = audit;
         _logger = logger;
     }
 
@@ -106,6 +113,7 @@ public class AuthenticationService : IAuthService
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync(cancellationToken);
+        await _accountEmail.RequestEmailVerificationAsync(user, cancellationToken);
 
         _logger.LogInformation("User {UserId} registered", user.Id);
 
@@ -138,7 +146,14 @@ public class AuthenticationService : IAuthService
             return null;
         }
 
+        if (_configuration.GetValue("Email:RequireVerification", false) && !user.EmailVerified)
+        {
+            _logger.LogWarning("Login rejected: user {UserId} has not verified e-mail", user.Id);
+            return null;
+        }
+
         _logger.LogInformation("User {UserId} logged in", user.Id);
+        await _audit.WriteAsync(new AuditRecord("Login", user.Id, "User", user.Id.ToString(), IpAddress: client?.IpAddress), cancellationToken);
 
         return await IssueTokensAsync(user, client, cancellationToken);
     }

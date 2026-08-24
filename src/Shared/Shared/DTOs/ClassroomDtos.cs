@@ -34,3 +34,9 @@ public record ClassSessionDto(
 
 public record CreateSessionRequest(string Title, string? Description, DateTime ScheduledStartTime, DateTime ScheduledEndTime);
 public record UpdateSessionRequest(string? Title, string? Description, DateTime? ScheduledStartTime, DateTime? ScheduledEndTime);
+
+public record AnnouncementDto(Guid Id, Guid ClassroomId, Guid AuthorId, string Title, string Body, DateTime CreatedAt);
+public record CreateAnnouncementRequest(string Title, string Body);
+public record ClassroomCommentDto(Guid Id, Guid ClassroomId, string TargetType, Guid TargetId, Guid AuthorId, string Body, DateTime CreatedAt);
+public record CreateCommentRequest(string TargetType, Guid TargetId, string Body);
+public record AttendanceRecordDto(Guid Id, Guid SessionId, Guid UserId, DateTime JoinedAt, DateTime? LeftAt);

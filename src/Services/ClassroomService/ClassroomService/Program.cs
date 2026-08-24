@@ -9,12 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformWebHost(options => options.IncludeRedisHealth = true);
 
 builder.Services.AddDbContext<ClassroomDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
 builder.Services.AddEduPlatformSignalR(builder.Configuration, "ClassroomHub");
 builder.Services.Configure<JitsiOptions>(builder.Configuration.GetSection(JitsiOptions.SectionName));
 builder.Services.AddScoped<IClassroomManagementService, ClassroomManagementService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IClassroomCommunityService, ClassroomCommunityService>();
 
 var app = builder.Build();
 app.UseEduPlatformPipeline();

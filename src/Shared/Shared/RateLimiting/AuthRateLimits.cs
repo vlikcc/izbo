@@ -19,6 +19,7 @@ public static class AuthRateLimits
     public const string Login = "auth-login";
     public const string Registration = "auth-registration";
     public const string Refresh = "auth-refresh";
+    public const string ForgotPassword = "auth-forgot-password";
 
     /// <summary>
     /// Registers the credential-endpoint policies, counting in Redis when a connection string is given so
@@ -39,6 +40,7 @@ public static class AuthRateLimits
             AddPolicy(options, Login, new RedisRateLimitOptions("rl:login", PermitLimit: 10, TimeSpan.FromMinutes(5)));
             AddPolicy(options, Registration, new RedisRateLimitOptions("rl:register", PermitLimit: 5, TimeSpan.FromMinutes(15)));
             AddPolicy(options, Refresh, new RedisRateLimitOptions("rl:refresh", PermitLimit: 30, TimeSpan.FromMinutes(5)));
+            AddPolicy(options, ForgotPassword, new RedisRateLimitOptions("rl:forgot", PermitLimit: 5, TimeSpan.FromMinutes(15)));
         });
 
         return services;

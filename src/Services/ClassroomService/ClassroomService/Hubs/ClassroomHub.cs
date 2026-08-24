@@ -19,15 +19,18 @@ public class ClassroomHub : Hub
 
     private readonly IClassroomManagementService _classroomService;
     private readonly ISessionService _sessionService;
+    private readonly IClassroomCommunityService _community;
     private readonly ILogger<ClassroomHub> _logger;
 
     public ClassroomHub(
         IClassroomManagementService classroomService,
         ISessionService sessionService,
+        IClassroomCommunityService community,
         ILogger<ClassroomHub> logger)
     {
         _classroomService = classroomService;
         _sessionService = sessionService;
+        _community = community;
         _logger = logger;
     }
 
@@ -76,6 +79,7 @@ public class ClassroomHub : Hub
 
         var group = SessionGroup(sessionId);
         await AddToGroupAsync(group);
+        await _community.RecordJoinAsync(sessionGuid, caller.UserId, Context.ConnectionAborted);
 
         await Clients.Group(group).SendAsync("ParticipantJoined", new
         {
@@ -89,14 +93,34 @@ public class ClassroomHub : Hub
 
     public async Task LeaveSession(string sessionId)
     {
+        var caller = Caller();
+        var sessionGuid = ParseId(sessionId);
         var group = SessionGroup(sessionId);
+        await _community.RecordLeaveAsync(sessionGuid, caller.UserId, Context.ConnectionAborted);
         await RemoveFromGroupAsync(group);
 
         await Clients.Group(group).SendAsync("ParticipantLeft", new
         {
-            userId = Caller().UserId,
+            userId = caller.UserId,
             leftAt = DateTime.UtcNow
         });
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        if (Context.User.TryGetCaller(out var caller))
+        {
+            foreach (var group in JoinedGroups.ToArray())
+            {
+                if (group.StartsWith("session_", StringComparison.Ordinal)
+                    && Guid.TryParse(group["session_".Length..], out var sessionId))
+                {
+                    await _community.RecordLeaveAsync(sessionId, caller.UserId, Context.ConnectionAborted);
+                }
+            }
+        }
+
+        await base.OnDisconnectedAsync(exception);
     }
 
     public Task SendMessage(string sessionId, string message)

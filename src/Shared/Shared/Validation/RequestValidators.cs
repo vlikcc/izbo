@@ -76,6 +76,62 @@ public sealed class UpdateRoleRequestValidator : AbstractValidator<UpdateRoleReq
     }
 }
 
+public sealed class ForgotPasswordRequestValidator : AbstractValidator<ForgotPasswordRequest>
+{
+    public ForgotPasswordRequestValidator()
+    {
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+    }
+}
+
+public sealed class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
+{
+    public ResetPasswordRequestValidator()
+    {
+        RuleFor(x => x.Token).NotEmpty();
+        RuleFor(x => x.Password)
+            .Custom((password, context) =>
+            {
+                var error = PasswordPolicy.Validate(password);
+                if (error is not null)
+                {
+                    context.AddFailure(error);
+                }
+            });
+    }
+}
+
+public sealed class VerifyEmailRequestValidator : AbstractValidator<VerifyEmailRequest>
+{
+    public VerifyEmailRequestValidator()
+    {
+        RuleFor(x => x.Token).NotEmpty();
+    }
+}
+
+public sealed class CreateAnnouncementRequestValidator : AbstractValidator<CreateAnnouncementRequest>
+{
+    public CreateAnnouncementRequestValidator()
+    {
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Body).NotEmpty().MaximumLength(8000);
+    }
+}
+
+public sealed class CreateCommentRequestValidator : AbstractValidator<CreateCommentRequest>
+{
+    public CreateCommentRequestValidator()
+    {
+        RuleFor(x => x.TargetType)
+            .NotEmpty()
+            .MaximumLength(32)
+            .Must(static t => t is "Announcement" or "Homework" or "Session")
+            .WithMessage("TargetType must be Announcement, Homework, or Session.");
+        RuleFor(x => x.TargetId).NotEmpty();
+        RuleFor(x => x.Body).NotEmpty().MaximumLength(4000);
+    }
+}
+
 public sealed class CreateClassroomRequestValidator : AbstractValidator<CreateClassroomRequest>
 {
     public CreateClassroomRequestValidator()

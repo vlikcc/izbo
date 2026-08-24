@@ -159,4 +159,26 @@ public class UsersController : ControllerBase
         var result = await _userService.GetUserStatsAsync(cancellationToken);
         return Ok(new ApiResponse<Dictionary<UserRole, int>>(true, result));
     }
+
+    [HttpGet("me/export")]
+    public async Task<IActionResult> ExportMe(CancellationToken cancellationToken)
+    {
+        var result = await _userService.ExportUserAsync(Caller.UserId, cancellationToken);
+        if (result is null)
+        {
+            return NotFound();
+        }
+
+        return File(
+            System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(result),
+            "application/json",
+            "eduplatform-verilerim.json");
+    }
+
+    [HttpDelete("me")]
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteMe(CancellationToken cancellationToken)
+    {
+        var ok = await _userService.DeleteOwnAccountAsync(Caller.UserId, cancellationToken);
+        return Ok(new ApiResponse<bool>(ok, ok, ok ? "Hesap silindi" : "Hesap silinemedi"));
+    }
 }

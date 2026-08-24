@@ -19,6 +19,9 @@ public class User
     public string? PhoneNumber { get; set; }
     public string? ProfileImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool EmailVerified { get; set; }
+    public DateTime? EmailVerifiedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 

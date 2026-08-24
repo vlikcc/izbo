@@ -80,6 +80,11 @@ public class AuthEnumerationTests
             })
             .Build();
 
-        return new AuthenticationService(db, configuration, NullLogger<AuthenticationService>.Instance);
+        return new AuthenticationService(
+            db,
+            configuration,
+            new NullAccountEmailService(),
+            new NullAuditLogger(),
+            NullLogger<AuthenticationService>.Instance);
     }
 }

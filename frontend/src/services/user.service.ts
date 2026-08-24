@@ -64,10 +64,11 @@ export const userService = {
     },
 
     async deleteMyAccount(): Promise<void> {
-        const response = await api.delete<ApiResponse<boolean>>('/api/users/me');
-        if (!response.data.success) {
-            throw new Error(response.data.message || 'Hesap silinemedi');
+        const userResponse = await api.delete<ApiResponse<boolean>>('/api/users/me');
+        if (!userResponse.data.success) {
+            throw new Error(userResponse.data.message || 'Hesap silinemedi');
         }
+        await api.delete<ApiResponse<boolean>>('/api/auth/me');
     },
 };
 

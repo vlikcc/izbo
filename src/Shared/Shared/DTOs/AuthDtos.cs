@@ -17,3 +17,6 @@ public record PublicUserDto(Guid Id, string FirstName, string LastName, string R
 public record UpdateUserRequest(string? FirstName, string? LastName, string? PhoneNumber, string? ProfileImageUrl);
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 public record UpdateRoleRequest(string Role);
+public record ForgotPasswordRequest(string Email);
+public record ResetPasswordRequest(string Token, string Password);
+public record VerifyEmailRequest(string Token);
