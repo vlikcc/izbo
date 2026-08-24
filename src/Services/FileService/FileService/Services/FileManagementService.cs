@@ -10,16 +10,31 @@ namespace FileService.Services;
 
 public interface IFileManagementService
 {
-    Task<FileUploadResponse> UploadFileAsync(Stream fileStream, string fileName, string contentType, FileType type, Guid uploadedBy, Guid? entityId = null, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Stores an already validated upload. Returns <c>null</c> when <paramref name="entityId"/> names a
+    /// classroom the caller is not a member of, since attaching a file there would publish it to that
+    /// classroom.
+    /// </summary>
+    Task<FileUploadResponse?> UploadFileAsync(Stream fileStream, string fileName, UploadValidation validation, Caller caller, Guid? entityId = null, CancellationToken cancellationToken = default);
+
     Task<FileDto?> GetFileAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
     Task<List<FileDto>?> GetFilesByEntityAsync(Guid entityId, Caller caller, CancellationToken cancellationToken = default);
     Task<PresignedUrlResponse?> GetPresignedDownloadUrlAsync(Guid fileId, Caller caller, int expiresMinutes = 60, CancellationToken cancellationToken = default);
     Task<bool> DeleteFileAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
-    Task<FileDownload?> DownloadFileAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Metadata for serving a file, with a callback that copies its bytes to a destination when the
+    /// response is ready for them.
+    /// </summary>
+    Task<FileDownload?> OpenDownloadAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
 }
 
-/// <summary>A file's bytes together with the metadata needed to serve them.</summary>
-public sealed record FileDownload(Stream Content, string ContentType, string FileName);
+/// <summary>What a caller needs to serve a stored file without ever holding all of it.</summary>
+public sealed record FileDownload(
+    string ContentType,
+    string FileName,
+    long Size,
+    Func<Stream, CancellationToken, Task> CopyToAsync);
 
 public class FileManagementService : IFileManagementService
 {
@@ -45,16 +60,27 @@ public class FileManagementService : IFileManagementService
         _bucketName = configuration["MinIO:BucketName"] ?? "eduplatform";
     }
 
-    public async Task<FileUploadResponse> UploadFileAsync(
+    public async Task<FileUploadResponse?> UploadFileAsync(
         Stream fileStream,
         string fileName,
-        string contentType,
-        FileType type,
-        Guid uploadedBy,
+        UploadValidation validation,
+        Caller caller,
         Guid? entityId = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(fileStream);
+        ArgumentNullException.ThrowIfNull(caller);
+
+        // An entity id is a classroom id, and files carrying one are readable by that classroom. Without
+        // this check a student could plant a file in any classroom, or read back what one contains by
+        // listing it afterwards.
+        if (entityId.HasValue && !await _classroomAccess.CanViewAsync(entityId.Value, caller, cancellationToken))
+        {
+            _logger.LogWarning(
+                "User {UserId} attempted to attach a file to classroom {ClassroomId} they do not belong to",
+                caller.UserId, entityId.Value);
+            return null;
+        }
 
         var bucketExists = await _minioClient.BucketExistsAsync(
             new BucketExistsArgs().WithBucket(_bucketName), cancellationToken);
@@ -67,24 +93,24 @@ public class FileManagementService : IFileManagementService
 
         // The object key is derived entirely from server-side values. The client's file name is kept in
         // metadata only, so it can never influence the storage layout or escape the prefix.
-        var storagePath = $"{type.ToString().ToLowerInvariant()}/{fileId:N}{StoredFileName.ExtensionOf(fileName)}";
+        var storagePath = $"{validation.Type.ToString().ToLowerInvariant()}/{fileId:N}{StoredFileName.ExtensionOf(fileName)}";
 
         await _minioClient.PutObjectAsync(new PutObjectArgs()
             .WithBucket(_bucketName)
             .WithObject(storagePath)
             .WithStreamData(fileStream)
             .WithObjectSize(fileStream.Length)
-            .WithContentType(contentType), cancellationToken);
+            .WithContentType(validation.ContentType), cancellationToken);
 
         var fileMetadata = new FileMetadata
         {
             Id = fileId,
             FileName = StoredFileName.Sanitize(fileName),
-            ContentType = contentType,
+            ContentType = validation.ContentType,
             Size = fileStream.Length,
             StoragePath = storagePath,
-            Type = type,
-            UploadedBy = uploadedBy,
+            Type = validation.Type,
+            UploadedBy = caller.UserId,
             EntityId = entityId,
             UploadedAt = DateTime.UtcNow
         };
@@ -92,7 +118,7 @@ public class FileManagementService : IFileManagementService
         _context.Files.Add(fileMetadata);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("File {FileId} uploaded by {UserId}", fileId, uploadedBy);
+        _logger.LogInformation("File {FileId} uploaded by {UserId}", fileId, caller.UserId);
 
         return new FileUploadResponse(fileId, fileMetadata.FileName, fileMetadata.Size);
     }
@@ -182,19 +208,19 @@ public class FileManagementService : IFileManagementService
         return true;
     }
 
-    public async Task<FileDownload?> DownloadFileAsync(Guid id, Caller caller, CancellationToken cancellationToken = default)
+    public async Task<FileDownload?> OpenDownloadAsync(Guid id, Caller caller, CancellationToken cancellationToken = default)
     {
         var file = await FindReadableAsync(id, caller, cancellationToken);
         if (file == null) return null;
 
-        var memoryStream = new MemoryStream();
-        await _minioClient.GetObjectAsync(new GetObjectArgs()
-            .WithBucket(_bucketName)
-            .WithObject(file.StoragePath)
-            .WithCallbackStream((stream, ct) => stream.CopyToAsync(memoryStream, ct)), cancellationToken);
-
-        memoryStream.Position = 0;
-        return new FileDownload(memoryStream, file.ContentType, file.FileName);
+        return new FileDownload(
+            file.ContentType,
+            file.FileName,
+            file.Size,
+            (destination, ct) => _minioClient.GetObjectAsync(new GetObjectArgs()
+                .WithBucket(_bucketName)
+                .WithObject(file.StoragePath)
+                .WithCallbackStream((source, streamToken) => source.CopyToAsync(destination, streamToken)), ct));
     }
 
     /// <summary>

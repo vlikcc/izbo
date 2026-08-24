@@ -1,8 +1,9 @@
-using Serilog;
 using FileService.Data;
 using FileService.Services;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Minio;
+using Serilog;
 using Shared.Authorization;
 using Shared.Extensions;
 
@@ -12,6 +13,11 @@ builder.AddEduPlatformLogging();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// The multipart limit defaults below the largest upload the rules allow, which would reject a valid
+// video before the endpoint's own limit could produce a meaningful error.
+builder.Services.Configure<FormOptions>(options =>
+    options.MultipartBodyLengthLimit = FileUploadRules.AbsoluteMaxBytes);
 
 // Database
 builder.Services.AddDbContext<FileDbContext>(options =>

@@ -1,6 +1,7 @@
 using FileService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using Shared.Authorization;
 using Shared.DTOs;
 using Shared.Models;
@@ -34,12 +35,12 @@ public class FilesController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new ApiResponse<FileUploadResponse>(false, null, "No file provided"));
 
-        if (!Enum.TryParse<FileType>(type, ignoreCase: true, out var fileType))
-            fileType = FileType.Other;
+        if (!Enum.TryParse<FileType>(type, ignoreCase: true, out var declaredType))
+            declaredType = FileType.Other;
 
         await using var stream = file.OpenReadStream();
 
-        var validation = await FileUploadRules.ValidateAsync(stream, file.FileName, fileType, file.Length, cancellationToken);
+        var validation = await FileUploadRules.ValidateAsync(stream, file.FileName, declaredType, file.Length, cancellationToken);
         if (!validation.IsValid)
         {
             _logger.LogWarning(
@@ -49,7 +50,14 @@ public class FilesController : ControllerBase
         }
 
         var result = await _fileService.UploadFileAsync(
-            stream, file.FileName, validation.ContentType, fileType, Caller.UserId, entityId, cancellationToken);
+            stream, file.FileName, validation, Caller, entityId, cancellationToken);
+
+        if (result == null)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ApiResponse<FileUploadResponse>(false, null, "You cannot attach files to that classroom"));
+        }
 
         return Ok(new ApiResponse<FileUploadResponse>(true, result, "File uploaded successfully"));
     }
@@ -79,13 +87,24 @@ public class FilesController : ControllerBase
     [HttpGet("{id}/download")]
     public async Task<IActionResult> DownloadFile(Guid id, CancellationToken cancellationToken)
     {
-        var download = await _fileService.DownloadFileAsync(id, Caller, cancellationToken);
+        var download = await _fileService.OpenDownloadAsync(id, Caller, cancellationToken);
         if (download == null)
             return NotFound();
 
-        // Content-Disposition: attachment prevents the browser from rendering an uploaded document
-        // inline, which would let stored HTML or SVG execute in the application's origin.
-        return File(download.Content, download.ContentType, download.FileName);
+        Response.ContentType = download.ContentType;
+        Response.ContentLength = download.Size;
+
+        // `attachment` stops the browser rendering an upload inline, which would let stored markup run in
+        // the application's origin; `nosniff` stops it disregarding the declared type and doing so anyway.
+        Response.Headers.ContentDisposition =
+            new ContentDispositionHeaderValue("attachment") { FileNameStar = download.FileName }.ToString();
+        Response.Headers.XContentTypeOptions = "nosniff";
+
+        // Streamed straight through rather than buffered: files run to hundreds of megabytes, and holding
+        // one per concurrent download in memory is what takes the service down.
+        await download.CopyToAsync(Response.Body, cancellationToken);
+
+        return new EmptyResult();
     }
 
     [HttpGet("{id}/presigned-url")]

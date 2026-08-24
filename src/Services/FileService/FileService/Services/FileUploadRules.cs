@@ -10,13 +10,13 @@ namespace FileService.Services;
 /// </summary>
 public static class FileUploadRules
 {
+    private const long Megabyte = 1024 * 1024;
+
     /// <summary>
-    /// Ceiling enforced by the request size limit. Per-type limits below are stricter; this only stops a
-    /// request from being buffered at all.
+    /// Ceiling enforced on the request itself, matching the most permissive per-type limit. Its job is to
+    /// stop an oversized body from being read at all; the per-type limits below then apply.
     /// </summary>
     public const int AbsoluteMaxBytes = 200 * 1024 * 1024;
-
-    private const long Megabyte = 1024 * 1024;
 
     private static readonly FrozenDictionary<FileType, long> MaxSizeByType = new Dictionary<FileType, long>
     {
@@ -81,18 +81,20 @@ public static class FileUploadRules
                 $"File type '{extension}' is not allowed. Allowed types: {string.Join(", ", AllowedFormats.Keys.Order())}");
         }
 
-        var maxSize = MaxSizeByType.GetValueOrDefault(declaredType, MaxSizeByType[FileType.Other]);
-        if (length > maxSize)
-        {
-            return UploadValidation.Invalid(
-                $"File is too large. The limit for {declaredType} uploads is {maxSize / Megabyte} MB.");
-        }
-
-        // An .mp4 declared as an Image would otherwise be checked against the Image size limit.
-        if (format.Category != declaredType && declaredType != FileType.Other)
+        // The caller's label is accepted only when it agrees with the extension. Everything downstream —
+        // the size limit, the stored content type, the storage prefix — then follows the extension, so
+        // calling an .mp4 an image cannot buy it the image size limit.
+        if (declaredType != FileType.Other && declaredType != format.Category)
         {
             return UploadValidation.Invalid(
                 $"A '{extension}' file cannot be uploaded as {declaredType}; it is a {format.Category} file.");
+        }
+
+        var maxSize = MaxSizeByType[format.Category];
+        if (length > maxSize)
+        {
+            return UploadValidation.Invalid(
+                $"File is too large. The limit for {format.Category} uploads is {maxSize / Megabyte} MB.");
         }
 
         if (!await HasExpectedSignatureAsync(content, format, cancellationToken))
@@ -100,7 +102,7 @@ public static class FileUploadRules
             return UploadValidation.Invalid("The file contents do not match its extension.");
         }
 
-        return UploadValidation.Valid(format.ContentType);
+        return UploadValidation.Valid(format.ContentType, format.Category);
     }
 
     private static async Task<bool> HasExpectedSignatureAsync(
@@ -185,9 +187,13 @@ public static class FileUploadRules
     }
 }
 
-public readonly record struct UploadValidation(bool IsValid, string ContentType, string? Error)
+/// <summary>
+/// The outcome of checking an upload. On success it carries the content type and category the server will
+/// record, both derived from the file's extension and verified against its leading bytes.
+/// </summary>
+public readonly record struct UploadValidation(bool IsValid, string ContentType, FileType Type, string? Error)
 {
-    internal static UploadValidation Valid(string contentType) => new(true, contentType, null);
+    internal static UploadValidation Valid(string contentType, FileType type) => new(true, contentType, type, null);
 
-    internal static UploadValidation Invalid(string error) => new(false, string.Empty, error);
+    internal static UploadValidation Invalid(string error) => new(false, string.Empty, FileType.Other, error);
 }
