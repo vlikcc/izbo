@@ -1,5 +1,6 @@
 using HomeworkService.Data;
 using Microsoft.EntityFrameworkCore;
+using Shared.Audit;
 using Shared.Authorization;
 using Shared.DTOs;
 using Shared.Models;
@@ -23,15 +24,18 @@ public class HomeworkManagementService : IHomeworkManagementService
 {
     private readonly HomeworkDbContext _context;
     private readonly IClassroomAccessClient _classroomAccess;
+    private readonly IAuditLogger _audit;
     private readonly ILogger<HomeworkManagementService> _logger;
 
     public HomeworkManagementService(
         HomeworkDbContext context,
         IClassroomAccessClient classroomAccess,
+        IAuditLogger audit,
         ILogger<HomeworkManagementService> logger)
     {
         _context = context;
         _classroomAccess = classroomAccess;
+        _audit = audit;
         _logger = logger;
     }
 
@@ -324,6 +328,7 @@ public class HomeworkManagementService : IHomeworkManagementService
         submission.Status = SubmissionStatus.Graded;
 
         await _context.SaveChangesAsync(cancellationToken);
+        await _audit.WriteAsync(new AuditRecord("GradeChanged", caller.UserId, "Submission", submissionId.ToString(), $"score={finalScore}"), cancellationToken);
 
         _logger.LogInformation("Submission {SubmissionId} graded: {Score}", submissionId, finalScore);
 

@@ -1,8 +1,8 @@
 using FileService.Data;
 using FileService.Services;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.EntityFrameworkCore;
 using Minio;
+using Shared.Audit;
 using Shared.Authorization;
 using Shared.Extensions;
 
@@ -13,7 +13,7 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = FileUploadRules.AbsoluteMaxBytes);
 
 builder.Services.AddDbContext<FileDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
 var minioUseSsl = builder.Configuration.GetValue<bool>("MinIO:UseSsl");
 builder.Services.AddMinio(configureClient =>
@@ -30,6 +30,7 @@ builder.Services.AddMinio(configureClient =>
 });
 
 builder.Services.AddClassroomAccessClient(builder.Configuration);
+builder.Services.AddEduPlatformAuditLogger();
 builder.Services.AddScoped<IFileManagementService, FileManagementService>();
 
 var app = builder.Build();

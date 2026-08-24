@@ -28,7 +28,7 @@ public class HomeworkOwnershipTests
         await db.Database.EnsureCreatedAsync();
 
         var access = new FakeClassroomAccessClient();
-        var service = new HomeworkManagementService(db, access, NullLogger<HomeworkManagementService>.Instance);
+        var service = new HomeworkManagementService(db, access, new NullAuditLogger(), NullLogger<HomeworkManagementService>.Instance);
         var stranger = new Caller(Guid.NewGuid(), UserRole.Instructor);
 
         var created = await service.CreateHomeworkAsync(

@@ -73,6 +73,16 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL:?FRONTEND_URL is required}
+      OTEL_SERVICE_NAME: authservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      Smtp__Host: ${SMTP_HOST:-}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__From: ${SMTP_FROM:-noreply@eduplatform.local}
+      Smtp__User: ${SMTP_USER:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+      Email__RequireVerification: ${EMAIL_REQUIRE_VERIFICATION:-false}
+      ConnectionStrings__RabbitMQ: ${RABBITMQ_URL:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,6 +114,8 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      OTEL_SERVICE_NAME: userservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -136,6 +148,8 @@ services:
       Frontend__Url: ${FRONTEND_URL}
       Jitsi__AppId: ${JITSI_APP_ID:-}
       Jitsi__AppSecret: ${JITSI_APP_SECRET:-}
+      OTEL_SERVICE_NAME: classroomservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -166,6 +180,8 @@ services:
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
       Services__ClassroomService: http://classroomservice
+      OTEL_SERVICE_NAME: homeworkservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -199,6 +215,8 @@ services:
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
       Services__ClassroomService: http://classroomservice
+      OTEL_SERVICE_NAME: examservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -232,6 +250,8 @@ services:
       Frontend__Url: ${FRONTEND_URL}
       ConnectionStrings__Redis: redis:6379
       Services__ClassroomService: http://classroomservice
+      OTEL_SERVICE_NAME: livesessionservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       classroomservice:
         condition: service_healthy
@@ -264,6 +284,8 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      OTEL_SERVICE_NAME: notificationservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -299,6 +321,8 @@ services:
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
       MinIO__BucketName: ${MINIO_BUCKET:-eduplatform}
       MinIO__UseSsl: "false"
+      OTEL_SERVICE_NAME: fileservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -332,6 +356,8 @@ services:
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
       Api__PublicUrl: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
+      OTEL_SERVICE_NAME: apigateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       authservice:
         condition: service_healthy
@@ -407,6 +433,57 @@ services:
         limits:
           memory: 128M
 
+  rabbitmq:
+    profiles: ["messaging"]
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-eduplatform}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-eduplatform}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  otel-collector:
+    profiles: ["obs"]
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ./deploy/observability/otel-collector.yaml:/etc/otel-collector.yaml:ro
+    networks:
+      - internal
+
+  prometheus:
+    profiles: ["obs"]
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - internal
+
+  grafana:
+    profiles: ["obs"]
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - internal
+
 networks:
   internal:
     driver: bridge
@@ -417,3 +494,6 @@ volumes:
   minio_data:
   caddy_data:
   caddy_config:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:

@@ -7,6 +7,11 @@ namespace Shared.Extensions;
 
 public static class DatabaseExtensions
 {
+    public static void UseEduPlatformNpgsql(this DbContextOptionsBuilder options, string? connectionString)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        options.UseNpgsql(NpgsqlPooling.Apply(connectionString));
+    }
     /// <summary>
     /// Applies pending EF migrations. On PostgreSQL the work is wrapped in an advisory lock so two
     /// instances booting together cannot race the schema.

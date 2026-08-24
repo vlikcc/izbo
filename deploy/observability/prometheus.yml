@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: eduplatform
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - apigateway:8080
+          - authservice:80
+          - userservice:80
+          - classroomservice:80
+          - homeworkservice:80
+          - examservice:80
+          - livesessionservice:80
+          - notificationservice:80
+          - fileservice:80

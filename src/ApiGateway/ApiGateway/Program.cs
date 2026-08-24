@@ -10,6 +10,7 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
+builder.AddEduPlatformTelemetry();
 builder.Services.AddForwardedHeaders();
 
 var ocelotFile = builder.Environment.IsProduction() ? "ocelot.Production.json" : "ocelot.json";
@@ -99,11 +100,13 @@ app.UseSwaggerUI(options =>
 app.UseWebSockets();
 app.UseRouting();
 app.MapEduPlatformHealthChecks();
+app.MapEduPlatformMetrics();
 
 app.UseWhen(
     ctx => !ctx.Request.Path.StartsWithSegments("/health")
         && !ctx.Request.Path.StartsWithSegments("/docs")
-        && !ctx.Request.Path.StartsWithSegments("/swagger"),
+        && !ctx.Request.Path.StartsWithSegments("/swagger")
+        && !ctx.Request.Path.StartsWithSegments("/metrics"),
     branch => branch.UseOcelot().GetAwaiter().GetResult());
 
 app.Run();

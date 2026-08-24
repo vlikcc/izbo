@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -16,6 +25,8 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: Directory.Packages.props
 
       - name: Restore
         run: dotnet restore EduPlatform.sln
@@ -24,7 +35,10 @@ jobs:
         run: dotnet build EduPlatform.sln -c Release --no-restore
 
       - name: Test
-        run: dotnet test tests/EduPlatform.SmokeTests/EduPlatform.SmokeTests.csproj -c Release
+        run: dotnet test EduPlatform.sln -c Release --no-build --collect:"XPlat Code Coverage"
+
+      - name: Vulnerable package scan
+        run: bash scripts/check-vulnerable-packages.sh
 
   frontend:
     runs-on: ubuntu-latest
@@ -44,19 +58,136 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
         env:
           VITE_API_URL: https://api.example.com
 
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Install EF tools
+        run: dotnet tool install --global dotnet-ef --version 10.0.0
+      - name: Validate Auth migrations
+        run: |
+          dotnet ef database update --project src/Services/AuthService/AuthService --connection "Host=localhost;Database=eduplatform_auth;Username=postgres"
+          dotnet ef migrations has-pending-model-changes --project src/Services/AuthService/AuthService
+      - name: Validate User migrations
+        run: |
+          dotnet ef database update --project src/Services/UserService/UserService --connection "Host=localhost;Database=eduplatform_user;Username=postgres"
+          dotnet ef migrations has-pending-model-changes --project src/Services/UserService/UserService
+      - name: Validate Classroom migrations
+        run: |
+          dotnet ef database update --project src/Services/ClassroomService/ClassroomService --connection "Host=localhost;Database=eduplatform_classroom;Username=postgres"
+          dotnet ef migrations has-pending-model-changes --project src/Services/ClassroomService/ClassroomService
+
   docker:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: apigateway
+            file: src/ApiGateway/ApiGateway/Dockerfile
+            context: .
+          - name: authservice
+            file: src/Services/AuthService/AuthService/Dockerfile
+            context: .
+          - name: userservice
+            file: src/Services/UserService/UserService/Dockerfile
+            context: .
+          - name: classroomservice
+            file: src/Services/ClassroomService/ClassroomService/Dockerfile
+            context: .
+          - name: homeworkservice
+            file: src/Services/HomeworkService/HomeworkService/Dockerfile
+            context: .
+          - name: examservice
+            file: src/Services/ExamService/ExamService/Dockerfile
+            context: .
+          - name: livesessionservice
+            file: src/Services/LiveSessionService/LiveSessionService/Dockerfile
+            context: .
+          - name: notificationservice
+            file: src/Services/NotificationService/NotificationService/Dockerfile
+            context: .
+          - name: fileservice
+            file: src/Services/FileService/FileService/Dockerfile
+            context: .
+          - name: frontend
+            file: frontend/Dockerfile
+            context: frontend
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build API Gateway image
-        run: docker build -f src/ApiGateway/ApiGateway/Dockerfile .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build Frontend image
-        run: docker build -f frontend/Dockerfile --build-arg VITE_API_URL=https://api.example.com ./frontend
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: false
+          tags: ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:ci
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=min,scope=${{ matrix.name }}
+          build-args: |
+            VITE_API_URL=https://api.example.com
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:ci
+          format: table
+          exit-code: "1"
+          severity: CRITICAL
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [docker]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish note
+        run: echo "Images are published from the deploy workflow after a successful main build."
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: csharp, javascript
+      - uses: github/codeql-action/analyze@v3

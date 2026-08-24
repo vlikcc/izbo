@@ -2,6 +2,7 @@ using FileService.Data;
 using Microsoft.EntityFrameworkCore;
 using Minio;
 using Minio.DataModel.Args;
+using Shared.Audit;
 using Shared.Authorization;
 using Shared.DTOs;
 using Shared.Models;
@@ -41,6 +42,7 @@ public class FileManagementService : IFileManagementService
     private readonly FileDbContext _context;
     private readonly IMinioClient _minioClient;
     private readonly IClassroomAccessClient _classroomAccess;
+    private readonly IAuditLogger _audit;
     private readonly ILogger<FileManagementService> _logger;
     private readonly string _bucketName;
 
@@ -49,6 +51,7 @@ public class FileManagementService : IFileManagementService
         IMinioClient minioClient,
         IClassroomAccessClient classroomAccess,
         IConfiguration configuration,
+        IAuditLogger audit,
         ILogger<FileManagementService> logger)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -56,6 +59,7 @@ public class FileManagementService : IFileManagementService
         _context = context;
         _minioClient = minioClient;
         _classroomAccess = classroomAccess;
+        _audit = audit;
         _logger = logger;
         _bucketName = configuration["MinIO:BucketName"] ?? "eduplatform";
     }
@@ -203,6 +207,9 @@ public class FileManagementService : IFileManagementService
 
         _context.Files.Remove(file);
         await _context.SaveChangesAsync(cancellationToken);
+        await _audit.WriteAsync(
+            new AuditRecord("FileDeleted", caller.UserId, "File", id.ToString()),
+            cancellationToken);
 
         _logger.LogInformation("File {FileId} deleted by {UserId}", id, caller.UserId);
         return true;

@@ -35,6 +35,11 @@
 		Cross-Origin-Resource-Policy "same-site"
 	}
 
+	# Metrics stay on the internal network; scrape from Prometheus, not the public hostname.
+	handle /metrics* {
+		respond 404
+	}
+
 	reverse_proxy apigateway:8080 {
 		transport http {
 			versions 1.1

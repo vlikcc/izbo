@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformWebHost(options => options.IncludeRedisHealth = true);
 
 builder.Services.AddDbContext<NotificationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
 builder.Services.AddEduPlatformSignalR(builder.Configuration, "NotificationHub");
 builder.Services.AddScoped<INotificationManagementService, NotificationManagementService>();

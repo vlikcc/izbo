@@ -62,6 +62,7 @@ public static class EduPlatformHostExtensions
             "AllowFrontend",
             builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
         builder.Services.AddEduPlatformHealthChecks(builder.Configuration, options.IncludeRedisHealth);
+        builder.AddEduPlatformTelemetry();
 
         return builder;
     }
@@ -98,6 +99,7 @@ public static class EduPlatformHostExtensions
         }
 
         app.MapEduPlatformHealthChecks();
+        app.MapEduPlatformMetrics();
         return app;
     }
 

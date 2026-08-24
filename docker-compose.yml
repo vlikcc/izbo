@@ -73,6 +73,8 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - OTEL_SERVICE_NAME=apigateway
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       - authservice
       - userservice
@@ -102,6 +104,16 @@ services:
       - Seed__Enabled=${SEED_ENABLED:-true}
       - Seed__Email=${SEED_ADMIN_EMAIL:-admin@eduplatform.local}
       - Seed__Password=${SEED_ADMIN_PASSWORD}
+      - OTEL_SERVICE_NAME=authservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      - Smtp__Host=${SMTP_HOST:-}
+      - Smtp__Port=${SMTP_PORT:-587}
+      - Smtp__From=${SMTP_FROM:-noreply@eduplatform.local}
+      - Smtp__User=${SMTP_USER:-}
+      - Smtp__Password=${SMTP_PASSWORD:-}
+      - Smtp__EnableSsl=${SMTP_ENABLE_SSL:-true}
+      - Email__RequireVerification=${EMAIL_REQUIRE_VERIFICATION:-false}
+      - ConnectionStrings__RabbitMQ=${RABBITMQ_URL:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -123,6 +135,8 @@ services:
       - Seed__Enabled=${SEED_ENABLED:-true}
       - Seed__Email=${SEED_ADMIN_EMAIL:-admin@eduplatform.local}
       - Seed__Password=${SEED_ADMIN_PASSWORD}
+      - OTEL_SERVICE_NAME=userservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -142,6 +156,8 @@ services:
       - Frontend__Url=http://localhost:3000
       - Jitsi__AppId=${JITSI_APP_ID:-}
       - Jitsi__AppSecret=${JITSI_APP_SECRET:-}
+      - OTEL_SERVICE_NAME=classroomservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -159,6 +175,8 @@ services:
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
       - Services__ClassroomService=http://classroomservice
+      - OTEL_SERVICE_NAME=homeworkservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -177,6 +195,8 @@ services:
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
       - Services__ClassroomService=http://classroomservice
+      - OTEL_SERVICE_NAME=examservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -195,6 +215,8 @@ services:
       - Frontend__Url=http://localhost:3000
       - ConnectionStrings__Redis=redis:6379
       - Services__ClassroomService=http://classroomservice
+      - OTEL_SERVICE_NAME=livesessionservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
 
   notificationservice:
     build:
@@ -209,6 +231,8 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - OTEL_SERVICE_NAME=notificationservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -230,6 +254,8 @@ services:
       - MinIO__AccessKey=minioadmin
       - MinIO__SecretKey=minioadmin
       - MinIO__BucketName=eduplatform
+      - OTEL_SERVICE_NAME=fileservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -248,8 +274,42 @@ services:
     depends_on:
       - apigateway
 
+  otel-collector:
+    profiles: ["obs"]
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ./deploy/observability/otel-collector.yaml:/etc/otel-collector.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  prometheus:
+    profiles: ["obs"]
+    image: prom/prometheus:v2.55.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    profiles: ["obs"]
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+
 volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
   minio_data:
+  grafana_data:
