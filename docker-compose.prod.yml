@@ -130,8 +130,12 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Subscription__BaseUrl: http://subscriptionservice:80
+      Subscription__FailOpen: "true"
     depends_on:
       postgres:
+        condition: service_healthy
+      subscriptionservice:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
@@ -159,8 +163,12 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Subscription__BaseUrl: http://subscriptionservice:80
+      Subscription__FailOpen: "true"
     depends_on:
       postgres:
+        condition: service_healthy
+      subscriptionservice:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
@@ -189,10 +197,14 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Subscription__BaseUrl: http://subscriptionservice:80
+      Subscription__FailOpen: "true"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      subscriptionservice:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
@@ -218,6 +230,11 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Subscription__BaseUrl: http://subscriptionservice:80
+      Subscription__FailOpen: "true"
+    depends_on:
+      subscriptionservice:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
       interval: 30s
@@ -278,11 +295,44 @@ services:
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
       MinIO__BucketName: ${MINIO_BUCKET:-eduplatform}
       MinIO__UseSsl: "false"
+      Subscription__BaseUrl: http://subscriptionservice:80
+      Subscription__FailOpen: "true"
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_started
+      subscriptionservice:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  subscriptionservice:
+    build:
+      context: .
+      dockerfile: src/Services/SubscriptionService/SubscriptionService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_subscription;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
       interval: 30s
@@ -325,6 +375,8 @@ services:
       notificationservice:
         condition: service_healthy
       fileservice:
+        condition: service_healthy
+      subscriptionservice:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]

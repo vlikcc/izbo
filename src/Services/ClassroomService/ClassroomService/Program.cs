@@ -4,6 +4,7 @@ using ClassroomService.Hubs;
 using ClassroomService.Services;
 using Microsoft.EntityFrameworkCore;
 using Shared.Extensions;
+using Shared.Subscription;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
@@ -32,6 +33,7 @@ builder.Services.AddSignalR();
 // Services
 builder.Services.AddScoped<IClassroomManagementService, ClassroomManagementService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddSubscriptionGuard(builder.Configuration);
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
@@ -49,6 +51,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSubscriptionQuotaExceptions();
 app.MapControllers();
 app.MapHub<ClassroomHub>("/hubs/classroom");
 app.MapHealthChecks("/health");

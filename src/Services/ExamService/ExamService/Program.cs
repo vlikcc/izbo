@@ -4,12 +4,18 @@ using ExamService.Hubs;
 using ExamService.Services;
 using Microsoft.EntityFrameworkCore;
 using Shared.Extensions;
+using Shared.Subscription;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
 
 // Add services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -43,6 +49,7 @@ builder.Services.AddSignalR().AddStackExchangeRedis(builder.Configuration.GetCon
 // Services
 builder.Services.AddScoped<IExamManagementService, ExamManagementService>();
 builder.Services.AddScoped<IExamSessionService, ExamSessionService>();
+builder.Services.AddSubscriptionGuard(builder.Configuration);
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
@@ -60,6 +67,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSubscriptionQuotaExceptions();
 app.MapControllers();
 app.MapHub<ExamHub>("/hubs/exam");
 app.MapHealthChecks("/health");

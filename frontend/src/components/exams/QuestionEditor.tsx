@@ -102,7 +102,7 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({
             orderIndex,
             type,
             content: content.trim(),
-            options: type !== 'ShortAnswer' ? options.filter(o => o.trim()) : undefined,
+            options: type !== 'FillInBlank' ? options.filter(o => o.trim()) : undefined,
             correctAnswer: correctAnswer || undefined,
             points,
             explanation: explanation.trim() || undefined,
@@ -120,7 +120,7 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({
     };
 
     const renderOptions = () => {
-        if (type === 'ShortAnswer') {
+        if (type === 'FillInBlank') {
             return (
                 <div className="question-options">
                     <div className="question-options-title">
@@ -226,7 +226,7 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({
                     }}>
                         {type === 'MultipleChoice' && 'Çoktan Seçmeli'}
                         {type === 'TrueFalse' && 'Doğru/Yanlış'}
-                        {type === 'ShortAnswer' && 'Kısa Cevap'}
+                        {type === 'FillInBlank' && 'Kısa Cevap'}
                     </span>
                     <span style={{ fontWeight: 600, color: 'var(--color-primary-600)' }}>
                         {points} puan
@@ -248,7 +248,7 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({
                 >
                     <option value="MultipleChoice">Çoktan Seçmeli</option>
                     <option value="TrueFalse">Doğru / Yanlış</option>
-                    <option value="ShortAnswer">Kısa Cevap</option>
+                    <option value="FillInBlank">Kısa Cevap</option>
                 </select>
                 <div className="question-points">
                     <span className="question-points-label">Puan:</span>

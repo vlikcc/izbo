@@ -89,7 +89,7 @@ public class ExamSessionController : ControllerBase
     }
 
     [HttpGet("{examId}/active-count")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<int>>> GetActiveCount(Guid examId)
     {
         var count = await _sessionService.GetActiveSessionCountAsync(examId);

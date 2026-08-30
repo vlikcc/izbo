@@ -158,7 +158,7 @@ function parseExcelRow(row: unknown[], columnMap: ColumnMapping, _rowNum: number
     if (typeStr.includes('doğru') || typeStr.includes('yanlış') || typeStr === 'truefalse' || typeStr === 'd/y') {
         type = 'TrueFalse';
     } else if (typeStr.includes('kısa') || typeStr === 'shortanswer' || typeStr === 'açık uçlu') {
-        type = 'ShortAnswer';
+        type = 'FillInBlank';
     }
 
     // Seçenekleri topla
@@ -275,7 +275,7 @@ function parseWordQuestion(block: string): ParsedQuestion | null {
     let content = lines[0];
     const options: string[] = [];
     let correctAnswer = '';
-    let type: QuestionType = 'ShortAnswer';
+    let type: QuestionType = 'FillInBlank';
 
     // Seçenekleri bul
     const optionPattern = /^([A-E])[.)]\s*(.+)$/i;

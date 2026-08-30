@@ -1,5 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
+import { useUpgradeStore } from '../stores/upgradeStore';
+import type { QuotaExceededInfo } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
@@ -27,6 +29,21 @@ api.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+        // Plan/quota limit hit — surface the upgrade modal instead of a generic error toast.
+        if (error.response?.status === 402) {
+            const body = error.response.data as Partial<QuotaExceededInfo> | undefined;
+            useUpgradeStore.getState().open({
+                message: body?.message || 'Planınızın kotasını doldurdunuz.',
+                errorCode: 'QUOTA_EXCEEDED',
+                metric: body?.metric,
+                featureCode: body?.featureCode,
+                limit: body?.limit,
+                current: body?.current,
+                upgradeUrl: body?.upgradeUrl || '/app/billing',
+            });
+            return Promise.reject(error);
+        }
 
         // If 401 and not already retrying, try to refresh token
         if (error.response?.status === 401 && !originalRequest._retry) {

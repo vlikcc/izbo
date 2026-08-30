@@ -5,8 +5,24 @@
 ## Mimari
 
 - **API Gateway** — JWT doğrulama, rate limiting, Ocelot yönlendirme
-- **Servisler** — Auth, User, Classroom, Homework, Exam, Live Session, Notification, File
+- **Servisler** — Auth, User, Classroom, Homework, Exam, Live Session, Notification, File, Subscription
 - **Altyapı** — PostgreSQL (servis başına DB), Redis (Exam cache/SignalR), MinIO (dosyalar)
+
+### Abonelik / kota katmanı
+
+**SubscriptionService** plan kataloğunu (Free/Pro/Kurumsal), abonelikleri, kullanım sayaçlarını ve
+kurumları (`Organization`) yönetir. `/api/plans` herkese açık; `/api/subscriptions/*` ve
+`/api/organizations/*` JWT gerektirir; `/api/admin/*` Admin/SuperAdmin ister. `/api/internal/*`
+gateway’den **geçirilmez**, yalnızca docker ağı içinden diğer servislerin ulaştığı uçlardır.
+
+Classroom/Exam/Homework/LiveSession/File servisleri `Shared.Subscription.IQuotaGuard` üzerinden
+kota kontrolü yapar (bkz. `src/Shared/Shared/Subscription/`). SubscriptionService'e ulaşılamazsa
+istekler **fail-open** olarak geçer (`Subscription__FailOpen=true`) — faturalama kesintisi dersleri
+durdurmaz. Kota aşımı `402 Payment Required` + `errorCode: QUOTA_EXCEEDED` olarak döner.
+
+Bu fazda gerçek ödeme sağlayıcısı yok: abonelikler admin panelinden (`/api/admin/orders/{id}/mark-paid`)
+manuel onaylanır. İleride bir ödeme sağlayıcısı eklemek `IPaymentProvider` arkasına yeni bir
+implementasyon yazmaktan ibarettir.
 
 SignalR hub’ları (Classroom, Notification) production MVP’de **tek instance** için yapılandırılmıştır. Yatay ölçek için Redis backplane eklenmelidir (ExamService’te mevcut).
 
@@ -121,6 +137,14 @@ Servisler açılışta `Database.Migrate()` çalıştırır. Yeni migration:
 ```bash
 dotnet ef migrations add <Name> --project src/Services/<Service>/<Service>.csproj
 ```
+
+> **Not:** `POSTGRES_MULTIPLE_DATABASES` yalnızca `postgres_data` volume'ü **ilk kez** oluşturulurken
+> `scripts/init-db.sh` tarafından işlenir. SubscriptionService'i mevcut bir geliştirme ortamına
+> ekliyorsanız (yani `postgres_data` volume'ü zaten varsa), veritabanını elle oluşturun:
+> ```bash
+> docker compose exec postgres psql -U postgres -c "CREATE DATABASE eduplatform_subscription;"
+> docker compose up -d --build subscriptionservice
+> ```
 
 ## Güvenlik notları
 

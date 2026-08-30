@@ -1,0 +1,166 @@
+.billing-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.billing-title {
+    font-size: var(--font-size-2xl);
+    color: var(--color-gray-900);
+}
+
+.billing-banner {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+}
+
+.billing-banner.success {
+    background: #EBFBEE;
+    color: #2B8A3E;
+}
+
+.billing-banner.error {
+    background: var(--color-primary-50);
+    color: var(--color-primary-800);
+}
+
+.billing-plan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.billing-plan-name {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin-right: var(--space-3);
+}
+
+.billing-status-badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+}
+
+.billing-status-badge.status-trialing {
+    background: #FFF9DB;
+    color: #E67700;
+}
+
+.billing-status-badge.status-active {
+    background: #EBFBEE;
+    color: #2B8A3E;
+}
+
+.billing-status-badge.status-pastdue,
+.billing-status-badge.status-expired {
+    background: var(--color-primary-50);
+    color: var(--color-primary-800);
+}
+
+.billing-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-500);
+}
+
+.billing-period {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    margin-bottom: var(--space-2);
+}
+
+.billing-trial-note {
+    font-size: var(--font-size-sm);
+    color: var(--color-warning);
+    margin-bottom: var(--space-4);
+}
+
+.billing-usage-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin: var(--space-5) 0;
+}
+
+.billing-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.billing-plan-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.billing-plan-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-gray-50);
+    border-radius: var(--radius-md);
+}
+
+.billing-org-name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-4);
+}
+
+.billing-member-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+}
+
+.billing-member-list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-gray-50);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+}
+
+.billing-org-role {
+    color: var(--color-gray-500);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+}
+
+.billing-remove-member {
+    margin-left: auto;
+    border: none;
+    background: none;
+    color: var(--color-primary-700);
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+}
+
+.billing-add-member {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+}
+
+.billing-add-member .input-wrapper {
+    flex: 1;
+}

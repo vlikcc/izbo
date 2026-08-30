@@ -56,6 +56,7 @@ export const LandingPage: React.FC = () => {
                     <div className="landing-nav-links">
                         <a href="#features">Özellikler</a>
                         <a href="#how-it-works">Nasıl Çalışır</a>
+                        <Link to="/pricing">Fiyatlandırma</Link>
                     </div>
                     <div className="landing-nav-actions">
                         <Link to="/login">

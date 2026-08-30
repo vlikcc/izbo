@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Shared.Subscription;
 using System.Security.Claims;
 
 namespace ExamService.Hubs;
@@ -7,6 +8,7 @@ namespace ExamService.Hubs;
 [Authorize]
 public class ExamHub : Hub
 {
+    private readonly IQuotaGuard _quotaGuard;
     private readonly ILogger<ExamHub> _logger;
 
     // In-memory store for active quizzes (in production, use Redis or database)
@@ -14,8 +16,9 @@ public class ExamHub : Hub
     private static readonly Dictionary<string, string> _quizCodes = new(); // code -> examId
     private static readonly Dictionary<string, List<QuizParticipant>> _participants = new();
 
-    public ExamHub(ILogger<ExamHub> logger)
+    public ExamHub(IQuotaGuard quotaGuard, ILogger<ExamHub> logger)
     {
+        _quotaGuard = quotaGuard;
         _logger = logger;
     }
 
@@ -82,8 +85,17 @@ public class ExamHub : Hub
     // Presenter: Start a live quiz session
     public async Task<string> StartLiveQuiz(string examId)
     {
+        try
+        {
+            await _quotaGuard.EnsureFeatureAsync("live_quiz");
+        }
+        catch (QuotaExceededException ex)
+        {
+            throw new HubException(ex.Message);
+        }
+
         var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+
         // Generate a 6-character quiz code
         var code = GenerateQuizCode();
         while (_quizCodes.ContainsKey(code))

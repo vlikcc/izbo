@@ -241,7 +241,7 @@ export const LiveQuizPresenterPage: React.FC = () => {
                             <div className="question-type-badge">
                                 {currentQuestion.type === 'MultipleChoice' && '📝 Çoktan Seçmeli'}
                                 {currentQuestion.type === 'TrueFalse' && '✓✗ Doğru/Yanlış'}
-                                {currentQuestion.type === 'ShortAnswer' && '✏️ Kısa Cevap'}
+                                {currentQuestion.type === 'FillInBlank' && '✏️ Kısa Cevap'}
                             </div>
                             <div className="question-text-presenter">
                                 {currentQuestion.content}

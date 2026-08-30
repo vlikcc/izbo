@@ -1,6 +1,7 @@
 using Serilog;
 using LiveSessionService.Hubs;
 using Shared.Extensions;
+using Shared.Subscription;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
@@ -29,6 +30,8 @@ builder.Services.AddSignalR(options =>
     options.MaximumReceiveMessageSize = 102400; // 100KB for WebRTC signaling
 });
 
+builder.Services.AddSubscriptionGuard(builder.Configuration);
+
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
 
@@ -46,6 +49,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSubscriptionQuotaExceptions();
 app.MapControllers();
 app.MapHub<LiveSessionHub>("/hubs/live");
 app.MapHealthChecks("/health");

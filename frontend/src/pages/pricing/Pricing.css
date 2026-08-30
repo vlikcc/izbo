@@ -1,0 +1,186 @@
+.pricing-page {
+    min-height: 100vh;
+    background: var(--color-gray-50);
+}
+
+.pricing-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-8);
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.pricing-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    text-decoration: none;
+}
+
+.pricing-nav-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.pricing-header {
+    text-align: center;
+    padding: var(--space-16) var(--space-4) var(--space-8);
+}
+
+.pricing-header h1 {
+    font-size: var(--font-size-4xl);
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-3);
+}
+
+.pricing-header p {
+    font-size: var(--font-size-lg);
+    color: var(--color-gray-600);
+    margin-bottom: var(--space-8);
+}
+
+.pricing-cycle-toggle {
+    display: inline-flex;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-full);
+    padding: var(--space-1);
+    gap: var(--space-1);
+}
+
+.pricing-cycle-toggle button {
+    border: none;
+    background: transparent;
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-gray-600);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.pricing-cycle-toggle button.active {
+    background: var(--color-primary-600);
+    color: var(--color-white);
+}
+
+.pricing-cycle-badge {
+    font-size: var(--font-size-xs);
+    background: var(--color-success);
+    color: var(--color-white);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+}
+
+.pricing-loading {
+    text-align: center;
+    padding: var(--space-16);
+    color: var(--color-gray-500);
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 var(--space-8) var(--space-16);
+}
+
+.pricing-card {
+    position: relative;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.pricing-card.popular {
+    border-color: var(--color-primary-500);
+    box-shadow: var(--shadow-primary);
+}
+
+.pricing-card-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-primary-600);
+    color: var(--color-white);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    padding: var(--space-1) var(--space-4);
+    border-radius: var(--radius-full);
+}
+
+.pricing-card-name {
+    font-size: var(--font-size-xl);
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-2);
+}
+
+.pricing-card-desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-500);
+    margin-bottom: var(--space-5);
+    min-height: 40px;
+}
+
+.pricing-card-price {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    margin-bottom: var(--space-6);
+}
+
+.pricing-card-amount {
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
+    color: var(--color-gray-900);
+}
+
+.pricing-card-period {
+    color: var(--color-gray-500);
+    font-size: var(--font-size-sm);
+}
+
+.pricing-card-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-8);
+    flex: 1;
+}
+
+.pricing-card-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-700);
+    text-transform: capitalize;
+}
+
+.pricing-check {
+    color: var(--color-success);
+    font-weight: 700;
+}

@@ -4,6 +4,8 @@ import { Button } from '../../components/ui';
 import { QuestionEditor } from '../../components/exams/QuestionEditor';
 import { FileImportModal } from '../../components/exams/FileImportModal';
 import { examService } from '../../services/exam.service';
+import { useSubscriptionStore } from '../../stores/subscriptionStore';
+import { useUpgradeStore } from '../../stores/upgradeStore';
 import type { Exam, Question, CreateQuestionRequest } from '../../types';
 import './ExamBuilder.css';
 
@@ -18,6 +20,8 @@ export const ExamBuilderPage: React.FC = () => {
     const [isPublishing, setIsPublishing] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const hasQuestionImport = useSubscriptionStore((s) => s.hasFeature('question_import'));
+    const openUpgradeModal = useUpgradeStore((s) => s.open);
 
     useEffect(() => {
         if (id) {
@@ -63,29 +67,21 @@ export const ExamBuilderPage: React.FC = () => {
         if (!id) return;
 
         setIsImporting(true);
-        let successCount = 0;
-        const newQuestions: Question[] = [];
-
-        for (const q of importedQuestions) {
-            try {
-                const newQuestion = await examService.addQuestion(id, {
-                    ...q,
-                    orderIndex: questions.length + successCount + 1,
-                });
-                newQuestions.push(newQuestion);
-                successCount++;
-            } catch (error) {
-                console.error('Failed to add question:', error);
-            }
-        }
-
-        setQuestions([...questions, ...newQuestions]);
-        setIsImporting(false);
-
-        if (successCount > 0) {
-            alert(`${successCount} soru başarıyla içe aktarıldı!`);
-        } else {
+        try {
+            const requests = importedQuestions.map((q, i) => ({
+                ...q,
+                orderIndex: questions.length + i + 1,
+            }));
+            const newQuestions = await examService.importQuestions(id, requests);
+            setQuestions([...questions, ...newQuestions]);
+            alert(`${newQuestions.length} soru başarıyla içe aktarıldı!`);
+        } catch (error) {
+            console.error('Failed to import questions:', error);
+            // A 402 (quota/feature limit) is already surfaced globally via the upgrade modal;
+            // this alert covers any other failure.
             alert('Sorular içe aktarılırken bir hata oluştu.');
+        } finally {
+            setIsImporting(false);
         }
     };
 
@@ -193,10 +189,21 @@ export const ExamBuilderPage: React.FC = () => {
                                 <Button
                                     variant="secondary"
                                     size="md"
-                                    onClick={() => setIsImportModalOpen(true)}
+                                    onClick={() => {
+                                        if (!hasQuestionImport) {
+                                            openUpgradeModal({
+                                                message: 'Dosyadan soru içe aktarma özelliği mevcut planınızda bulunmuyor.',
+                                                errorCode: 'QUOTA_EXCEEDED',
+                                                featureCode: 'question_import',
+                                                upgradeUrl: '/app/billing',
+                                            });
+                                            return;
+                                        }
+                                        setIsImportModalOpen(true);
+                                    }}
                                     isLoading={isImporting}
                                 >
-                                    📁 Dosyadan İçe Aktar
+                                    {hasQuestionImport ? '📁 Dosyadan İçe Aktar' : '🔒 Dosyadan İçe Aktar'}
                                 </Button>
                                 <Button
                                     variant="primary"

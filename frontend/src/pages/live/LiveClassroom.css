@@ -167,6 +167,43 @@
     font-weight: 600;
 }
 
+.sidebar-tabs {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.sidebar-tab {
+    position: relative;
+    padding: 0.35rem 0.75rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sidebar-tab.active {
+    background: #2e3038;
+    color: #fff;
+}
+
+.live-sidebar.sidebar-hidden {
+    display: none;
+}
+
+.sidebar-tab.has-badge::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+}
+
 .chat-messages {
     flex: 1;
     padding: 1rem;
@@ -221,22 +258,8 @@
     cursor: pointer;
 }
 
-/* Bottom Controls */
-.controls-bar {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(30, 30, 35, 0.9);
-    padding: 0.75rem 1.5rem;
-    border-radius: 1rem;
-    display: flex;
-    gap: 1rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-    z-index: 50;
-    backdrop-filter: blur(10px);
-}
-
+/* Bottom Controls — the bar itself is now a <FloatingToolbar> (see FloatingToolbar.css);
+   this file only styles the individual buttons inside it. */
 .control-btn {
     background-color: #374151;
     border: none;

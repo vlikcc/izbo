@@ -238,7 +238,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                                         <span className="preview-question-type">
                                             {q.type === 'MultipleChoice' && '📝 Çoktan Seçmeli'}
                                             {q.type === 'TrueFalse' && '✓✗ Doğru/Yanlış'}
-                                            {q.type === 'ShortAnswer' && '✏️ Kısa Cevap'}
+                                            {q.type === 'FillInBlank' && '✏️ Kısa Cevap'}
                                         </span>
                                         <span className="preview-question-points">{q.points} puan</span>
                                         <button

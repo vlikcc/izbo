@@ -108,6 +108,59 @@ public class ClassroomHub : Hub
         await Clients.Group($"session_{sessionId}").SendAsync("HandLowered", new { userId });
     }
 
+    // Whiteboard — only the instructor draws, everyone else views. Diffs are tldraw store
+    // changes (added/updated/removed records) forwarded as-is; late joiners get a full
+    // snapshot pushed directly to them by the instructor's client (see SendWhiteboardSnapshot).
+    public async Task SendWhiteboardDiff(string sessionId, string diffJson)
+    {
+        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
+        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+            return;
+
+        await Clients.OthersInGroup($"session_{sessionId}").SendAsync("WhiteboardDiff", diffJson);
+    }
+
+    public async Task SendWhiteboardSnapshot(string sessionId, string toUserId, string snapshotJson)
+    {
+        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
+        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+            return;
+
+        await Clients.User(toUserId).SendAsync("WhiteboardSnapshot", snapshotJson);
+    }
+
+    // Live-quiz bridge — the quiz itself (questions, answers, scoring) runs entirely over
+    // ExamHub/liveQuizHub in ExamService; this just tells everyone already in the room that a
+    // quiz has started so students can auto-join with the code instead of typing it in.
+    public async Task NotifyQuizStarted(string sessionId, string examId, string quizCode)
+    {
+        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
+        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+            return;
+
+        await Clients.Group($"session_{sessionId}").SendAsync("QuizStarted", new { examId, quizCode });
+    }
+
+    // Catches up a student who joins the room after the quiz already started (the group
+    // broadcast above only reaches whoever was connected at that moment).
+    public async Task NotifyQuizStartedTo(string toUserId, string examId, string quizCode)
+    {
+        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
+        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+            return;
+
+        await Clients.User(toUserId).SendAsync("QuizStarted", new { examId, quizCode });
+    }
+
+    public async Task NotifyQuizEnded(string sessionId)
+    {
+        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
+        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+            return;
+
+        await Clients.Group($"session_{sessionId}").SendAsync("QuizEnded");
+    }
+
     // WebRTC Signaling
     public async Task SendOffer(string sessionId, string toUserId, string offer)
     {

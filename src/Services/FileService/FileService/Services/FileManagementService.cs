@@ -4,6 +4,7 @@ using Minio;
 using Minio.DataModel.Args;
 using Shared.DTOs;
 using Shared.Models;
+using Shared.Subscription;
 
 namespace FileService.Services;
 
@@ -23,6 +24,7 @@ public class FileManagementService : IFileManagementService
     private readonly FileDbContext _context;
     private readonly IMinioClient _minioClient;
     private readonly IConfiguration _configuration;
+    private readonly IQuotaGuard _quotaGuard;
     private readonly ILogger<FileManagementService> _logger;
     private readonly string _bucketName;
 
@@ -30,17 +32,23 @@ public class FileManagementService : IFileManagementService
         FileDbContext context,
         IMinioClient minioClient,
         IConfiguration configuration,
+        IQuotaGuard quotaGuard,
         ILogger<FileManagementService> logger)
     {
         _context = context;
         _minioClient = minioClient;
         _configuration = configuration;
+        _quotaGuard = quotaGuard;
         _logger = logger;
         _bucketName = _configuration["MinIO:BucketName"] ?? "eduplatform";
     }
 
+    private static long ToMegabytes(long bytes) => Math.Max(1, (long)Math.Ceiling(bytes / (1024.0 * 1024.0)));
+
     public async Task<FileUploadResponse> UploadFileAsync(Stream fileStream, string fileName, string contentType, FileType type, Guid uploadedBy, Guid? entityId = null)
     {
+        await _quotaGuard.TryConsumeAsync(QuotaMetric.StorageMegabytes, ToMegabytes(fileStream.Length));
+
         // Ensure bucket exists
         var bucketExists = await _minioClient.BucketExistsAsync(new BucketExistsArgs().WithBucket(_bucketName));
         if (!bucketExists)
@@ -139,6 +147,8 @@ public class FileManagementService : IFileManagementService
 
         _context.Files.Remove(file);
         await _context.SaveChangesAsync();
+
+        await _quotaGuard.ReleaseAsync(QuotaMetric.StorageMegabytes, ToMegabytes(file.Size));
 
         _logger.LogInformation("File {FileId} deleted", id);
         return true;

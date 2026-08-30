@@ -2,6 +2,7 @@ using HomeworkService.Data;
 using Microsoft.EntityFrameworkCore;
 using Shared.DTOs;
 using Shared.Models;
+using Shared.Subscription;
 
 namespace HomeworkService.Services;
 
@@ -22,16 +23,20 @@ public interface IHomeworkManagementService
 public class HomeworkManagementService : IHomeworkManagementService
 {
     private readonly HomeworkDbContext _context;
+    private readonly IQuotaGuard _quotaGuard;
     private readonly ILogger<HomeworkManagementService> _logger;
 
-    public HomeworkManagementService(HomeworkDbContext context, ILogger<HomeworkManagementService> logger)
+    public HomeworkManagementService(HomeworkDbContext context, IQuotaGuard quotaGuard, ILogger<HomeworkManagementService> logger)
     {
         _context = context;
+        _quotaGuard = quotaGuard;
         _logger = logger;
     }
 
     public async Task<HomeworkDto?> CreateHomeworkAsync(CreateHomeworkRequest request)
     {
+        await _quotaGuard.TryConsumeAsync(QuotaMetric.HomeworksCreated);
+
         var homework = new Homework
         {
             Id = Guid.NewGuid(),

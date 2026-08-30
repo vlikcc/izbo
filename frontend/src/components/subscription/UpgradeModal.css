@@ -1,0 +1,52 @@
+.upgrade-modal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-3);
+}
+
+.upgrade-modal-icon {
+    font-size: 40px;
+    line-height: 1;
+    margin-bottom: var(--space-1);
+}
+
+.upgrade-modal-message {
+    font-size: var(--font-size-base);
+    color: var(--color-gray-800);
+    font-weight: 600;
+}
+
+.upgrade-modal-detail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-gray-50);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+}
+
+.upgrade-modal-detail strong {
+    color: var(--color-primary-700);
+}
+
+.upgrade-modal-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-500);
+    line-height: 1.5;
+}
+
+.upgrade-modal-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    width: 100%;
+}
+
+.upgrade-modal-actions .btn {
+    flex: 1;
+}

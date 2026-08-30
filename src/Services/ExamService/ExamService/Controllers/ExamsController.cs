@@ -21,7 +21,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<ExamDto>>> CreateExam([FromBody] CreateExamRequest request)
     {
         var instructorId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -55,7 +55,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<ExamDto>>> UpdateExam(Guid id, [FromBody] UpdateExamRequest request)
     {
         var result = await _examService.UpdateExamAsync(id, request);
@@ -67,7 +67,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteExam(Guid id)
     {
         var result = await _examService.DeleteExamAsync(id);
@@ -79,7 +79,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPost("{id}/publish")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<bool>>> PublishExam(Guid id)
     {
         var result = await _examService.PublishExamAsync(id);
@@ -91,7 +91,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpGet("{id}/questions")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<List<QuestionWithAnswerDto>>>> GetQuestions(Guid id)
     {
         var result = await _examService.GetQuestionsAsync(id);
@@ -99,7 +99,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPost("{id}/questions")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<QuestionWithAnswerDto>>> AddQuestion(Guid id, [FromBody] CreateQuestionRequest request)
     {
         var result = await _examService.AddQuestionAsync(id, request);
@@ -110,8 +110,16 @@ public class ExamsController : ControllerBase
         return Ok(new ApiResponse<QuestionWithAnswerDto>(true, result, "Question added successfully"));
     }
 
+    [HttpPost("{id}/questions/import")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
+    public async Task<ActionResult<ApiResponse<List<QuestionWithAnswerDto>>>> ImportQuestions(Guid id, [FromBody] List<CreateQuestionRequest> requests)
+    {
+        var result = await _examService.AddQuestionsBulkAsync(id, requests);
+        return Ok(new ApiResponse<List<QuestionWithAnswerDto>>(true, result, $"{result.Count} soru içe aktarıldı"));
+    }
+
     [HttpPut("questions/{questionId}")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<bool>>> UpdateQuestion(Guid questionId, [FromBody] UpdateQuestionRequest request)
     {
         var result = await _examService.UpdateQuestionAsync(questionId, request);
@@ -123,7 +131,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpDelete("questions/{questionId}")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteQuestion(Guid questionId)
     {
         var result = await _examService.DeleteQuestionAsync(questionId);

@@ -101,7 +101,7 @@ export interface LiveSession {
 }
 
 // Question Types
-export type QuestionType = 'MultipleChoice' | 'TrueFalse' | 'ShortAnswer';
+export type QuestionType = 'MultipleChoice' | 'TrueFalse' | 'FillInBlank';
 
 export interface Question {
     id: string;
@@ -135,4 +135,129 @@ export interface UpdateQuestionRequest {
     correctAnswer?: string;
     points?: number;
     explanation?: string;
+}
+
+// Subscription Types
+export type SubscriberType = 'User' | 'Organization';
+export type SubscriptionStatus = 'Trialing' | 'Active' | 'PastDue' | 'Canceled' | 'Expired';
+export type BillingCycle = 'Monthly' | 'Yearly';
+export type QuotaPeriod = 'Absolute' | 'Monthly';
+export type OrgRole = 'Owner' | 'Admin' | 'Member';
+export type OrderStatus = 'Pending' | 'Paid' | 'Failed' | 'Canceled';
+
+export type QuotaMetric =
+    | 'Classrooms'
+    | 'ExamsCreated'
+    | 'HomeworksCreated'
+    | 'LiveMinutes'
+    | 'StorageMegabytes'
+    | 'MaxStudentsPerClassroom'
+    | 'MaxQuestionsPerExam'
+    | 'Seats';
+
+export interface PlanLimit {
+    metric: QuotaMetric;
+    value: number; // -1 = unlimited
+    period: QuotaPeriod;
+}
+
+export interface PlanFeature {
+    featureCode: string;
+    isEnabled: boolean;
+}
+
+export interface Plan {
+    id: string;
+    code: string;
+    name: string;
+    description?: string;
+    priceMonthly: number;
+    priceYearly: number;
+    currency: string;
+    tier: number;
+    targetSubscriberType: SubscriberType | null;
+    isPublic: boolean;
+    limits: PlanLimit[];
+    features: PlanFeature[];
+}
+
+export interface UsageSnapshot {
+    metric: QuotaMetric;
+    used: number;
+    limit: number; // -1 = unlimited
+    period: QuotaPeriod;
+}
+
+export interface Subscription {
+    id: string;
+    subscriberType: SubscriberType;
+    subscriberId: string;
+    plan: Plan;
+    status: SubscriptionStatus;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    trialEndsAt?: string;
+    trialAvailable: boolean;
+    cancelAtPeriodEnd: boolean;
+    seatCount: number;
+    usage: UsageSnapshot[];
+}
+
+export interface CheckoutRequest {
+    planCode: string;
+    cycle: BillingCycle;
+}
+
+export interface CheckoutResult {
+    orderId: string;
+    amount: number;
+    currency: string;
+    provider: string;
+    instructions: string;
+}
+
+export interface Organization {
+    id: string;
+    name: string;
+    slug: string;
+    ownerUserId: string;
+    members: OrganizationMember[];
+}
+
+export interface OrganizationMember {
+    id: string;
+    userId: string;
+    orgRole: OrgRole;
+    joinedAt: string;
+}
+
+export interface AdminSubscription {
+    id: string;
+    subscriberType: SubscriberType;
+    subscriberId: string;
+    planCode: string;
+    status: SubscriptionStatus;
+    currentPeriodEnd: string;
+    trialEndsAt?: string;
+}
+
+export interface AdminOrder {
+    id: string;
+    subscriptionId: string;
+    planCode: string;
+    cycle: BillingCycle;
+    amount: number;
+    currency: string;
+    status: OrderStatus;
+    createdAt: string;
+}
+
+export interface QuotaExceededInfo {
+    message: string;
+    errorCode: 'QUOTA_EXCEEDED';
+    metric?: QuotaMetric;
+    featureCode?: string;
+    limit?: number;
+    current?: number;
+    upgradeUrl?: string;
 }

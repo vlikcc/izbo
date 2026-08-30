@@ -4,12 +4,16 @@ import { Card, Button } from '../../components/ui';
 import { CreateExamModal } from '../../components/exams/CreateExamModal';
 import { examService } from '../../services/exam.service';
 import { useAuthStore } from '../../stores/authStore';
+import { useSubscriptionStore } from '../../stores/subscriptionStore';
+import { useUpgradeStore } from '../../stores/upgradeStore';
 import type { Exam } from '../../types';
 import './Exams.css';
 
 export const ExamsPage: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
+    const hasLiveQuiz = useSubscriptionStore((s) => s.hasFeature('live_quiz'));
+    const openUpgradeModal = useUpgradeStore((s) => s.open);
     const [exams, setExams] = useState<Exam[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -135,9 +139,20 @@ export const ExamsPage: React.FC = () => {
                                             <Button
                                                 variant="primary"
                                                 size="sm"
-                                                onClick={() => navigate(`/quiz/presenter/${exam.id}`)}
+                                                onClick={() => {
+                                                    if (!hasLiveQuiz) {
+                                                        openUpgradeModal({
+                                                            message: 'Canlı quiz özelliği mevcut planınızda bulunmuyor.',
+                                                            errorCode: 'QUOTA_EXCEEDED',
+                                                            featureCode: 'live_quiz',
+                                                            upgradeUrl: '/app/billing',
+                                                        });
+                                                        return;
+                                                    }
+                                                    navigate(`/quiz/presenter/${exam.id}`);
+                                                }}
                                             >
-                                                🎯 Canlı Başlat
+                                                {hasLiveQuiz ? '🎯 Canlı Başlat' : '🔒 Canlı Başlat'}
                                             </Button>
                                         )}
                                         <Button variant="outline" size="sm" onClick={() => handleEditExam(exam.id)}>

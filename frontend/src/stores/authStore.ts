@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User } from '../types';
 import authService from '../services/auth.service';
+import { useSubscriptionStore } from './subscriptionStore';
 
 interface AuthState {
     user: User | null;
@@ -27,6 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             const response = await authService.login({ email, password });
             set({ user: response.user, isAuthenticated: true, isLoading: false });
+            useSubscriptionStore.getState().load();
         } catch (error) {
             set({
                 error: error instanceof Error ? error.message : 'Login failed',
@@ -41,6 +43,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             const response = await authService.register(data);
             set({ user: response.user, isAuthenticated: true, isLoading: false });
+            useSubscriptionStore.getState().load();
         } catch (error) {
             set({
                 error: error instanceof Error ? error.message : 'Registration failed',
@@ -56,6 +59,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             await authService.logout();
         } finally {
             set({ user: null, isAuthenticated: false, isLoading: false });
+            useSubscriptionStore.getState().reset();
         }
     },
 
@@ -69,6 +73,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             const user = await authService.getCurrentUser();
             set({ user, isAuthenticated: !!user, isLoading: false });
+            if (user) useSubscriptionStore.getState().load();
         } catch {
             set({ user: null, isAuthenticated: false, isLoading: false });
         }

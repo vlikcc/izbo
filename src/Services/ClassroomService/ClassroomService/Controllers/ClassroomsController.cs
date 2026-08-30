@@ -179,6 +179,17 @@ public class ClassroomsController : ControllerBase
         return Ok(new ApiResponse<List<ClassSessionDto>>(true, result));
     }
 
+    [HttpGet("sessions/{sessionId}")]
+    public async Task<ActionResult<ApiResponse<ClassSessionDto>>> GetSession(Guid sessionId)
+    {
+        var result = await _sessionService.GetSessionAsync(sessionId);
+
+        if (result == null)
+            return NotFound(new ApiResponse<ClassSessionDto>(false, null, "Session not found"));
+
+        return Ok(new ApiResponse<ClassSessionDto>(true, result));
+    }
+
     [HttpPost("sessions/{sessionId}/start")]
     [Authorize(Roles = "Instructor,Admin,SuperAdmin")]
     public async Task<ActionResult<ApiResponse<bool>>> StartSession(Guid sessionId)

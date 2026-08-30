@@ -60,6 +60,14 @@ export const examService = {
         throw new Error(response.data.message || 'Failed to add question');
     },
 
+    async importQuestions(examId: string, data: CreateQuestionRequest[]): Promise<Question[]> {
+        const response = await api.post<ApiResponse<Question[]>>(`/api/exams/${examId}/questions/import`, data);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        throw new Error(response.data.message || 'Failed to import questions');
+    },
+
     async updateQuestion(questionId: string, data: UpdateQuestionRequest): Promise<void> {
         const response = await api.put<ApiResponse<boolean>>(`/api/exams/questions/${questionId}`, data);
         if (!response.data.success) {

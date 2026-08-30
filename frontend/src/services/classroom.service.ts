@@ -73,6 +73,14 @@ export const classroomService = {
         throw new Error(response.data.message || 'Failed to fetch sessions');
     },
 
+    async getSession(sessionId: string): Promise<ClassSession> {
+        const response = await api.get<ApiResponse<ClassSession>>(`/api/classrooms/sessions/${sessionId}`);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        throw new Error(response.data.message || 'Session not found');
+    },
+
     async enrollStudent(classroomId: string, studentId: string): Promise<void> {
         const response = await api.post<ApiResponse<boolean>>(`/api/classrooms/${classroomId}/enroll`, { studentId });
         if (!response.data.success) {

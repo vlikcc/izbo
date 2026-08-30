@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_MULTIPLE_DATABASES: eduplatform_auth,eduplatform_user,eduplatform_classroom,eduplatform_homework,eduplatform_exam,eduplatform_notification,eduplatform_file
+      POSTGRES_MULTIPLE_DATABASES: eduplatform_auth,eduplatform_user,eduplatform_classroom,eduplatform_homework,eduplatform_exam,eduplatform_notification,eduplatform_file,eduplatform_subscription
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
@@ -82,6 +82,7 @@ services:
       - livesessionservice
       - notificationservice
       - fileservice
+      - subscriptionservice
 
   # Microservices
   authservice:
@@ -138,9 +139,13 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Subscription__BaseUrl=http://subscriptionservice:80
+      - Subscription__FailOpen=true
     depends_on:
       postgres:
         condition: service_healthy
+      subscriptionservice:
+        condition: service_started
 
   homeworkservice:
     build:
@@ -154,9 +159,13 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Subscription__BaseUrl=http://subscriptionservice:80
+      - Subscription__FailOpen=true
     depends_on:
       postgres:
         condition: service_healthy
+      subscriptionservice:
+        condition: service_started
 
   examservice:
     build:
@@ -171,11 +180,15 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Subscription__BaseUrl=http://subscriptionservice:80
+      - Subscription__FailOpen=true
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      subscriptionservice:
+        condition: service_started
 
   livesessionservice:
     build:
@@ -187,6 +200,11 @@ services:
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
+      - Subscription__BaseUrl=http://subscriptionservice:80
+      - Subscription__FailOpen=true
+    depends_on:
+      subscriptionservice:
+        condition: service_started
 
   notificationservice:
     build:
@@ -220,11 +238,31 @@ services:
       - MinIO__AccessKey=minioadmin
       - MinIO__SecretKey=minioadmin
       - MinIO__BucketName=eduplatform
+      - Subscription__BaseUrl=http://subscriptionservice:80
+      - Subscription__FailOpen=true
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_started
+      subscriptionservice:
+        condition: service_started
+
+  subscriptionservice:
+    build:
+      context: .
+      dockerfile: src/Services/SubscriptionService/SubscriptionService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_subscription;Username=postgres;Password=postgres
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # Frontend
   frontend:

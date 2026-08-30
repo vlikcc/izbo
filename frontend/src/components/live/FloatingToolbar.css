@@ -1,0 +1,65 @@
+.floating-toolbar {
+    position: fixed;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(23, 23, 23, 0.92);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    touch-action: none;
+    user-select: none;
+}
+
+.floating-toolbar.vertical {
+    flex-direction: column;
+}
+
+.floating-toolbar.horizontal {
+    flex-direction: row;
+}
+
+.floating-toolbar-items {
+    display: flex;
+    gap: 4px;
+}
+
+.floating-toolbar.horizontal .floating-toolbar-items {
+    flex-direction: row;
+}
+
+.floating-toolbar.vertical .floating-toolbar-items {
+    flex-direction: column;
+}
+
+.floating-toolbar-handle,
+.floating-toolbar-rotate {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #d1d5db;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+}
+
+.floating-toolbar-handle:active {
+    cursor: grabbing;
+}
+
+.floating-toolbar-rotate {
+    cursor: pointer;
+}
+
+.floating-toolbar-rotate:hover,
+.floating-toolbar-handle:hover {
+    background: rgba(255, 255, 255, 0.12);
+}

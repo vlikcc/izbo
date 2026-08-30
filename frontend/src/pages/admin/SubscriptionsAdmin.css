@@ -1,0 +1,56 @@
+.subs-admin-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.subs-admin-page h1 {
+    font-size: var(--font-size-2xl);
+    color: var(--color-gray-900);
+}
+
+.subs-admin-error {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-primary-50);
+    color: var(--color-primary-800);
+    font-size: var(--font-size-sm);
+}
+
+.subs-admin-table-wrapper {
+    overflow-x: auto;
+}
+
+.subs-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.subs-admin-table th {
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-gray-500);
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-gray-200);
+    white-space: nowrap;
+}
+
+.subs-admin-table td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-gray-100);
+    vertical-align: middle;
+}
+
+.subs-admin-id {
+    font-family: monospace;
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+}
+
+.subs-admin-table .input-wrapper {
+    min-width: 160px;
+}

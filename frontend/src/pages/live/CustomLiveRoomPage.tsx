@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
+import { classroomService } from '../../services/classroom.service';
+import { Whiteboard } from '../../components/live/Whiteboard';
+import { FloatingToolbar } from '../../components/live/FloatingToolbar';
+import { LiveQuizInstructorPanel } from '../../components/live/LiveQuizInstructorPanel';
+import { LiveQuizStudentPanel } from '../../components/live/LiveQuizStudentPanel';
 import './LiveClassroom.css';
 
 // Simple Icons
@@ -36,11 +41,18 @@ export const CustomLiveRoomPage: React.FC = () => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
 
+    const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+
     // UI States
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [sidebarView, setSidebarView] = useState<'chat' | 'quiz'>('chat');
     const [isMicMuted, setIsMicMuted] = useState(false);
     const [isCameraOff, setIsCameraOff] = useState(false);
     const [isHandRaised, setIsHandRaised] = useState(false);
+    const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
+    const [classroomId, setClassroomId] = useState<string | null>(null);
+    const [activeQuizCode, setActiveQuizCode] = useState<string | null>(null);
+    const activeQuizRef = useRef<{ examId: string; quizCode: string } | null>(null);
 
     // SignalR & Data States
     const [connection, setConnection] = useState<HubConnection | null>(null);
@@ -77,6 +89,13 @@ export const CustomLiveRoomPage: React.FC = () => {
             Object.values(peersRef.current).forEach(peer => peer.close());
         };
     }, []);
+
+    useEffect(() => {
+        if (!sessionId) return;
+        classroomService.getSession(sessionId)
+            .then(session => setClassroomId(session.classroomId))
+            .catch(err => console.error('Failed to load session details:', err));
+    }, [sessionId]);
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -166,10 +185,26 @@ export const CustomLiveRoomPage: React.FC = () => {
                         ));
                     });
 
+                    // --- Live quiz bridge (see LiveQuizInstructorPanel/StudentPanel) ---
+                    connection.on('QuizStarted', (data: { examId: string; quizCode: string }) => {
+                        setActiveQuizCode(data.quizCode);
+                        setIsSidebarOpen(true);
+                        setSidebarView('quiz');
+                    });
+
+                    connection.on('QuizEnded', () => {
+                        setActiveQuizCode(null);
+                    });
+
                     // --- WebRTC Signaling ---
 
                     // 1. Existing participants receive 'ParticipantJoined' and initiate Offer to the new participant.
                     connection.on('ParticipantJoined', async (participant: Participant) => {
+                        // The hub broadcasts this to the whole group, including the joiner
+                        // themselves — skip our own join notice entirely (participant count and
+                        // WebRTC offers only make sense for other people in the room).
+                        if (participant.userId === user?.id) return;
+
                         setParticipants(prev => {
                             if (!prev.find(p => p.userId === participant.userId)) {
                                 return [...prev, participant];
@@ -177,21 +212,24 @@ export const CustomLiveRoomPage: React.FC = () => {
                             return prev;
                         });
 
-                        // Initiate connection only if it's not us
-                        if (participant.userId !== user?.id) {
-                            console.log('Initiating offer to', participant.userName);
-                            const peer = createPeerConnection(participant.userId, connection);
-                            peersRef.current[participant.userId] = peer;
-
-                            // Add local tracks
-                            localStream?.getTracks().forEach(track => {
-                                peer.addTrack(track, localStream);
-                            });
-
-                            const offer = await peer.createOffer();
-                            await peer.setLocalDescription(offer);
-                            connection.invoke('SendOffer', sessionId, participant.userId, JSON.stringify(offer));
+                        // Catch up a student who joins after the instructor already started a quiz.
+                        if (isInstructor && activeQuizRef.current) {
+                            connection.invoke('NotifyQuizStartedTo', participant.userId,
+                                activeQuizRef.current.examId, activeQuizRef.current.quizCode);
                         }
+
+                        console.log('Initiating offer to', participant.userName);
+                        const peer = createPeerConnection(participant.userId, connection);
+                        peersRef.current[participant.userId] = peer;
+
+                        // Add local tracks
+                        localStream?.getTracks().forEach(track => {
+                            peer.addTrack(track, localStream);
+                        });
+
+                        const offer = await peer.createOffer();
+                        await peer.setLocalDescription(offer);
+                        connection.invoke('SendOffer', sessionId, participant.userId, JSON.stringify(offer));
                     });
 
                     connection.on('ReceiveOffer', async (data: { fromUserId: string, fromUserName: string, offer: string }) => {
@@ -378,6 +416,23 @@ export const CustomLiveRoomPage: React.FC = () => {
         }
     };
 
+    const handleQuizStarted = (examId: string, quizCode: string) => {
+        activeQuizRef.current = { examId, quizCode };
+        setActiveQuizCode(quizCode);
+        connection?.invoke('NotifyQuizStarted', sessionId, examId, quizCode);
+    };
+
+    const handleQuizEnded = () => {
+        activeQuizRef.current = null;
+        setActiveQuizCode(null);
+        connection?.invoke('NotifyQuizEnded', sessionId);
+    };
+
+    const openPanel = (view: 'chat' | 'quiz') => {
+        setSidebarView(view);
+        setIsSidebarOpen(true);
+    };
+
     const sendMessage = async () => {
         if (!messageInput.trim() || !connection) return;
 
@@ -425,6 +480,15 @@ export const CustomLiveRoomPage: React.FC = () => {
 
             {/* Main Content Area */}
             <div className="live-content">
+                {isWhiteboardOpen && connection && sessionId && (
+                    <Whiteboard
+                        connection={connection}
+                        sessionId={sessionId}
+                        isInstructor={isInstructor}
+                        onClose={() => setIsWhiteboardOpen(false)}
+                    />
+                )}
+
                 {/* Video Grid */}
                 <div className={`video-grid ${!isSidebarOpen ? 'full-width' : ''} ${Object.keys(remoteStreams).length > 0 ? 'multi-user' : 'single-user'}`}>
                     {/* Local User */}
@@ -455,41 +519,71 @@ export const CustomLiveRoomPage: React.FC = () => {
                     })}
                 </div>
 
-                {/* Sidebar */}
-                {isSidebarOpen && (
-                    <div className="live-sidebar">
+                {/* Sidebar — stays mounted (just visually hidden) so the quiz panel's in-progress
+                    state (active question, code, answer counts) survives toggling chat/quiz. */}
+                <div className={`live-sidebar ${!isSidebarOpen ? 'sidebar-hidden' : ''}`}>
                         <div className="sidebar-header">
-                            <h3>Sohbet</h3>
+                            <div className="sidebar-tabs">
+                                <button
+                                    className={`sidebar-tab ${sidebarView === 'chat' ? 'active' : ''}`}
+                                    onClick={() => setSidebarView('chat')}
+                                >
+                                    Sohbet
+                                </button>
+                                <button
+                                    className={`sidebar-tab ${sidebarView === 'quiz' ? 'active' : ''} ${activeQuizCode ? 'has-badge' : ''}`}
+                                    onClick={() => setSidebarView('quiz')}
+                                >
+                                    Quiz
+                                </button>
+                            </div>
                             <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer' }}>
                                 <Icons.X />
                             </button>
                         </div>
-                        <div className="chat-messages">
-                            {messages.map((msg, idx) => (
-                                <div key={idx} className="chat-message">
-                                    <span className="chat-author">{msg.userName}:</span>
-                                    <span className="chat-text">{msg.message}</span>
+
+                        {sidebarView === 'chat' ? (
+                            <>
+                                <div className="chat-messages">
+                                    {messages.map((msg, idx) => (
+                                        <div key={idx} className="chat-message">
+                                            <span className="chat-author">{msg.userName}:</span>
+                                            <span className="chat-text">{msg.message}</span>
+                                        </div>
+                                    ))}
+                                    <div ref={messagesEndRef} />
                                 </div>
-                            ))}
-                            <div ref={messagesEndRef} />
-                        </div>
-                        <div className="chat-input-area">
-                            <input
-                                type="text"
-                                placeholder="Mesaj yazın..."
-                                className="chat-input"
-                                value={messageInput}
-                                onChange={(e) => setMessageInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                            />
-                            <button className="send-btn" onClick={sendMessage}><Icons.Send /></button>
-                        </div>
-                    </div>
-                )}
+                                <div className="chat-input-area">
+                                    <input
+                                        type="text"
+                                        placeholder="Mesaj yazın..."
+                                        className="chat-input"
+                                        value={messageInput}
+                                        onChange={(e) => setMessageInput(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                    />
+                                    <button className="send-btn" onClick={sendMessage}><Icons.Send /></button>
+                                </div>
+                            </>
+                        ) : isInstructor ? (
+                            classroomId && (
+                                <LiveQuizInstructorPanel
+                                    classroomId={classroomId}
+                                    onQuizStarted={handleQuizStarted}
+                                    onQuizEnded={handleQuizEnded}
+                                />
+                            )
+                        ) : (
+                            <LiveQuizStudentPanel quizCode={activeQuizCode} />
+                        )}
+                </div>
             </div>
 
             {/* Bottom Controls */}
-            <div className="controls-bar">
+            <FloatingToolbar
+                storageKey="live-controls"
+                defaultPosition={() => ({ x: Math.max(16, window.innerWidth / 2 - 280), y: window.innerHeight - 96 })}
+            >
                 <button
                     className={`control-btn ${isMicMuted ? 'active' : ''}`}
                     onClick={toggleMic}
@@ -524,12 +618,28 @@ export const CustomLiveRoomPage: React.FC = () => {
 
                 <button
                     className="control-btn"
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    onClick={() => (isSidebarOpen && sidebarView === 'chat' ? setIsSidebarOpen(false) : openPanel('chat'))}
                 >
                     <span className="control-icon"><Icons.MessageSquare /></span>
-                    <span className="control-label">{isSidebarOpen ? 'Sohbeti Gizle' : 'Sohbet'}</span>
+                    <span className="control-label">Sohbet</span>
                 </button>
-            </div>
+
+                <button
+                    className={`control-btn ${isWhiteboardOpen ? 'active' : ''}`}
+                    onClick={() => setIsWhiteboardOpen(!isWhiteboardOpen)}
+                >
+                    <span className="control-icon">🖊️</span>
+                    <span className="control-label">Beyaz Tahta</span>
+                </button>
+
+                <button
+                    className={`control-btn ${activeQuizCode ? 'active' : ''}`}
+                    onClick={() => (isSidebarOpen && sidebarView === 'quiz' ? setIsSidebarOpen(false) : openPanel('quiz'))}
+                >
+                    <span className="control-icon">🎯</span>
+                    <span className="control-label">Quiz</span>
+                </button>
+            </FloatingToolbar>
         </div>
     );
 };

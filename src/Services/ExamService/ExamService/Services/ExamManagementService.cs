@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Shared.DTOs;
 using Shared.Models;
+using Shared.Subscription;
 using System.Text.Json;
 
 namespace ExamService.Services;
@@ -16,6 +17,7 @@ public interface IExamManagementService
     Task<bool> DeleteExamAsync(Guid examId);
     Task<bool> PublishExamAsync(Guid examId);
     Task<QuestionWithAnswerDto?> AddQuestionAsync(Guid examId, CreateQuestionRequest request);
+    Task<List<QuestionWithAnswerDto>> AddQuestionsBulkAsync(Guid examId, List<CreateQuestionRequest> requests);
     Task<List<QuestionWithAnswerDto>> GetQuestionsAsync(Guid examId);
     Task<bool> UpdateQuestionAsync(Guid questionId, UpdateQuestionRequest request);
     Task<bool> DeleteQuestionAsync(Guid questionId);
@@ -25,20 +27,25 @@ public class ExamManagementService : IExamManagementService
 {
     private readonly ExamDbContext _context;
     private readonly IDistributedCache _cache;
+    private readonly IQuotaGuard _quotaGuard;
     private readonly ILogger<ExamManagementService> _logger;
 
     public ExamManagementService(
         ExamDbContext context,
         IDistributedCache cache,
+        IQuotaGuard quotaGuard,
         ILogger<ExamManagementService> logger)
     {
         _context = context;
         _cache = cache;
+        _quotaGuard = quotaGuard;
         _logger = logger;
     }
 
     public async Task<ExamDto?> CreateExamAsync(CreateExamRequest request, Guid instructorId)
     {
+        await _quotaGuard.TryConsumeAsync(QuotaMetric.ExamsCreated);
+
         var exam = new Exam
         {
             Id = Guid.NewGuid(),
@@ -181,6 +188,8 @@ public class ExamManagementService : IExamManagementService
         var exam = await _context.Exams.FindAsync(examId);
         if (exam == null) return null;
 
+        await EnsureQuestionCapacityAsync(examId, additionalQuestions: 1);
+
         var question = new Question
         {
             Id = Guid.NewGuid(),
@@ -203,6 +212,53 @@ public class ExamManagementService : IExamManagementService
         await _cache.RemoveAsync($"exam:{examId}:questions");
 
         return MapQuestionToDto(question);
+    }
+
+    /// <summary>Used by the Excel/Word question-import flow — gated behind the "question_import"
+    /// plan feature, on top of the usual per-exam question ceiling.</summary>
+    public async Task<List<QuestionWithAnswerDto>> AddQuestionsBulkAsync(Guid examId, List<CreateQuestionRequest> requests)
+    {
+        var exam = await _context.Exams.FindAsync(examId);
+        if (exam == null) return new List<QuestionWithAnswerDto>();
+
+        await _quotaGuard.EnsureFeatureAsync("question_import");
+        await EnsureQuestionCapacityAsync(examId, additionalQuestions: requests.Count);
+
+        var questions = requests.Select(request => new Question
+        {
+            Id = Guid.NewGuid(),
+            ExamId = examId,
+            OrderIndex = request.OrderIndex,
+            Type = request.Type,
+            Content = request.Content,
+            ImageUrl = request.ImageUrl,
+            Options = request.Options != null ? JsonSerializer.Serialize(request.Options) : null,
+            CorrectAnswer = request.CorrectAnswer,
+            Points = request.Points,
+            Explanation = request.Explanation,
+            CreatedAt = DateTime.UtcNow
+        }).ToList();
+
+        _context.Questions.AddRange(questions);
+        await _context.SaveChangesAsync();
+
+        await _cache.RemoveAsync($"exam:{examId}");
+        await _cache.RemoveAsync($"exam:{examId}:questions");
+
+        return questions.Select(MapQuestionToDto).ToList();
+    }
+
+    /// <summary>Questions-per-exam is a per-resource ceiling, not a running counter, so it's compared
+    /// locally against the plan's limit rather than going through TryConsumeAsync.</summary>
+    private async Task EnsureQuestionCapacityAsync(Guid examId, int additionalQuestions)
+    {
+        var limit = await _quotaGuard.GetLimitAsync(QuotaMetric.MaxQuestionsPerExam);
+        if (limit < 0) return; // unlimited
+
+        var currentCount = await _context.Questions.CountAsync(q => q.ExamId == examId);
+        if (currentCount + additionalQuestions > limit)
+            throw new QuotaExceededException(QuotaMetric.MaxQuestionsPerExam, limit, currentCount,
+                "Bu sınav için soru limitine ulaşıldı.");
     }
 
     public async Task<List<QuestionWithAnswerDto>> GetQuestionsAsync(Guid examId)

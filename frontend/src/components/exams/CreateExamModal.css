@@ -202,6 +202,17 @@
     margin: var(--space-2) 0;
 }
 
+/* Info Box */
+.form-info-box {
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-primary-50);
+    border: 1px solid var(--color-primary-100);
+    border-radius: var(--radius-md);
+    color: var(--color-gray-700);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
 /* Modal Actions */
 .form-actions {
     display: flex;

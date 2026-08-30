@@ -2,6 +2,7 @@ using ClassroomService.Data;
 using Microsoft.EntityFrameworkCore;
 using Shared.DTOs;
 using Shared.Models;
+using Shared.Subscription;
 
 namespace ClassroomService.Services;
 
@@ -22,16 +23,20 @@ public interface IClassroomManagementService
 public class ClassroomManagementService : IClassroomManagementService
 {
     private readonly ClassroomDbContext _context;
+    private readonly IQuotaGuard _quotaGuard;
     private readonly ILogger<ClassroomManagementService> _logger;
 
-    public ClassroomManagementService(ClassroomDbContext context, ILogger<ClassroomManagementService> logger)
+    public ClassroomManagementService(ClassroomDbContext context, IQuotaGuard quotaGuard, ILogger<ClassroomManagementService> logger)
     {
         _context = context;
+        _quotaGuard = quotaGuard;
         _logger = logger;
     }
 
     public async Task<ClassroomDto?> CreateClassroomAsync(CreateClassroomRequest request, Guid instructorId)
     {
+        await _quotaGuard.TryConsumeAsync(QuotaMetric.Classrooms);
+
         var classroom = new Classroom
         {
             Id = Guid.NewGuid(),
@@ -134,6 +139,8 @@ public class ClassroomManagementService : IClassroomManagementService
         classroom.IsActive = false;
         classroom.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        await _quotaGuard.ReleaseAsync(QuotaMetric.Classrooms);
         return true;
     }
 
@@ -143,6 +150,8 @@ public class ClassroomManagementService : IClassroomManagementService
             .AnyAsync(e => e.ClassroomId == classroomId && e.StudentId == studentId);
 
         if (exists) return false;
+
+        await EnsureStudentCapacityAsync(classroomId, additionalStudents: 1);
 
         var enrollment = new Enrollment
         {
@@ -169,6 +178,8 @@ public class ClassroomManagementService : IClassroomManagementService
 
         var newStudentIds = studentIds.Except(existingEnrollments).ToList();
 
+        await EnsureStudentCapacityAsync(classroomId, additionalStudents: newStudentIds.Count);
+
         var enrollments = newStudentIds.Select(studentId => new Enrollment
         {
             Id = Guid.NewGuid(),
@@ -183,6 +194,19 @@ public class ClassroomManagementService : IClassroomManagementService
 
         _logger.LogInformation("{Count} students enrolled in classroom {ClassroomId}", enrollments.Count, classroomId);
         return true;
+    }
+
+    /// <summary>Students-per-classroom is a per-resource ceiling, not a running counter, so it's
+    /// compared locally against the plan's limit rather than going through TryConsumeAsync.</summary>
+    private async Task EnsureStudentCapacityAsync(Guid classroomId, int additionalStudents)
+    {
+        var limit = await _quotaGuard.GetLimitAsync(QuotaMetric.MaxStudentsPerClassroom);
+        if (limit < 0) return; // unlimited
+
+        var currentCount = await _context.Enrollments.CountAsync(e => e.ClassroomId == classroomId && e.IsActive);
+        if (currentCount + additionalStudents > limit)
+            throw new QuotaExceededException(QuotaMetric.MaxStudentsPerClassroom, limit, currentCount,
+                "Bu sınıf için öğrenci limitine ulaşıldı.");
     }
 
     public async Task<bool> UnenrollStudentAsync(Guid classroomId, Guid studentId)

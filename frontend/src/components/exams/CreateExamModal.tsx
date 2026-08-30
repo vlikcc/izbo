@@ -288,13 +288,18 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                     </label>
                 </div>
 
+                <div className="form-info-box">
+                    Sınav oluşturulduktan sonra soru ekleme ekranına yönlendirileceksiniz.
+                    Soruları manuel ekleyebilir veya dosyadan içe aktarabilirsiniz.
+                </div>
+
                 {/* Actions */}
                 <div className="form-actions">
                     <Button type="button" variant="ghost" size="md" onClick={onClose}>
                         İptal
                     </Button>
                     <Button type="submit" variant="primary" size="md" isLoading={isLoading}>
-                        ✨ Sınav Oluştur
+                        ✨ Oluştur ve Soruları Ekle
                     </Button>
                 </div>
             </form>

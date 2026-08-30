@@ -3,6 +3,7 @@ using HomeworkService.Services;
 using Serilog;
 using Microsoft.EntityFrameworkCore;
 using Shared.Extensions;
+using Shared.Subscription;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
@@ -27,6 +28,7 @@ builder.Services.AddAuthorization();
 
 // Services
 builder.Services.AddScoped<IHomeworkManagementService, HomeworkManagementService>();
+builder.Services.AddSubscriptionGuard(builder.Configuration);
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
@@ -44,6 +46,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSubscriptionQuotaExceptions();
 app.MapControllers();
 app.MapHealthChecks("/health");
 

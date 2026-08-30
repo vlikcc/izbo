@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { MainLayout } from './components/layout';
+import { RoleRoute } from './components/RoleRoute';
+import { UpgradeModal } from './components/subscription/UpgradeModal';
 import { LandingPage } from './pages/landing';
 import { LoginPage, RegisterPage } from './pages/auth';
 import { ClassroomsPage, ClassroomDetailPage } from './pages/classrooms';
@@ -13,6 +15,9 @@ import { HomeworkPage } from './pages/homework';
 import LivePage from './pages/live/LivePage';
 import CustomLiveRoomPage from './pages/live/CustomLiveRoomPage';
 import { ProfilePage } from './pages/profile';
+import { PricingPage } from './pages/pricing/PricingPage';
+import { BillingPage } from './pages/billing/BillingPage';
+import { SubscriptionsAdminPage } from './pages/admin/SubscriptionsAdminPage';
 import './index.css';
 
 // Protected Route Component
@@ -49,6 +54,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
 
         {/* Protected Application Routes */}
         <Route
@@ -67,6 +73,15 @@ function App() {
           <Route path="exams/:id/builder" element={<ExamBuilderPage />} />
           <Route path="live" element={<LivePage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="billing" element={<BillingPage />} />
+          <Route
+            path="admin/subscriptions"
+            element={
+              <RoleRoute roles={['Admin', 'SuperAdmin']}>
+                <SubscriptionsAdminPage />
+              </RoleRoute>
+            }
+          />
         </Route>
 
         {/* Full Screen Live Room (No Layout) */}
@@ -100,6 +115,7 @@ function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
+      <UpgradeModal />
     </BrowserRouter>
   );
 }

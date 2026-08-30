@@ -1,0 +1,70 @@
+.whiteboard-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    background: #1a1a1a;
+}
+
+.whiteboard-canvas {
+    position: absolute;
+    inset: 0;
+}
+
+.whiteboard-toolbar-title {
+    padding: 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #f3f4f6;
+    white-space: nowrap;
+}
+
+.whiteboard-toolbar-divider {
+    width: 1px;
+    align-self: stretch;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 2px;
+}
+
+.floating-toolbar.vertical .whiteboard-toolbar-divider {
+    width: auto;
+    height: 1px;
+    align-self: stretch;
+}
+
+.whiteboard-tool-btn {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #e5e7eb;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.whiteboard-tool-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.whiteboard-tool-btn.active {
+    background: #ef4444;
+    color: #fff;
+}
+
+.whiteboard-color-btn {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    padding: 0;
+}
+
+.whiteboard-color-btn:hover {
+    border-color: #fff;
+}
