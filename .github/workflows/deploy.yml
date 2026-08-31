@@ -34,9 +34,9 @@ jobs:
           docker build -t "$PREFIX/livesessionservice:$TAG" -f src/Services/LiveSessionService/LiveSessionService/Dockerfile .
           docker build -t "$PREFIX/notificationservice:$TAG" -f src/Services/NotificationService/NotificationService/Dockerfile .
           docker build -t "$PREFIX/fileservice:$TAG" -f src/Services/FileService/FileService/Dockerfile .
+          docker build -t "$PREFIX/subscriptionservice:$TAG" -f src/Services/SubscriptionService/SubscriptionService/Dockerfile .
           docker build -t "$PREFIX/frontend:$TAG" --build-arg VITE_API_URL="${VITE_API_URL:-https://api.example.com}" -f frontend/Dockerfile frontend
-          docker push --all-tags "$PREFIX/apigateway" || docker push "$PREFIX/apigateway:$TAG"
-          for img in authservice userservice classroomservice homeworkservice examservice livesessionservice notificationservice fileservice frontend apigateway; do
+          for img in authservice userservice classroomservice homeworkservice examservice livesessionservice notificationservice fileservice subscriptionservice frontend apigateway; do
             docker push "$PREFIX/$img:$TAG"
           done
 
