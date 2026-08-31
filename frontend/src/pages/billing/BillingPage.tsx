@@ -131,7 +131,12 @@ export const BillingPage: React.FC = () => {
                                 {STATUS_LABELS[subscription.status] ?? subscription.status}
                             </span>
                         </div>
-                        {selectedPlanCode && (
+                        {selectedPlanCode && subscription.trialAvailable && (
+                            <span className="billing-hint">
+                                Aşağıdaki butonla <strong>14 günlük ücretsiz denemenizi</strong> başlatabilirsiniz.
+                            </span>
+                        )}
+                        {selectedPlanCode && !subscription.trialAvailable && (
                             <span className="billing-hint">Yükseltmek istediğiniz plan: <strong>{selectedPlanCode}</strong></span>
                         )}
                     </div>

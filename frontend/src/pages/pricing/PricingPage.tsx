@@ -114,6 +114,11 @@ export const PricingPage: React.FC = () => {
                                         </>
                                     )}
                                 </div>
+                                {price > 0 && (
+                                    <span className="pricing-card-trial-badge">
+                                        ✨ 14 gün ücretsiz deneme
+                                    </span>
+                                )}
                                 <ul className="pricing-card-features">
                                     {plan.limits.map((limit) => (
                                         <li key={limit.metric}>
@@ -133,7 +138,7 @@ export const PricingPage: React.FC = () => {
                                     fullWidth
                                     onClick={() => handleSelectPlan(plan)}
                                 >
-                                    {plan.code === 'free' ? 'Ücretsiz Başla' : 'Bu Planı Seç'}
+                                    {plan.code === 'free' ? 'Ücretsiz Başla' : '14 Gün Ücretsiz Dene'}
                                 </Button>
                             </div>
                         );
