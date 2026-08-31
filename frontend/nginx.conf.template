@@ -21,6 +21,18 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # The base image's mime.types maps .js but not .mjs, so dynamically-imported ES module chunks
+    # (e.g. pdfjs-dist's worker) are served as application/octet-stream and browsers refuse to
+    # execute them as modules. The types{} override is scoped to this location alone so it doesn't
+    # clobber the inherited mime.types map for every other extension.
+    location ~* \.mjs$ {
+        types {
+            application/javascript mjs;
+        }
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+    }
+
     # Hashed asset file names make these safe to cache indefinitely.
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
         expires 1y;

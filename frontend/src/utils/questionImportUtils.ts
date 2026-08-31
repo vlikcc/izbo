@@ -215,6 +215,68 @@ function parseExcelRow(row: unknown[], columnMap: ColumnMapping): ParsedQuestion
  * Doğru cevap: A/B/C/D veya [Doğru: X] formatında
  */
 export async function parseWordFile(file: File): Promise<ImportResult> {
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const mammothResult = await mammoth.extractRawText({ arrayBuffer });
+        return parseQuestionsFromText(mammothResult.value, 'Word dosyasında metin bulunamadı.');
+    } catch (error) {
+        return {
+            success: false,
+            questions: [],
+            errors: [`Dosya okuma hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`],
+            warnings: [],
+        };
+    }
+}
+
+/**
+ * PDF dosyasından soruları parse eder. Sayfalar metne dökülüp Word ile aynı
+ * numaralandırılmış soru / A)-D) seçenek formatıyla ayrıştırılır — taranmış
+ * (görüntü tabanlı) PDF'ler desteklenmez, çünkü onlarda çıkarılabilir metin yoktur.
+ */
+export async function parsePdfFile(file: File): Promise<ImportResult> {
+    try {
+        const [pdfjsLib, { default: pdfjsWorker }] = await Promise.all([
+            import('pdfjs-dist'),
+            import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+        ]);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        const pageTexts: string[] = [];
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const content = await page.getTextContent();
+            // getTextContent() returns text fragments, not lines — join() would run every
+            // line on a page together and break the numbered-question split below. hasEOL
+            // marks the fragment that ends a line, so a newline goes after those instead.
+            let pageText = '';
+            for (const item of content.items) {
+                if (!('str' in item)) continue;
+                pageText += item.str;
+                pageText += item.hasEOL ? '\n' : ' ';
+            }
+            pageTexts.push(pageText);
+        }
+
+        return parseQuestionsFromText(pageTexts.join('\n'), 'PDF dosyasında metin bulunamadı. Taranmış (görüntü) PDF\'ler desteklenmiyor.');
+    } catch (error) {
+        return {
+            success: false,
+            questions: [],
+            errors: [`Dosya okuma hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`],
+            warnings: [],
+        };
+    }
+}
+
+/**
+ * Word ve PDF için ortak metin-tabanlı soru ayrıştırma: her iki kaynak da
+ * çıkarılan düz metni aynı numaralandırılmış soru / A)-D) seçenek formatına göre parse eder.
+ */
+function parseQuestionsFromText(text: string, emptyTextError: string): ImportResult {
     const result: ImportResult = {
         success: false,
         questions: [],
@@ -222,38 +284,28 @@ export async function parseWordFile(file: File): Promise<ImportResult> {
         warnings: [],
     };
 
-    try {
-        const arrayBuffer = await file.arrayBuffer();
-        const mammothResult = await mammoth.extractRawText({ arrayBuffer });
-        const text = mammothResult.value;
+    if (!text.trim()) {
+        result.errors.push(emptyTextError);
+        return result;
+    }
 
-        if (!text.trim()) {
-            result.errors.push('Word dosyasında metin bulunamadı.');
-            return result;
-        }
+    const questionBlocks = splitIntoQuestions(text);
 
-        // Soruları ayır
-        const questionBlocks = splitIntoQuestions(text);
-
-        for (let i = 0; i < questionBlocks.length; i++) {
-            try {
-                const question = parseWordQuestion(questionBlocks[i]);
-                if (question) {
-                    result.questions.push(question);
-                }
-            } catch (error) {
-                result.warnings.push(`Soru ${i + 1}: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+    for (let i = 0; i < questionBlocks.length; i++) {
+        try {
+            const question = parseWordQuestion(questionBlocks[i]);
+            if (question) {
+                result.questions.push(question);
             }
+        } catch (error) {
+            result.warnings.push(`Soru ${i + 1}: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
         }
+    }
 
-        result.success = result.questions.length > 0;
+    result.success = result.questions.length > 0;
 
-        if (result.questions.length === 0) {
-            result.errors.push('Hiçbir soru parse edilemedi. Lütfen formatı kontrol edin.');
-        }
-
-    } catch (error) {
-        result.errors.push(`Dosya okuma hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+    if (result.questions.length === 0) {
+        result.errors.push('Hiçbir soru parse edilemedi. Lütfen formatı kontrol edin.');
     }
 
     return result;
@@ -346,11 +398,13 @@ export async function parseQuestionFile(file: File): Promise<ImportResult> {
         return parseExcelFile(file);
     } else if (fileName.endsWith('.docx')) {
         return parseWordFile(file);
+    } else if (fileName.endsWith('.pdf')) {
+        return parsePdfFile(file);
     } else {
         return {
             success: false,
             questions: [],
-            errors: [`Desteklenmeyen dosya formatı: ${file.name}. Desteklenen formatlar: .xlsx, .xls, .docx`],
+            errors: [`Desteklenmeyen dosya formatı: ${file.name}. Desteklenen formatlar: .xlsx, .xls, .docx, .pdf`],
             warnings: [],
         };
     }

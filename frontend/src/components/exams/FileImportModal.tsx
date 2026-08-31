@@ -119,7 +119,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept=".xlsx,.xls,.docx"
+                                accept=".xlsx,.xls,.docx,.pdf"
                                 onChange={handleFileInputChange}
                                 style={{ display: 'none' }}
                             />
@@ -145,7 +145,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                                         <span>veya tıklayarak seçin</span>
                                     </div>
                                     <div className="file-drop-formats">
-                                        Desteklenen formatlar: .xlsx, .xls, .docx
+                                        Desteklenen formatlar: .xlsx, .xls, .docx, .pdf
                                     </div>
                                 </>
                             )}
@@ -199,6 +199,16 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                                     </tr>
                                 </tbody>
                             </table>
+
+                            <h4>📋 Word / PDF Format Örneği</h4>
+                            <pre className="format-example-text">{
+`1. 2+2=?
+A) 3
+B) 4
+C) 5
+D) 6
+Doğru Cevap: B`
+                            }</pre>
                         </div>
                     </div>
                 ) : (
