@@ -1,23 +1,21 @@
-using Serilog;
 using FileService.Data;
 using FileService.Services;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.Features;
 using Minio;
+using Shared.Audit;
+using Shared.Authorization;
 using Shared.Extensions;
 using Shared.Subscription;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.AddEduPlatformLogging();
+builder.AddEduPlatformWebHost();
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.Configure<FormOptions>(options =>
+    options.MultipartBodyLengthLimit = FileUploadRules.AbsoluteMaxBytes);
 
-// Database
 builder.Services.AddDbContext<FileDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
-// MinIO
 var minioUseSsl = builder.Configuration.GetValue<bool>("MinIO:UseSsl");
 builder.Services.AddMinio(configureClient =>
 {
@@ -32,40 +30,13 @@ builder.Services.AddMinio(configureClient =>
     }
 });
 
-// JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("JWT");
-builder.Services.AddJwtAuthentication(
-    jwtSettings["Secret"]!,
-    jwtSettings["Issuer"]!,
-    jwtSettings["Audience"]!
-);
-
-builder.Services.AddAuthorization();
-
-// Services
+builder.Services.AddClassroomAccessClient(builder.Configuration);
+builder.Services.AddEduPlatformAuditLogger();
 builder.Services.AddScoped<IFileManagementService, FileManagementService>();
 builder.Services.AddSubscriptionGuard(builder.Configuration);
 
-// CORS
-builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
-
-builder.Services.AddEduPlatformHealthChecks(builder.Configuration);
-
 var app = builder.Build();
-app.UseSerilogRequestLogging();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseCors("AllowFrontend");
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseSubscriptionQuotaExceptions();
-app.MapControllers();
-app.MapHealthChecks("/health");
+app.UseEduPlatformPipeline(configure: pipeline => pipeline.UseSubscriptionQuotaExceptions());
 
 app.ApplyMigrations<FileDbContext>();
 

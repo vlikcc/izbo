@@ -1,0 +1,6 @@
+version: 2
+
+# Local Docker defaults and a password denylist are not live credentials.
+ignored_matches:
+  - name: Local development Postgres password
+    match: postgres

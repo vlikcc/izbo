@@ -18,6 +18,22 @@ export const liveService = {
         return [];
     },
 
+    async getVisibleSessions(): Promise<LiveSession[]> {
+        const [upcoming, live] = await Promise.all([
+            this.getUpcomingSessions(),
+            this.getLiveSessions(),
+        ]);
+
+        const sessionsById = new Map<string, LiveSession>();
+        for (const session of [...upcoming, ...live]) {
+            sessionsById.set(session.id, session);
+        }
+
+        return Array.from(sessionsById.values()).sort(
+            (a, b) => new Date(a.scheduledStartTime).getTime() - new Date(b.scheduledStartTime).getTime()
+        );
+    },
+
     async joinSession(sessionId: string): Promise<{ meetingUrl: string }> {
         // This endpoint might not exist in backend, but keeping it consistent with route structure
         // If needed, implement in ClassroomController

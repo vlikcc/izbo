@@ -1,14 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Shared.Audit;
 using Shared.Models;
 
 namespace UserService.Data;
 
-public class UserDbContext : DbContext
+public class UserDbContext : DbContext, IAuditDbContext
 {
     public UserDbContext(DbContextOptions<UserDbContext> options) : base(options) { }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<AuditEvent> AuditEvents { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -30,6 +32,15 @@ public class UserDbContext : DbContext
             entity.Property(e => e.Role).HasConversion<string>();
             entity.HasIndex(e => e.Email).IsUnique();
             entity.HasIndex(e => e.Role);
+        });
+
+        modelBuilder.Entity<AuditEvent>(entity =>
+        {
+            entity.ToTable("audit_events");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.OccurredAt);
+            entity.Property(e => e.Action).HasMaxLength(64);
+            entity.Property(e => e.EntityType).HasMaxLength(64);
         });
     }
 }

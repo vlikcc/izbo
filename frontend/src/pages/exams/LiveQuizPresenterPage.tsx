@@ -31,16 +31,7 @@ export const LiveQuizPresenterPage: React.FC = () => {
     const [showAnswer, setShowAnswer] = useState(false);
     const [isQuizActive, setIsQuizActive] = useState(false);
 
-    useEffect(() => {
-        if (id) {
-            loadExamData();
-        }
-        return () => {
-            liveQuizHub.disconnect();
-        };
-    }, [id]);
-
-    const loadExamData = async () => {
+    const loadExamData = useCallback(async () => {
         if (!id) return;
         setIsLoading(true);
         try {
@@ -57,7 +48,16 @@ export const LiveQuizPresenterPage: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id, navigate]);
+
+    useEffect(() => {
+        if (id) {
+            void loadExamData();
+        }
+        return () => {
+            liveQuizHub.disconnect();
+        };
+    }, [id, loadExamData]);
 
     const setupHubListeners = useCallback(() => {
         liveQuizHub.on<ParticipantData>('ParticipantJoined', (data) => {

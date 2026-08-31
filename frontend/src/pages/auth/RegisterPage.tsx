@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Input, Card } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
+import { PASSWORD_HINT, validatePassword } from '../../utils/passwordPolicy';
 import './Auth.css';
 
 export const RegisterPage: React.FC = () => {
@@ -23,24 +24,27 @@ export const RegisterPage: React.FC = () => {
         setValidationError('');
 
         if (formData.password !== formData.confirmPassword) {
-            setValidationError('Şifreler eşleşmiyor');
+            setValidationError('Parolalar eşleşmiyor');
             return;
         }
 
-        if (formData.password.length < 6) {
-            setValidationError('Şifre en az 6 karakter olmalıdır');
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+            setValidationError(passwordError);
             return;
         }
 
         try {
-            await register({
+            const message = await register({
                 email: formData.email,
                 password: formData.password,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 role: formData.role,
             });
-            navigate('/dashboard');
+
+            // Registration issues no session, so the next step is signing in.
+            navigate('/login', { state: { notice: message } });
         } catch {
             // Error handled by store
         }
@@ -129,6 +133,7 @@ export const RegisterPage: React.FC = () => {
                             placeholder="••••••••"
                             value={formData.password}
                             onChange={handleChange}
+                            helperText={PASSWORD_HINT}
                             required
                         />
 

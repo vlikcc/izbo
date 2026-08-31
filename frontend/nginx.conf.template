@@ -1,0 +1,46 @@
+# Rendered at container start by the nginx image's envsubst entrypoint, so the Content-Security-Policy
+# can name the actual API and conferencing origins instead of allowing every https origin.
+#
+#   CSP_CONNECT_SRC  origins the app may call, e.g. "https://api.example.com wss://api.example.com"
+#   CSP_FRAME_SRC    origins the app may embed, e.g. "https://meet.jit.si"
+
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Nothing here is a secret, but the version is free reconnaissance.
+    server_tokens off;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # Handle SPA routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Hashed asset file names make these safe to cache indefinitely.
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+    }
+
+    # index.html must never be cached, or a deploy leaves clients loading asset names that are gone.
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=()" always;
+
+    # script-src carries no 'unsafe-inline' or 'unsafe-eval': the build emits only module scripts, so an
+    # injected <script> or a string passed to eval cannot run. Inline styles are still allowed as
+    # attributes (React style props) but not as <style> blocks; style-src is the fallback for browsers
+    # that do not implement the -elem/-attr split.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' ${CSP_CONNECT_SRC}; frame-src 'self' ${CSP_FRAME_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" always;
+}

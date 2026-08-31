@@ -28,11 +28,3 @@ public record UpdateNotificationPreferenceRequest(
     bool? HomeworkReminders,
     bool? ExamReminders,
     bool? LiveSessionAlerts);
-
-// File DTOs
-public record FileUploadResponse(
-    Guid Id,
-    string FileName,
-    string StoragePath);
-
-public record PresignedUrlResponse(string Url, DateTime ExpiresAt);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../ui';
 import type { Question, QuestionType, CreateQuestionRequest } from '../../types';
 import './QuestionEditor.css';
@@ -29,17 +29,6 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({
     const [points, setPoints] = useState(question?.points || 10);
     const [explanation, setExplanation] = useState(question?.explanation || '');
     const [isEditing, setIsEditing] = useState(isNew);
-
-    useEffect(() => {
-        if (question) {
-            setType(question.type);
-            setContent(question.content);
-            setOptions(question.options || ['', '', '', '']);
-            setCorrectAnswer(question.correctAnswer || '');
-            setPoints(question.points);
-            setExplanation(question.explanation || '');
-        }
-    }, [question]);
 
     const handleTypeChange = (newType: QuestionType) => {
         setType(newType);

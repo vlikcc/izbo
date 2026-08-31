@@ -11,6 +11,9 @@ public class ClassroomDbContext : DbContext
     public DbSet<Classroom> Classrooms { get; set; }
     public DbSet<Enrollment> Enrollments { get; set; }
     public DbSet<ClassSession> ClassSessions { get; set; }
+    public DbSet<Announcement> Announcements { get; set; }
+    public DbSet<ClassroomComment> Comments { get; set; }
+    public DbSet<AttendanceRecord> Attendance { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -58,6 +61,29 @@ public class ClassroomDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => new { e.ClassroomId, e.ScheduledStartTime });
             entity.HasIndex(e => e.Status);
+        });
+
+        modelBuilder.Entity<Announcement>(entity =>
+        {
+            entity.ToTable("announcements");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.HasIndex(e => new { e.ClassroomId, e.CreatedAt });
+        });
+
+        modelBuilder.Entity<ClassroomComment>(entity =>
+        {
+            entity.ToTable("classroom_comments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TargetType).IsRequired().HasMaxLength(32);
+            entity.HasIndex(e => new { e.ClassroomId, e.TargetType, e.TargetId });
+        });
+
+        modelBuilder.Entity<AttendanceRecord>(entity =>
+        {
+            entity.ToTable("attendance_records");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.SessionId, e.UserId, e.JoinedAt });
         });
     }
 }

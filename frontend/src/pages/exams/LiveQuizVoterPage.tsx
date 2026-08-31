@@ -36,15 +36,16 @@ export const LiveQuizVoterPage: React.FC = () => {
     const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
     useEffect(() => {
-        // Auto-join if code is in URL
         const token = localStorage.getItem('accessToken');
         if (code && token) {
-            handleJoin();
+            void handleJoin();
         }
 
         return () => {
-            liveQuizHub.disconnect();
+            void liveQuizHub.disconnect();
         };
+        // Join once on mount when the URL already includes a code.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const setupHubListeners = useCallback(() => {

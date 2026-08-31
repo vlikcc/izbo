@@ -1,370 +1,296 @@
+using ExamService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Shared.Authorization;
 using Shared.Subscription;
-using System.Security.Claims;
 
 namespace ExamService.Hubs;
 
+/// <summary>
+/// Exam answer synchronisation and presenter-led live quizzes.
+///
+/// Presenter commands (advancing questions, revealing answers, ending the quiz) are restricted to the
+/// instructor who started the quiz, and participation is restricted to members of the exam's classroom.
+/// Both used to be open to any authenticated connection that knew an exam id.
+/// </summary>
 [Authorize]
 public class ExamHub : Hub
 {
+    private readonly ILiveQuizStore _quizzes;
+    private readonly IExamManagementService _exams;
     private readonly IQuotaGuard _quotaGuard;
     private readonly ILogger<ExamHub> _logger;
 
-    // In-memory store for active quizzes (in production, use Redis or database)
-    private static readonly Dictionary<string, LiveQuizState> _activeQuizzes = new();
-    private static readonly Dictionary<string, string> _quizCodes = new(); // code -> examId
-    private static readonly Dictionary<string, List<QuizParticipant>> _participants = new();
-
-    public ExamHub(IQuotaGuard quotaGuard, ILogger<ExamHub> logger)
+    public ExamHub(ILiveQuizStore quizzes, IExamManagementService exams, IQuotaGuard quotaGuard, ILogger<ExamHub> logger)
     {
+        _quizzes = quizzes;
+        _exams = exams;
         _quotaGuard = quotaGuard;
         _logger = logger;
     }
 
     public override async Task OnConnectedAsync()
     {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!string.IsNullOrEmpty(userId))
+        if (!Context.User.TryGetCaller(out var caller))
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
-            _logger.LogInformation("User {UserId} connected to ExamHub", userId);
+            Context.Abort();
+            return;
         }
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(caller.UserId));
+        _logger.LogInformation("User {UserId} connected to ExamHub", caller.UserId);
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!string.IsNullOrEmpty(userId))
+        foreach (var (quiz, userId) in _quizzes.RemoveConnection(Context.ConnectionId))
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user_{userId}");
-            _logger.LogInformation("User {UserId} disconnected from ExamHub", userId);
-
-            // Remove from any active quiz participants
-            foreach (var kvp in _participants)
-            {
-                var participant = kvp.Value.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
-                if (participant != null)
-                {
-                    kvp.Value.Remove(participant);
-                    await Clients.Group($"quiz_{kvp.Key}").SendAsync("ParticipantLeft", new { userId = participant.UserId });
-                }
-            }
+            await Clients.Client(quiz.PresenterConnectionId).SendAsync("ParticipantLeft", new { userId });
         }
+
         await base.OnDisconnectedAsync(exception);
     }
 
+    /// <summary>
+    /// Subscribes to an exam's announcements. Restricted to the classroom's members so that an exam id
+    /// alone does not reveal that the exam exists, or leak what the instructor broadcasts about it.
+    /// </summary>
     public async Task JoinExam(string examId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"exam_{examId}");
-        _logger.LogInformation("Connection {ConnectionId} joined exam {ExamId}", Context.ConnectionId, examId);
+        var (caller, examGuid) = Identify(examId);
+
+        var access = await _exams.GetExamAccessAsync(examGuid, caller, Context.ConnectionAborted);
+        if (access?.CanView != true)
+        {
+            throw new HubException("You do not have access to this exam.");
+        }
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, ExamGroup(examGuid));
     }
 
-    public async Task LeaveExam(string examId)
+    public Task LeaveExam(string examId) =>
+        Groups.RemoveFromGroupAsync(Context.ConnectionId, ExamGroup(ParseId(examId)));
+
+    /// <summary>Echoes a saved answer to the student's other devices, and only to those.</summary>
+    public Task AnswerSaved(string sessionId, string questionId)
     {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"exam_{examId}");
-        _logger.LogInformation("Connection {ConnectionId} left exam {ExamId}", Context.ConnectionId, examId);
+        var caller = Caller();
+        return Clients.Group(UserGroup(caller.UserId)).SendAsync("AnswerSynced", new { sessionId, questionId });
     }
 
-    // Called when a student saves an answer (for real-time sync across devices)
-    public async Task AnswerSaved(string sessionId, string questionId)
-    {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        await Clients.Group($"user_{userId}").SendAsync("AnswerSynced", new { sessionId, questionId });
-    }
+    public Task Heartbeat(string sessionId) => Clients.Caller.SendAsync("HeartbeatAck", DateTime.UtcNow);
 
-    // Heartbeat to track active connections
-    public async Task Heartbeat(string sessionId)
-    {
-        await Clients.Caller.SendAsync("HeartbeatAck", DateTime.UtcNow);
-    }
-
-    #region Live Quiz Methods
-
-    // Presenter: Start a live quiz session
     public async Task<string> StartLiveQuiz(string examId)
     {
+        var (caller, examGuid) = Identify(examId);
+
+        var access = await _exams.GetExamAccessAsync(examGuid, caller, Context.ConnectionAborted);
+        if (access?.IsInstructor != true)
+        {
+            _logger.LogWarning(
+                "User {UserId} attempted to present a live quiz for exam {ExamId} they do not own",
+                caller.UserId, examGuid);
+            throw new HubException("Only the exam's instructor can present it.");
+        }
+
         try
         {
-            await _quotaGuard.EnsureFeatureAsync("live_quiz");
+            await _quotaGuard.EnsureFeatureAsync("live_quiz", Context.ConnectionAborted);
         }
         catch (QuotaExceededException ex)
         {
             throw new HubException(ex.Message);
         }
 
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var quiz = _quizzes.Start(examGuid, caller.UserId, Context.ConnectionId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, QuizGroup(examGuid));
 
-        // Generate a 6-character quiz code
-        var code = GenerateQuizCode();
-        while (_quizCodes.ContainsKey(code))
-        {
-            code = GenerateQuizCode();
-        }
+        _logger.LogInformation("Live quiz started for exam {ExamId}", examGuid);
 
-        var state = new LiveQuizState
-        {
-            ExamId = examId,
-            PresenterId = userId!,
-            PresenterConnectionId = Context.ConnectionId,
-            QuizCode = code,
-            CurrentQuestionIndex = 0,
-            IsActive = true,
-            StartedAt = DateTime.UtcNow
-        };
-
-        _activeQuizzes[examId] = state;
-        _quizCodes[code] = examId;
-        _participants[examId] = new List<QuizParticipant>();
-
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"quiz_{examId}");
-        
-        _logger.LogInformation("Live quiz started for exam {ExamId} with code {Code}", examId, code);
-        
-        return code;
+        return quiz.Code;
     }
 
-    // Presenter: End the live quiz
     public async Task EndLiveQuiz(string examId)
     {
-        if (_activeQuizzes.TryGetValue(examId, out var state))
+        var quiz = RequirePresenter(examId);
+        var leaderboard = quiz.Leaderboard(take: int.MaxValue);
+
+        _quizzes.End(quiz.ExamId);
+
+        await Clients.Group(QuizGroup(quiz.ExamId)).SendAsync("QuizEnded", new
         {
-            state.IsActive = false;
-            
-            // Get final leaderboard
-            var leaderboard = _participants.GetValueOrDefault(examId)?
-                .OrderByDescending(p => p.Score)
-                .Select((p, i) => new { rank = i + 1, userId = p.UserId, userName = p.UserName, score = p.Score })
-                .ToList();
+            leaderboard,
+            totalQuestions = quiz.CurrentQuestionIndex + 1
+        });
 
-            await Clients.Group($"quiz_{examId}").SendAsync("QuizEnded", new 
-            { 
-                leaderboard,
-                totalQuestions = state.CurrentQuestionIndex + 1
-            });
-
-            // Cleanup
-            _quizCodes.Remove(state.QuizCode);
-            _activeQuizzes.Remove(examId);
-            _participants.Remove(examId);
-
-            _logger.LogInformation("Live quiz ended for exam {ExamId}", examId);
-        }
+        _logger.LogInformation("Live quiz ended for exam {ExamId}", quiz.ExamId);
     }
 
-    // Voter: Join a quiz using code
     public async Task JoinQuiz(string quizCode)
     {
-        var code = quizCode.ToUpper();
-        if (!_quizCodes.TryGetValue(code, out var examId))
+        var caller = Caller();
+
+        if (!_quizzes.TryGetByCode(quizCode, out var quiz))
         {
             await Clients.Caller.SendAsync("Error", "Quiz bulunamadı. Kodu kontrol edin.");
             return;
         }
 
-        if (!_activeQuizzes.TryGetValue(examId, out var state) || !state.IsActive)
+        // Knowing the code is not sufficient: a quiz belongs to a classroom, and only its members may
+        // take part. Otherwise a leaked code would expose the quiz to the whole platform.
+        var access = await _exams.GetExamAccessAsync(quiz.ExamId, caller, Context.ConnectionAborted);
+        if (access?.CanView != true)
         {
-            await Clients.Caller.SendAsync("Error", "Bu quiz artık aktif değil.");
+            await Clients.Caller.SendAsync("Error", "Bu quizin sınıfına kayıtlı değilsiniz.");
             return;
         }
 
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        var firstName = Context.User?.FindFirstValue("firstName") ?? "Katılımcı";
-        var lastName = Context.User?.FindFirstValue("lastName") ?? "";
-        var userName = $"{firstName} {lastName}".Trim();
+        quiz.AddParticipant(caller.UserId, DisplayName(), Context.ConnectionId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, QuizGroup(quiz.ExamId));
 
-        var participant = new QuizParticipant
+        await Clients.Client(quiz.PresenterConnectionId).SendAsync("ParticipantJoined", new
         {
-            UserId = userId!,
-            UserName = userName,
-            ConnectionId = Context.ConnectionId,
-            Score = 0
-        };
-
-        if (!_participants.ContainsKey(examId))
-            _participants[examId] = new List<QuizParticipant>();
-
-        // Check if already joined
-        if (!_participants[examId].Any(p => p.UserId == userId))
-        {
-            _participants[examId].Add(participant);
-        }
-
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"quiz_{examId}");
-
-        // Notify presenter
-        await Clients.Client(state.PresenterConnectionId).SendAsync("ParticipantJoined", new
-        {
-            userId,
-            userName,
+            userId = caller.UserId,
+            userName = DisplayName(),
             connectionId = Context.ConnectionId,
-            participantCount = _participants[examId].Count
+            participantCount = quiz.ParticipantCount
         });
 
-        // Confirm to voter
         await Clients.Caller.SendAsync("JoinedQuiz", new
         {
-            examId,
-            currentQuestionIndex = state.CurrentQuestionIndex
+            examId = quiz.ExamId,
+            currentQuestionIndex = quiz.CurrentQuestionIndex
         });
 
-        _logger.LogInformation("User {UserId} joined quiz {ExamId}", userId, examId);
+        _logger.LogInformation("User {UserId} joined the live quiz for exam {ExamId}", caller.UserId, quiz.ExamId);
     }
 
-    // Voter: Leave the quiz
     public async Task LeaveQuiz(string examId)
     {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        
-        if (_participants.TryGetValue(examId, out var participants))
-        {
-            var participant = participants.FirstOrDefault(p => p.UserId == userId);
-            if (participant != null)
-            {
-                participants.Remove(participant);
-            }
-        }
+        var (caller, examGuid) = Identify(examId);
 
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"quiz_{examId}");
-        
-        if (_activeQuizzes.TryGetValue(examId, out var state))
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, QuizGroup(examGuid));
+
+        if (_quizzes.TryGetByExam(examGuid, out var quiz))
         {
-            await Clients.Client(state.PresenterConnectionId).SendAsync("ParticipantLeft", new { userId });
+            quiz.RemoveParticipant(caller.UserId);
+            await Clients.Client(quiz.PresenterConnectionId).SendAsync("ParticipantLeft", new { userId = caller.UserId });
         }
     }
 
-    // Presenter: Go to next question
-    public async Task NextQuestion(string examId)
+    public Task NextQuestion(string examId) => MoveToQuestion(examId, delta: 1);
+
+    public Task PreviousQuestion(string examId) => MoveToQuestion(examId, delta: -1);
+
+    public Task ShowResults(string examId)
     {
-        if (_activeQuizzes.TryGetValue(examId, out var state))
-        {
-            state.CurrentQuestionIndex++;
-            state.ShowingResults = false;
-            state.CurrentAnswers.Clear();
+        var quiz = RequirePresenter(examId);
+        quiz.RevealResults();
 
-            await Clients.Group($"quiz_{examId}").SendAsync("QuestionChanged", new
-            {
-                questionIndex = state.CurrentQuestionIndex
-            });
-        }
+        return Clients.Group(QuizGroup(quiz.ExamId)).SendAsync("QuestionResults", new
+        {
+            answers = quiz.AnswerTally(),
+            totalResponses = quiz.ResponseCount
+        });
     }
 
-    // Presenter: Go to previous question
-    public async Task PreviousQuestion(string examId)
+    public Task RevealAnswer(string examId)
     {
-        if (_activeQuizzes.TryGetValue(examId, out var state) && state.CurrentQuestionIndex > 0)
-        {
-            state.CurrentQuestionIndex--;
-            state.ShowingResults = false;
-            state.CurrentAnswers.Clear();
+        var quiz = RequirePresenter(examId);
 
-            await Clients.Group($"quiz_{examId}").SendAsync("QuestionChanged", new
-            {
-                questionIndex = state.CurrentQuestionIndex
-            });
-        }
+        return Clients.Group(QuizGroup(quiz.ExamId)).SendAsync("AnswerRevealed", new
+        {
+            questionIndex = quiz.CurrentQuestionIndex
+        });
     }
 
-    // Presenter: Show results for current question
-    public async Task ShowResults(string examId)
-    {
-        if (_activeQuizzes.TryGetValue(examId, out var state))
-        {
-            state.ShowingResults = true;
-            
-            var answerCounts = state.CurrentAnswers
-                .GroupBy(a => a.Value)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            await Clients.Group($"quiz_{examId}").SendAsync("QuestionResults", new
-            {
-                answers = answerCounts,
-                totalResponses = state.CurrentAnswers.Count
-            });
-        }
-    }
-
-    // Presenter: Reveal correct answer
-    public async Task RevealAnswer(string examId)
-    {
-        if (_activeQuizzes.TryGetValue(examId, out var state))
-        {
-            await Clients.Group($"quiz_{examId}").SendAsync("AnswerRevealed", new
-            {
-                questionIndex = state.CurrentQuestionIndex
-            });
-        }
-    }
-
-    // Voter: Submit answer
     public async Task SubmitAnswer(string examId, string questionId, string answer)
     {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var (caller, examGuid) = Identify(examId);
 
-        if (!_activeQuizzes.TryGetValue(examId, out var state))
+        if (!_quizzes.TryGetByExam(examGuid, out var quiz) || !quiz.HasParticipant(caller.UserId))
+        {
+            throw new HubException("Join the quiz first.");
+        }
+
+        if (!quiz.TryRecordAnswer(caller.UserId, answer))
+        {
             return;
-
-        // Store answer (only first answer counts)
-        if (!state.CurrentAnswers.ContainsKey(userId!))
-        {
-            state.CurrentAnswers[userId!] = answer;
-
-            // Notify presenter
-            await Clients.Client(state.PresenterConnectionId).SendAsync("AnswerReceived", new
-            {
-                userId,
-                answer
-            });
-
-            _logger.LogInformation("User {UserId} submitted answer {Answer} for quiz {ExamId}", userId, answer, examId);
         }
-    }
 
-    // Get current leaderboard
-    public async Task GetLeaderboard(string examId)
-    {
-        if (_participants.TryGetValue(examId, out var participants))
+        await Clients.Client(quiz.PresenterConnectionId).SendAsync("AnswerReceived", new
         {
-            var leaderboard = participants
-                .OrderByDescending(p => p.Score)
-                .Select((p, i) => new { rank = i + 1, userName = p.UserName, score = p.Score })
-                .Take(10)
-                .ToList();
-
-            await Clients.Caller.SendAsync("Leaderboard", leaderboard);
-        }
+            userId = caller.UserId,
+            answer
+        });
     }
 
-    private static string GenerateQuizCode()
+    public Task GetLeaderboard(string examId)
     {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        var random = new Random();
-        return new string(Enumerable.Repeat(chars, 6).Select(s => s[random.Next(s.Length)]).ToArray());
+        var (caller, examGuid) = Identify(examId);
+
+        if (!_quizzes.TryGetByExam(examGuid, out var quiz) ||
+            (!quiz.IsPresenter(caller.UserId) && !quiz.HasParticipant(caller.UserId)))
+        {
+            throw new HubException("Join the quiz first.");
+        }
+
+        return Clients.Caller.SendAsync("Leaderboard", quiz.Leaderboard(take: 10));
     }
 
-    #endregion
-}
+    private Task MoveToQuestion(string examId, int delta)
+    {
+        var quiz = RequirePresenter(examId);
 
-// Helper classes
-public class LiveQuizState
-{
-    public string ExamId { get; set; } = "";
-    public string PresenterId { get; set; } = "";
-    public string PresenterConnectionId { get; set; } = "";
-    public string QuizCode { get; set; } = "";
-    public int CurrentQuestionIndex { get; set; }
-    public bool IsActive { get; set; }
-    public bool ShowingResults { get; set; }
-    public DateTime StartedAt { get; set; }
-    public Dictionary<string, string> CurrentAnswers { get; set; } = new();
-}
+        return Clients.Group(QuizGroup(quiz.ExamId)).SendAsync("QuestionChanged", new
+        {
+            questionIndex = quiz.MoveToQuestion(delta)
+        });
+    }
 
-public class QuizParticipant
-{
-    public string UserId { get; set; } = "";
-    public string UserName { get; set; } = "";
-    public string ConnectionId { get; set; } = "";
-    public int Score { get; set; }
-}
+    /// <summary>
+    /// Resolves a running quiz only for the instructor who started it. Presenter commands change what
+    /// every participant sees, so a participant must not be able to issue them.
+    /// </summary>
+    private LiveQuiz RequirePresenter(string examId)
+    {
+        var (caller, examGuid) = Identify(examId);
 
+        if (!_quizzes.TryGetByExam(examGuid, out var quiz))
+        {
+            throw new HubException("No live quiz is running for this exam.");
+        }
+
+        if (!quiz.IsPresenter(caller.UserId))
+        {
+            _logger.LogWarning(
+                "User {UserId} attempted to control the live quiz of exam {ExamId}", caller.UserId, examGuid);
+            throw new HubException("Only the presenter can do that.");
+        }
+
+        return quiz;
+    }
+
+    private static string UserGroup(Guid userId) => $"user_{userId}";
+
+    private static string ExamGroup(Guid examId) => $"exam_{examId}";
+
+    private static string QuizGroup(Guid examId) => $"quiz_{examId}";
+
+    private static Guid ParseId(string value) =>
+        Guid.TryParse(value, out var id) ? id : throw new HubException("The supplied id is not valid.");
+
+    private (Caller Caller, Guid ExamId) Identify(string examId) => (Caller(), ParseId(examId));
+
+    private Caller Caller() => Context.User.TryGetCaller(out var caller)
+        ? caller
+        : throw new HubException("The connection is not authenticated.");
+
+    private string DisplayName()
+    {
+        var parts = new[] { Context.User?.FindFirst("firstName")?.Value, Context.User?.FindFirst("lastName")?.Value };
+        var name = string.Join(' ', parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+        return string.IsNullOrWhiteSpace(name) ? "Katılımcı" : name;
+    }
+}

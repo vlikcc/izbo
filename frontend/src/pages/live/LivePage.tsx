@@ -35,7 +35,7 @@ export const LivePage: React.FC = () => {
 
     const fetchSessions = async () => {
         try {
-            const data = await liveService.getUpcomingSessions();
+            const data = await liveService.getVisibleSessions();
             setSessions(data);
         } catch (error) {
             console.error('Failed to fetch sessions:', error);

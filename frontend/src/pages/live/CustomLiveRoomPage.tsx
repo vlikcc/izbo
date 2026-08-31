@@ -56,7 +56,7 @@ export const CustomLiveRoomPage: React.FC = () => {
 
     // SignalR & Data States
     const [connection, setConnection] = useState<HubConnection | null>(null);
-    const [_isConnected, setIsConnected] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [messageInput, setMessageInput] = useState('');
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -82,12 +82,51 @@ export const CustomLiveRoomPage: React.FC = () => {
         ]
     };
 
+    async function startLocalStream() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+            setLocalStream(stream);
+            cameraStreamRef.current = stream;
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = stream;
+            }
+        } catch (err) {
+            console.error("Error accessing media devices:", err);
+        }
+    }
+
+    function createPeerConnection(targetUserId: string, signalRConnection: HubConnection) {
+        const peer = new RTCPeerConnection(rtcConfig);
+
+        peer.onicecandidate = (event) => {
+            if (event.candidate) {
+                void signalRConnection.invoke('SendIceCandidate', sessionId, targetUserId, JSON.stringify(event.candidate));
+            }
+        };
+
+        peer.ontrack = (event) => {
+            console.log('Received remote track from', targetUserId);
+            setRemoteStreams(prev => ({
+                ...prev,
+                [targetUserId]: event.streams[0]
+            }));
+        };
+
+        return peer;
+    }
+
     useEffect(() => {
-        startLocalStream();
+        void startLocalStream();
+        const peers = peersRef.current;
         return () => {
             localStream?.getTracks().forEach(track => track.stop());
-            Object.values(peersRef.current).forEach(peer => peer.close());
+            Object.values(peers).forEach(peer => peer.close());
         };
+        // Camera capture is a one-shot setup for this room; re-running would restart the stream.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -283,47 +322,12 @@ export const CustomLiveRoomPage: React.FC = () => {
                 .catch(e => console.error('Connection failed: ', e));
 
             return () => {
-                connection.stop();
+                void connection.stop();
             };
         }
-    }, [connection, sessionId, localStream]); // Dependency on localStream to add tracks
-
-    const createPeerConnection = (targetUserId: string, signalRConnection: HubConnection) => {
-        const peer = new RTCPeerConnection(rtcConfig);
-
-        peer.onicecandidate = (event) => {
-            if (event.candidate) {
-                signalRConnection.invoke('SendIceCandidate', sessionId, targetUserId, JSON.stringify(event.candidate));
-            }
-        };
-
-        peer.ontrack = (event) => {
-            console.log('Received remote track from', targetUserId);
-            setRemoteStreams(prev => ({
-                ...prev,
-                [targetUserId]: event.streams[0]
-            }));
-        };
-
-        return peer;
-    };
-
-
-    const startLocalStream = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-            setLocalStream(stream);
-            cameraStreamRef.current = stream; // Store for switching back
-            if (localVideoRef.current) {
-                localVideoRef.current.srcObject = stream;
-            }
-        } catch (err) {
-            console.error("Error accessing media devices:", err);
-        }
-    };
+        // Signaling handlers close over the current stream; recreate only when the hub or stream changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connection, sessionId, localStream]);
 
     const toggleMic = () => {
         if (localStream) {
@@ -472,6 +476,7 @@ export const CustomLiveRoomPage: React.FC = () => {
                     <div className="live-badge">CANLI</div>
                     <div className="session-title">Canlı Ders: {sessionId?.substring(0, 8)}...</div>
                     <div className="participant-count">👥 {participants.length + 1} katılımcı</div>
+                    <div aria-live="polite">{isConnected ? 'Bağlı' : 'Bağlanıyor...'}</div>
                 </div>
                 <div className="header-right">
                     <button className="leave-btn" onClick={handleLeave}>Dersten Ayrıl</button>

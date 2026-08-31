@@ -10,9 +10,9 @@ public interface INotificationManagementService
     Task<NotificationDto> CreateNotificationAsync(Guid userId, NotificationType type, string title, string message, string? actionUrl = null);
     Task<List<NotificationDto>> GetUserNotificationsAsync(Guid userId, bool unreadOnly = false);
     Task<int> GetUnreadCountAsync(Guid userId);
-    Task<bool> MarkAsReadAsync(Guid notificationId);
+    Task<bool> MarkAsReadAsync(Guid notificationId, Guid userId);
     Task<bool> MarkAllAsReadAsync(Guid userId);
-    Task<bool> DeleteNotificationAsync(Guid notificationId);
+    Task<bool> DeleteNotificationAsync(Guid notificationId, Guid userId);
     Task<NotificationPreferenceDto?> GetPreferencesAsync(Guid userId);
     Task<NotificationPreferenceDto> UpdatePreferencesAsync(Guid userId, UpdateNotificationPreferenceRequest request);
 }
@@ -45,7 +45,7 @@ public class NotificationManagementService : INotificationManagementService
         _context.Notifications.Add(notification);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Notification created for user {UserId}: {Title}", userId, title);
+        _logger.LogInformation("Notification {NotificationId} created for user {UserId}", notification.Id, userId);
 
         return MapToDto(notification);
     }
@@ -72,9 +72,14 @@ public class NotificationManagementService : INotificationManagementService
             .CountAsync(n => n.UserId == userId && !n.IsRead);
     }
 
-    public async Task<bool> MarkAsReadAsync(Guid notificationId)
+    /// <summary>
+    /// Scoped to the recipient: a notification id alone must not be enough to act on someone else's inbox.
+    /// </summary>
+    public async Task<bool> MarkAsReadAsync(Guid notificationId, Guid userId)
     {
-        var notification = await _context.Notifications.FindAsync(notificationId);
+        var notification = await _context.Notifications
+            .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
+
         if (notification == null) return false;
 
         notification.IsRead = true;
@@ -99,9 +104,11 @@ public class NotificationManagementService : INotificationManagementService
         return true;
     }
 
-    public async Task<bool> DeleteNotificationAsync(Guid notificationId)
+    public async Task<bool> DeleteNotificationAsync(Guid notificationId, Guid userId)
     {
-        var notification = await _context.Notifications.FindAsync(notificationId);
+        var notification = await _context.Notifications
+            .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
+
         if (notification == null) return false;
 
         _context.Notifications.Remove(notification);

@@ -1,55 +1,31 @@
-using Serilog;
 using AuthService.Data;
 using AuthService.Services;
-using Microsoft.EntityFrameworkCore;
+using Shared.Audit;
 using Shared.Configuration;
+using Shared.Email;
 using Shared.Extensions;
+using Shared.Messaging;
+using Shared.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.AddEduPlatformLogging();
+builder.AddEduPlatformWebHost();
 
-// Add services to the container
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Database
 builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
-// JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("JWT");
-builder.Services.AddJwtAuthentication(
-    jwtSettings["Secret"]!,
-    jwtSettings["Issuer"]!,
-    jwtSettings["Audience"]!
-);
-
-builder.Services.AddAuthorization();
-
-// Services
+builder.Services.AddEduPlatformAudit<AuthDbContext>();
 builder.Services.AddScoped<IAuthService, AuthenticationService>();
+builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();
+builder.Services.AddSingleton<RabbitMqMessageBus>();
+builder.Services.AddSingleton<IMessageBus>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddHostedService<OutboxProcessor>();
 builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 
-// CORS
-builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
-builder.Services.AddEduPlatformHealthChecks(builder.Configuration);
+builder.Services.AddAuthRateLimiting(builder.Configuration.GetConnectionString("Redis"));
 
 var app = builder.Build();
-app.UseSerilogRequestLogging();
-
-// Configure pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseCors("AllowFrontend");
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-app.MapHealthChecks("/health");
+app.UseEduPlatformPipeline(configure: pipeline => pipeline.UseRateLimiter());
 
 app.ApplyMigrations<AuthDbContext>();
 await AuthDataSeeder.SeedAsync(app.Services);

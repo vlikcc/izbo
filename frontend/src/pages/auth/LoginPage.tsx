@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Input, Card } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import './Auth.css';
 
 export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login, isLoading, error, clearError } = useAuthStore();
+    const notice = (location.state as { notice?: string } | null)?.notice;
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -17,7 +19,8 @@ export const LoginPage: React.FC = () => {
         clearError();
         try {
             await login(formData.email, formData.password);
-            navigate('/dashboard');
+            const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+            navigate(from && from.startsWith('/app') ? from : '/app/dashboard');
         } catch {
             // Error handled by store
         }
@@ -49,6 +52,12 @@ export const LoginPage: React.FC = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="auth-form">
+                        {notice && !error && (
+                            <div className="auth-notice">
+                                {notice}
+                            </div>
+                        )}
+
                         {error && (
                             <div className="auth-error">
                                 {error}
@@ -87,6 +96,9 @@ export const LoginPage: React.FC = () => {
                     </form>
 
                     <div className="auth-footer">
+                        <p>
+                            <Link to="/forgot-password">Parolamı unuttum</Link>
+                        </p>
                         <p>
                             Hesabınız yok mu?{' '}
                             <Link to="/register">Kayıt Olun</Link>

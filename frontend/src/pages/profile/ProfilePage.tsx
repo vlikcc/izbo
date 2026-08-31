@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Card, Button, Input, Modal } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { userService } from '../../services/user.service';
+import { toast } from '../../lib/toast';
 import './Profile.css';
 
 export const ProfilePage: React.FC = () => {
-    const { user, checkAuth } = useAuthStore();
+    const { user, checkAuth, logout } = useAuthStore();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -180,6 +181,54 @@ export const ProfilePage: React.FC = () => {
                     </div>
                 </Card>
             </div>
+
+            <Card variant="default" padding="lg" className="profile-card">
+                <h3 className="profile-section-title">Gizlilik</h3>
+                <p>Verilerinizin bir kopyasını indirebilir veya hesabınızı silebilirsiniz.</p>
+                <div className="profile-actions">
+                    <Button
+                        variant="outline"
+                        size="md"
+                        onClick={() => {
+                            void (async () => {
+                                try {
+                                    const blob = await userService.exportMyData();
+                                    const url = URL.createObjectURL(blob);
+                                    const anchor = document.createElement('a');
+                                    anchor.href = url;
+                                    anchor.download = 'eduplatform-verilerim.json';
+                                    anchor.click();
+                                    URL.revokeObjectURL(url);
+                                } catch (err) {
+                                    toast.error(err instanceof Error ? err.message : 'Dışa aktarma başarısız');
+                                }
+                            })();
+                        }}
+                    >
+                        Verilerimi indir
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="md"
+                        onClick={() => {
+                            if (!window.confirm('Hesabınız silinecek ve verileriniz anonimleştirilecek. Emin misiniz?')) {
+                                return;
+                            }
+                            void (async () => {
+                                try {
+                                    await userService.deleteMyAccount();
+                                    await logout();
+                                    window.location.href = '/';
+                                } catch (err) {
+                                    toast.error(err instanceof Error ? err.message : 'Hesap silinemedi');
+                                }
+                            })();
+                        }}
+                    >
+                        Hesabımı sil
+                    </Button>
+                </div>
+            </Card>
 
             {/* Edit Profile Modal */}
             <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Profili Düzenle">

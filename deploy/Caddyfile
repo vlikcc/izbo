@@ -1,14 +1,45 @@
 {
 	email {$ACME_EMAIL}
+
+	# Caddy's own version is not useful to a client and is useful to a scanner.
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+# Applied to both sites. HSTS is set here rather than per-application because Caddy is what terminates
+# TLS and therefore the only thing that knows the connection was secure.
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
 }
 
 {$APP_DOMAIN} {
 	encode gzip
+	import security_headers
 	reverse_proxy frontend:80
 }
 
 {$API_DOMAIN} {
 	encode gzip
+	import security_headers
+
+	header {
+		# The API returns data, never a document, so nothing it serves should ever be rendered or framed.
+		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		X-Frame-Options "DENY"
+		Cross-Origin-Resource-Policy "same-site"
+	}
+
+	# Metrics stay on the internal network; scrape from Prometheus, not the public hostname.
+	handle /metrics* {
+		respond 404
+	}
+
 	reverse_proxy apigateway:8080 {
 		transport http {
 			versions 1.1

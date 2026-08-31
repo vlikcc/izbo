@@ -27,6 +27,7 @@ export const ExamBuilderPage: React.FC = () => {
         if (id) {
             fetchExamData(id);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchExamData = async (examId: string) => {

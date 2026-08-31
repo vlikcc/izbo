@@ -1,16 +1,18 @@
-using Serilog;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Serilog;
+using Shared.Errors;
 using Shared.Extensions;
-using System.Threading.RateLimiting;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddEduPlatformLogging();
+builder.AddEduPlatformTelemetry();
+builder.Services.AddForwardedHeaders();
 
-// Load Ocelot configuration
 var ocelotFile = builder.Environment.IsProduction() ? "ocelot.Production.json" : "ocelot.json";
 builder.Configuration.AddJsonFile(ocelotFile, optional: false, reloadOnChange: true);
 var apiPublicUrl = builder.Configuration["Api:PublicUrl"];
@@ -19,7 +21,6 @@ if (!string.IsNullOrWhiteSpace(apiPublicUrl))
     builder.Configuration["GlobalConfiguration:BaseUrl"] = apiPublicUrl;
 }
 
-// JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWT");
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -36,7 +37,6 @@ builder.Services.AddAuthentication("Bearer")
             ClockSkew = TimeSpan.Zero
         };
 
-        // Support token in query string for SignalR
         options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -53,23 +53,11 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-// CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins(builder.Configuration["Frontend:Url"] ?? "http://localhost:3000")
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
-    });
-});
-
-// Ocelot
+builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
 builder.Services.AddOcelot();
-
-// Health checks
 builder.Services.AddHealthChecks();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -89,17 +77,36 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
+app.UseForwardedHeadersFromProxy();
+app.UseCorrelationId();
 app.UseRateLimiter();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.RoutePrefix = "docs";
+    options.DocumentTitle = "EduPlatform API";
+    options.SwaggerEndpoint("/openapi/auth/v1/swagger.json", "Auth");
+    options.SwaggerEndpoint("/openapi/users/v1/swagger.json", "Users");
+    options.SwaggerEndpoint("/openapi/classrooms/v1/swagger.json", "Classrooms");
+    options.SwaggerEndpoint("/openapi/homework/v1/swagger.json", "Homework");
+    options.SwaggerEndpoint("/openapi/exams/v1/swagger.json", "Exams");
+    options.SwaggerEndpoint("/openapi/live/v1/swagger.json", "Live");
+    options.SwaggerEndpoint("/openapi/notifications/v1/swagger.json", "Notifications");
+    options.SwaggerEndpoint("/openapi/files/v1/swagger.json", "Files");
+});
 
 app.UseWebSockets();
-
 app.UseRouting();
-app.MapHealthChecks("/health");
+app.MapEduPlatformHealthChecks();
+app.MapEduPlatformMetrics();
 
 app.UseWhen(
-    ctx => !ctx.Request.Path.StartsWithSegments("/health"),
-    branch => branch.UseOcelot());
+    ctx => !ctx.Request.Path.StartsWithSegments("/health")
+        && !ctx.Request.Path.StartsWithSegments("/docs")
+        && !ctx.Request.Path.StartsWithSegments("/swagger")
+        && !ctx.Request.Path.StartsWithSegments("/metrics"),
+    branch => branch.UseOcelot().GetAwaiter().GetResult());
 
 app.Run();

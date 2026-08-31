@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Button } from '../../components/ui';
 import { CreateHomeworkModal } from '../../components/homework/CreateHomeworkModal';
 import { homeworkService } from '../../services/homework.service';
@@ -7,6 +8,7 @@ import type { Homework } from '../../types';
 import './Homework.css';
 
 export const HomeworkPage: React.FC = () => {
+    const navigate = useNavigate();
     const { user } = useAuthStore();
     const [homeworks, setHomeworks] = useState<Homework[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -112,15 +114,14 @@ export const HomeworkPage: React.FC = () => {
 
                             <div className="homework-actions">
                                 {!isInstructor && (
-                                    <Button variant="primary" size="md">
+                                    <Button variant="primary" size="md" onClick={() => navigate(`/app/homework/${homework.id}/submit`)}>
                                         Ödevi Teslim Et
                                     </Button>
                                 )}
                                 {isInstructor && (
-                                    <>
-                                        <Button variant="outline" size="sm">Düzenle</Button>
-                                        <Button variant="ghost" size="sm">Teslimler ({homework.submissionCount})</Button>
-                                    </>
+                                    <Button variant="ghost" size="sm" onClick={() => navigate(`/app/homework/${homework.id}/grade`)}>
+                                        Teslimler ({homework.submissionCount})
+                                    </Button>
                                 )}
                                 {homework.attachmentUrl && (
                                     <Button variant="ghost" size="sm">

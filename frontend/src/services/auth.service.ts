@@ -13,15 +13,16 @@ export const authService = {
         throw new Error(response.data.message || 'Login failed');
     },
 
-    async register(data: RegisterRequest): Promise<AuthResponse> {
-        const response = await api.post<ApiResponse<AuthResponse>>('/api/auth/register', data);
-        if (response.data.success && response.data.data) {
-            const authData = response.data.data;
-            localStorage.setItem('accessToken', authData.accessToken);
-            localStorage.setItem('refreshToken', authData.refreshToken);
-            return authData;
+    /**
+     * Registration deliberately returns no session. The response is identical whether or not the address
+     * was already taken, so signing the caller in would reveal which of the two happened.
+     */
+    async register(data: RegisterRequest): Promise<string> {
+        const response = await api.post<ApiResponse<boolean>>('/api/auth/register', data);
+        if (response.data.success) {
+            return response.data.message ?? 'Kayıt talebiniz alındı.';
         }
-        throw new Error(response.data.message || 'Registration failed');
+        throw new Error(response.data.message || 'Kayıt tamamlanamadı');
     },
 
     async logout(): Promise<void> {
@@ -59,6 +60,27 @@ export const authService = {
 
     isAuthenticated(): boolean {
         return !!localStorage.getItem('accessToken');
+    },
+
+    async forgotPassword(email: string): Promise<void> {
+        const response = await api.post<ApiResponse<boolean>>('/api/auth/forgot-password', { email });
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'İstek gönderilemedi');
+        }
+    },
+
+    async resetPassword(token: string, password: string): Promise<void> {
+        const response = await api.post<ApiResponse<boolean>>('/api/auth/reset-password', { token, password });
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Parola sıfırlanamadı');
+        }
+    },
+
+    async verifyEmail(token: string): Promise<void> {
+        const response = await api.post<ApiResponse<boolean>>('/api/auth/verify-email', { token });
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Doğrulama başarısız');
+        }
     },
 };
 

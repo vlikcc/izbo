@@ -1,111 +1,158 @@
+using ClassroomService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Shared.Authorization;
 using System.Security.Claims;
 
 namespace ClassroomService.Hubs;
 
+/// <summary>
+/// Real-time classroom and live-session events.
+///
+/// Group names are derived from ids the client supplies, so joining is gated on the same enrollment
+/// rules the REST endpoints enforce. Every other method requires the connection to already hold the
+/// group, which is the record that it passed that check.
+/// </summary>
 [Authorize]
 public class ClassroomHub : Hub
 {
+    private const string JoinedGroupsItemKey = "joined-groups";
+
+    private readonly IClassroomManagementService _classroomService;
+    private readonly ISessionService _sessionService;
+    private readonly IClassroomCommunityService _community;
     private readonly ILogger<ClassroomHub> _logger;
 
-    public ClassroomHub(ILogger<ClassroomHub> logger)
+    public ClassroomHub(
+        IClassroomManagementService classroomService,
+        ISessionService sessionService,
+        IClassroomCommunityService community,
+        ILogger<ClassroomHub> logger)
     {
+        _classroomService = classroomService;
+        _sessionService = sessionService;
+        _community = community;
         _logger = logger;
     }
 
     public override async Task OnConnectedAsync()
     {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        _logger.LogInformation("User {UserId} connected to ClassroomHub", userId);
-        await base.OnConnectedAsync();
-    }
+        if (!Context.User.TryGetCaller(out var caller))
+        {
+            Context.Abort();
+            return;
+        }
 
-    public override async Task OnDisconnectedAsync(Exception? exception)
-    {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        _logger.LogInformation("User {UserId} disconnected from ClassroomHub", userId);
-        await base.OnDisconnectedAsync(exception);
+        _logger.LogInformation("User {UserId} connected to ClassroomHub", caller.UserId);
+        await base.OnConnectedAsync();
     }
 
     public async Task JoinClassroom(string classroomId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"classroom_{classroomId}");
-        _logger.LogInformation("Connection {ConnectionId} joined classroom {ClassroomId}", Context.ConnectionId, classroomId);
+        var caller = Caller();
+        var classroomGuid = ParseId(classroomId);
+
+        var access = await _classroomService.GetAccessAsync(classroomGuid, caller);
+        if (access?.CanView != true)
+        {
+            _logger.LogWarning(
+                "User {UserId} was refused the event stream of classroom {ClassroomId}", caller.UserId, classroomGuid);
+            throw new HubException("You do not have access to this classroom.");
+        }
+
+        await AddToGroupAsync(ClassroomGroup(classroomId));
     }
 
-    public async Task LeaveClassroom(string classroomId)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"classroom_{classroomId}");
-        _logger.LogInformation("Connection {ConnectionId} left classroom {ClassroomId}", Context.ConnectionId, classroomId);
-    }
+    public Task LeaveClassroom(string classroomId) => RemoveFromGroupAsync(ClassroomGroup(classroomId));
 
     public async Task JoinSession(string sessionId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"session_{sessionId}");
-        
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        var userName = Context.User?.FindFirstValue("firstName") + " " + Context.User?.FindFirstValue("lastName");
-        
-        // Notify others that someone joined
-        await Clients.Group($"session_{sessionId}").SendAsync("ParticipantJoined", new
+        var caller = Caller();
+        var sessionGuid = ParseId(sessionId);
+
+        var access = await _sessionService.GetSessionAccessAsync(sessionGuid, caller);
+        if (access?.CanView != true)
         {
-            userId,
-            userName,
+            _logger.LogWarning(
+                "User {UserId} was refused entry to session {SessionId}", caller.UserId, sessionGuid);
+            throw new HubException("You do not have access to this session.");
+        }
+
+        var group = SessionGroup(sessionId);
+        await AddToGroupAsync(group);
+        await _community.RecordJoinAsync(sessionGuid, caller.UserId, Context.ConnectionAborted);
+
+        await Clients.Group(group).SendAsync("ParticipantJoined", new
+        {
+            userId = caller.UserId,
+            userName = DisplayName(),
             joinedAt = DateTime.UtcNow
         });
 
-        _logger.LogInformation("User {UserId} joined session {SessionId}", userId, sessionId);
+        _logger.LogInformation("User {UserId} joined session {SessionId}", caller.UserId, sessionGuid);
     }
 
     public async Task LeaveSession(string sessionId)
     {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"session_{sessionId}");
-        
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        
-        await Clients.Group($"session_{sessionId}").SendAsync("ParticipantLeft", new
+        var caller = Caller();
+        var sessionGuid = ParseId(sessionId);
+        var group = SessionGroup(sessionId);
+        await _community.RecordLeaveAsync(sessionGuid, caller.UserId, Context.ConnectionAborted);
+        await RemoveFromGroupAsync(group);
+
+        await Clients.Group(group).SendAsync("ParticipantLeft", new
         {
-            userId,
+            userId = caller.UserId,
             leftAt = DateTime.UtcNow
         });
-
-        _logger.LogInformation("User {UserId} left session {SessionId}", userId, sessionId);
     }
 
-    // Chat within session
-    public async Task SendMessage(string sessionId, string message)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        var userName = Context.User?.FindFirstValue("firstName") + " " + Context.User?.FindFirstValue("lastName");
-
-        await Clients.Group($"session_{sessionId}").SendAsync("ReceiveMessage", new
+        if (Context.User.TryGetCaller(out var caller))
         {
-            userId,
-            userName,
+            foreach (var group in JoinedGroups.ToArray())
+            {
+                if (group.StartsWith("session_", StringComparison.Ordinal)
+                    && Guid.TryParse(group["session_".Length..], out var sessionId))
+                {
+                    await _community.RecordLeaveAsync(sessionId, caller.UserId, Context.ConnectionAborted);
+                }
+            }
+        }
+
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    public Task SendMessage(string sessionId, string message)
+    {
+        var group = RequireJoinedSession(sessionId);
+
+        return Clients.Group(group).SendAsync("ReceiveMessage", new
+        {
+            userId = Caller().UserId,
+            userName = DisplayName(),
             message,
             sentAt = DateTime.UtcNow
         });
     }
 
-    // Hand raising
-    public async Task RaiseHand(string sessionId)
+    public Task RaiseHand(string sessionId)
     {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        var userName = Context.User?.FindFirstValue("firstName") + " " + Context.User?.FindFirstValue("lastName");
+        var group = RequireJoinedSession(sessionId);
 
-        await Clients.Group($"session_{sessionId}").SendAsync("HandRaised", new
+        return Clients.Group(group).SendAsync("HandRaised", new
         {
-            userId,
-            userName,
+            userId = Caller().UserId,
+            userName = DisplayName(),
             raisedAt = DateTime.UtcNow
         });
     }
 
-    public async Task LowerHand(string sessionId)
+    public Task LowerHand(string sessionId)
     {
-        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        await Clients.Group($"session_{sessionId}").SendAsync("HandLowered", new { userId });
+        var group = RequireJoinedSession(sessionId);
+        return Clients.Group(group).SendAsync("HandLowered", new { userId = Caller().UserId });
     }
 
     // Whiteboard — only the instructor draws, everyone else views. Diffs are tldraw store
@@ -117,7 +164,8 @@ public class ClassroomHub : Hub
         if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
             return;
 
-        await Clients.OthersInGroup($"session_{sessionId}").SendAsync("WhiteboardDiff", diffJson);
+        RequireJoinedSession(sessionId);
+        await Clients.OthersInGroup(SessionGroup(sessionId)).SendAsync("WhiteboardDiff", diffJson);
     }
 
     public async Task SendWhiteboardSnapshot(string sessionId, string toUserId, string snapshotJson)
@@ -126,6 +174,7 @@ public class ClassroomHub : Hub
         if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
             return;
 
+        RequireJoinedSession(sessionId);
         await Clients.User(toUserId).SendAsync("WhiteboardSnapshot", snapshotJson);
     }
 
@@ -138,7 +187,8 @@ public class ClassroomHub : Hub
         if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
             return;
 
-        await Clients.Group($"session_{sessionId}").SendAsync("QuizStarted", new { examId, quizCode });
+        var group = RequireJoinedSession(sessionId);
+        await Clients.Group(group).SendAsync("QuizStarted", new { examId, quizCode });
     }
 
     // Catches up a student who joins the room after the quiz already started (the group
@@ -158,29 +208,104 @@ public class ClassroomHub : Hub
         if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
             return;
 
-        await Clients.Group($"session_{sessionId}").SendAsync("QuizEnded");
+        var group = RequireJoinedSession(sessionId);
+        await Clients.Group(group).SendAsync("QuizEnded");
     }
 
-    // WebRTC Signaling
-    public async Task SendOffer(string sessionId, string toUserId, string offer)
+    // WebRTC signalling. Messages are addressed to a user rather than a connection, so the only
+    // guarantee available here is that the sender is a member of the session it names.
+    public Task SendOffer(string sessionId, string toUserId, string offer)
     {
-        var fromUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        var fromUserName = Context.User?.FindFirstValue("firstName") + " " + Context.User?.FindFirstValue("lastName");
-        
-        await Clients.User(toUserId).SendAsync("ReceiveOffer", new { fromUserId, fromUserName, offer });
+        RequireJoinedSession(sessionId);
+
+        return Clients.User(toUserId).SendAsync("ReceiveOffer", new
+        {
+            fromUserId = Caller().UserId,
+            fromUserName = DisplayName(),
+            offer
+        });
     }
 
-    public async Task SendAnswer(string sessionId, string toUserId, string answer)
+    public Task SendAnswer(string sessionId, string toUserId, string answer)
     {
-        var fromUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        var fromUserName = Context.User?.FindFirstValue("firstName") + " " + Context.User?.FindFirstValue("lastName");
+        RequireJoinedSession(sessionId);
 
-        await Clients.User(toUserId).SendAsync("ReceiveAnswer", new { fromUserId, fromUserName, answer });
+        return Clients.User(toUserId).SendAsync("ReceiveAnswer", new
+        {
+            fromUserId = Caller().UserId,
+            fromUserName = DisplayName(),
+            answer
+        });
     }
 
-    public async Task SendIceCandidate(string sessionId, string toUserId, string candidate)
+    public Task SendIceCandidate(string sessionId, string toUserId, string candidate)
     {
-        var fromUserId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-        await Clients.User(toUserId).SendAsync("ReceiveIceCandidate", new { fromUserId, candidate });
+        RequireJoinedSession(sessionId);
+
+        return Clients.User(toUserId).SendAsync("ReceiveIceCandidate", new
+        {
+            fromUserId = Caller().UserId,
+            candidate
+        });
+    }
+
+    private static string ClassroomGroup(string classroomId) => $"classroom_{classroomId}";
+
+    private static string SessionGroup(string sessionId) => $"session_{sessionId}";
+
+    private static Guid ParseId(string value) =>
+        Guid.TryParse(value, out var id) ? id : throw new HubException("The supplied id is not valid.");
+
+    private Caller Caller() => Context.User.TryGetCaller(out var caller)
+        ? caller
+        : throw new HubException("The connection is not authenticated.");
+
+    private string DisplayName()
+    {
+        var parts = new[] { Context.User?.FindFirst("firstName")?.Value, Context.User?.FindFirst("lastName")?.Value };
+        var name = string.Join(' ', parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+        return string.IsNullOrWhiteSpace(name) ? "User" : name;
+    }
+
+    /// <summary>
+    /// The groups this connection has been admitted to. SignalR does not expose group membership, so it
+    /// is tracked alongside the connection; invocations for one connection do not run concurrently.
+    /// </summary>
+    private HashSet<string> JoinedGroups
+    {
+        get
+        {
+            if (Context.Items[JoinedGroupsItemKey] is not HashSet<string> groups)
+            {
+                groups = new HashSet<string>(StringComparer.Ordinal);
+                Context.Items[JoinedGroupsItemKey] = groups;
+            }
+
+            return groups;
+        }
+    }
+
+    private async Task AddToGroupAsync(string group)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, group);
+        JoinedGroups.Add(group);
+    }
+
+    private async Task RemoveFromGroupAsync(string group)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
+        JoinedGroups.Remove(group);
+    }
+
+    private string RequireJoinedSession(string sessionId)
+    {
+        var group = SessionGroup(sessionId);
+
+        if (!JoinedGroups.Contains(group))
+        {
+            throw new HubException("Join the session first.");
+        }
+
+        return group;
     }
 }

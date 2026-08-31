@@ -221,9 +221,9 @@ export const LandingPage: React.FC = () => {
                         </div>
                         <div className="landing-footer-col">
                             <h4>Yasal</h4>
-                            <a href="#">Gizlilik Politikası</a>
-                            <a href="#">Kullanım Şartları</a>
-                            <a href="#">KVKK</a>
+                            <Link to="/privacy">Gizlilik Politikası</Link>
+                            <Link to="/terms">Kullanım Şartları</Link>
+                            <Link to="/privacy">KVKK</Link>
                         </div>
                     </div>
                 </div>

@@ -26,6 +26,8 @@ public static class AdminUserFactory
             LastName = options.LastName,
             Role = role,
             IsActive = true,
+            EmailVerified = true,
+            EmailVerifiedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow
         };
     }

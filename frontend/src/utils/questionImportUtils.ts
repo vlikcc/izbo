@@ -72,7 +72,7 @@ export async function parseExcelFile(file: File): Promise<ImportResult> {
             const rowNum = i + 1;
 
             try {
-                const question = parseExcelRow(row, columnMap, rowNum);
+                const question = parseExcelRow(row, columnMap);
                 if (question) {
                     result.questions.push(question);
                 }
@@ -139,7 +139,7 @@ function detectColumnMapping(headers: string[]): ColumnMapping {
     return map;
 }
 
-function parseExcelRow(row: unknown[], columnMap: ColumnMapping, _rowNum: number): ParsedQuestion | null {
+function parseExcelRow(row: unknown[], columnMap: ColumnMapping): ParsedQuestion | null {
     const getValue = (index: number | undefined): string => {
         if (index === undefined) return '';
         const val = row[index];
@@ -272,7 +272,7 @@ function parseWordQuestion(block: string): ParsedQuestion | null {
     if (lines.length === 0) return null;
 
     // İlk satır soru metni
-    let content = lines[0];
+    const content = lines[0];
     const options: string[] = [];
     let correctAnswer = '';
     let type: QuestionType = 'FillInBlank';

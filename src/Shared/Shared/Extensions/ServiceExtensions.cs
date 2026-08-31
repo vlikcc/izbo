@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using System.Text;
 
 namespace Shared.Extensions;
@@ -46,16 +47,36 @@ public static class ServiceExtensions
         return services;
     }
 
+    /// <summary>
+    /// Allows the browser application's origin, and nothing beyond what it actually sends. The previous
+    /// policy allowed any method and any header alongside credentials, which is as permissive as CORS gets
+    /// short of a wildcard origin.
+    /// </summary>
     public static IServiceCollection AddCorsPolicy(this IServiceCollection services, string policyName, params string[] origins)
     {
+        var allowedOrigins = (origins ?? [])
+            .Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .Select(origin => origin.TrimEnd('/'))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
         services.AddCors(options =>
         {
             options.AddPolicy(policyName, policy =>
             {
-                policy.WithOrigins(origins)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials();
+                policy.WithOrigins(allowedOrigins)
+                    .WithMethods(HttpMethods.Get, HttpMethods.Post, HttpMethods.Put, HttpMethods.Patch, HttpMethods.Delete, HttpMethods.Options)
+                    .WithHeaders(
+                        HeaderNames.Authorization,
+                        HeaderNames.ContentType,
+                        HeaderNames.Accept,
+                        HeaderNames.CacheControl,
+                        // SignalR sends these on its negotiate and long-polling requests.
+                        "x-requested-with",
+                        "x-signalr-user-agent")
+                    .WithExposedHeaders(HeaderNames.ContentDisposition, HeaderNames.RetryAfter)
+                    .AllowCredentials()
+                    .SetPreflightMaxAge(TimeSpan.FromHours(1));
             });
         });
 

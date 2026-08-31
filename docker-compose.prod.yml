@@ -68,12 +68,25 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "80"
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_auth;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
       JWT__Secret: ${JWT_SECRET:?JWT_SECRET is required}
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL:?FRONTEND_URL is required}
+      OTEL_SERVICE_NAME: authservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      Smtp__Host: ${SMTP_HOST:-}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__From: ${SMTP_FROM:-noreply@eduplatform.local}
+      Smtp__User: ${SMTP_USER:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+      Email__RequireVerification: ${EMAIL_REQUIRE_VERIFICATION:-false}
+      ConnectionStrings__RabbitMQ: ${RABBITMQ_URL:-}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
@@ -101,6 +114,8 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      OTEL_SERVICE_NAME: userservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -126,12 +141,17 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "80"
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_classroom;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
       JWT__Secret: ${JWT_SECRET}
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Jitsi__AppId: ${JITSI_APP_ID:-}
+      Jitsi__AppSecret: ${JITSI_APP_SECRET:-}
       Subscription__BaseUrl: http://subscriptionservice:80
       Subscription__FailOpen: "true"
+      OTEL_SERVICE_NAME: classroomservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -163,10 +183,15 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Services__ClassroomService: http://classroomservice
       Subscription__BaseUrl: http://subscriptionservice:80
       Subscription__FailOpen: "true"
+      OTEL_SERVICE_NAME: homeworkservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
+        condition: service_healthy
+      classroomservice:
         condition: service_healthy
       subscriptionservice:
         condition: service_healthy
@@ -197,12 +222,17 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Services__ClassroomService: http://classroomservice
       Subscription__BaseUrl: http://subscriptionservice:80
       Subscription__FailOpen: "true"
+      OTEL_SERVICE_NAME: examservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      classroomservice:
         condition: service_healthy
       subscriptionservice:
         condition: service_healthy
@@ -230,9 +260,17 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      ConnectionStrings__Redis: redis:6379
+      Services__ClassroomService: http://classroomservice
       Subscription__BaseUrl: http://subscriptionservice:80
       Subscription__FailOpen: "true"
+      OTEL_SERVICE_NAME: livesessionservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
+      classroomservice:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
       subscriptionservice:
         condition: service_healthy
     healthcheck:
@@ -257,10 +295,13 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "80"
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_notification;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
       JWT__Secret: ${JWT_SECRET}
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      OTEL_SERVICE_NAME: notificationservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -290,6 +331,7 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Services__ClassroomService: http://classroomservice
       MinIO__Endpoint: minio:9000
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
@@ -297,6 +339,8 @@ services:
       MinIO__UseSsl: "false"
       Subscription__BaseUrl: http://subscriptionservice:80
       Subscription__FailOpen: "true"
+      OTEL_SERVICE_NAME: fileservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -330,6 +374,8 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      OTEL_SERVICE_NAME: subscriptionservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -359,6 +405,8 @@ services:
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
       Api__PublicUrl: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
+      OTEL_SERVICE_NAME: apigateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       authservice:
         condition: service_healthy
@@ -398,6 +446,10 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:?VITE_API_URL is required}
     restart: unless-stopped
+    environment:
+      # nginx substitutes these into Content-Security-Policy at container start.
+      CSP_CONNECT_SRC: ${CSP_CONNECT_SRC:-https://${API_DOMAIN} wss://${API_DOMAIN}}
+      CSP_FRAME_SRC: ${CSP_FRAME_SRC:-https://${VITE_JITSI_DOMAIN:-meet.jit.si}}
     depends_on:
       apigateway:
         condition: service_healthy
@@ -432,6 +484,57 @@ services:
         limits:
           memory: 128M
 
+  rabbitmq:
+    profiles: ["messaging"]
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-eduplatform}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-eduplatform}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  otel-collector:
+    profiles: ["obs"]
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ./deploy/observability/otel-collector.yaml:/etc/otel-collector.yaml:ro
+    networks:
+      - internal
+
+  prometheus:
+    profiles: ["obs"]
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - internal
+
+  grafana:
+    profiles: ["obs"]
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - internal
+
 networks:
   internal:
     driver: bridge
@@ -442,3 +545,6 @@ volumes:
   minio_data:
   caddy_data:
   caddy_config:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:

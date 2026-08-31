@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button } from '../../components/ui';
 import { CreateExamModal } from '../../components/exams/CreateExamModal';
 import { CreateHomeworkModal } from '../../components/homework/CreateHomeworkModal';
+import { AnnouncementBoard } from '../../components/classroom/AnnouncementBoard';
 import { classroomService } from '../../services/classroom.service';
 import { homeworkService } from '../../services/homework.service';
 import { examService } from '../../services/exam.service';
@@ -44,6 +45,8 @@ export const ClassroomDetailPage: React.FC = () => {
     useEffect(() => {
         if (!id) return;
         fetchData(id);
+        // Reload when the route id changes; fetchData is recreated every render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchData = async (classroomId: string) => {
@@ -230,10 +233,7 @@ export const ClassroomDetailPage: React.FC = () => {
                         <div className="content-grid two-column">
                             <div className="main-column">
                                 <section className="section-block">
-                                    <h3 className="section-title">📢 Duyurular</h3>
-                                    <Card variant="default" padding="md" className="empty-state-card">
-                                        <p>Henüz duyuru yok.</p>
-                                    </Card>
+                                    <AnnouncementBoard classroomId={classroom.id} canManage={isInstructor} />
                                 </section>
                             </div>
 
@@ -310,7 +310,7 @@ export const ClassroomDetailPage: React.FC = () => {
                                                 <span className="due-date">Son Teslim: {formatDate(hw.dueDate)}</span>
                                             </div>
                                             <div className="list-item-action">
-                                                <Button size="sm" variant="outline">Detay</Button>
+                                                <Button size="sm" variant="outline" onClick={() => navigate(`/app/homework/${hw.id}/${isInstructor ? 'grade' : 'submit'}`)}>Detay</Button>
                                             </div>
                                         </div>
                                     </Card>
@@ -344,7 +344,7 @@ export const ClassroomDetailPage: React.FC = () => {
                                                 <span className="exam-date">Tarih: {formatDate(exam.startTime)}</span>
                                             </div>
                                             <div className="list-item-action">
-                                                <Button size="sm" variant="outline">Detay</Button>
+                                                <Button size="sm" variant="outline" onClick={() => navigate(isInstructor ? `/app/exams/${exam.id}/builder` : `/app/exams/${exam.id}/take`)}>Detay</Button>
                                             </div>
                                         </div>
                                     </Card>
