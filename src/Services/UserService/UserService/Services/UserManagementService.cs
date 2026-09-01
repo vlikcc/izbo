@@ -2,11 +2,23 @@ using Microsoft.EntityFrameworkCore;
 using Shared.Audit;
 using Shared.Authorization;
 using Shared.DTOs;
+using Shared.Internal;
 using Shared.Models;
 using Shared.Text;
 using UserService.Data;
 
 namespace UserService.Services;
+
+/// <summary>Why an activation change did not take effect, so the caller can say something useful.</summary>
+public enum SetActiveOutcome
+{
+    Updated,
+    NotFound,
+    /// <summary>Refused: nobody may disable their own account, or demote a SuperAdmin they do not outrank.</summary>
+    Forbidden,
+    /// <summary>The profile was updated but AuthService — which gates login — could not be reached.</summary>
+    AuthServiceUnavailable
+}
 
 public interface IUserManagementService
 {
@@ -18,7 +30,10 @@ public interface IUserManagementService
     Task<PagedResponse<UserDto>> GetUsersAsync(UserRole? role, PagedRequest request, CancellationToken cancellationToken = default);
     Task<UserDto?> UpdateUserAsync(Guid id, UpdateUserRequest request, CancellationToken cancellationToken = default);
     Task<bool> UpdateUserRoleAsync(Guid id, UpdateRoleRequest request, Caller caller, CancellationToken cancellationToken = default);
-    Task<bool> SetUserActiveAsync(Guid id, bool isActive, Caller caller, CancellationToken cancellationToken = default);
+    Task<SetActiveOutcome> SetUserActiveAsync(Guid id, bool isActive, Caller caller, CancellationToken cancellationToken = default);
+
+    /// <summary>Mirrors an AuthService account into the profile directory. Idempotent.</summary>
+    Task<bool> UpsertProfileAsync(AccountProfileSync profile, CancellationToken cancellationToken = default);
     Task<List<PublicUserDto>> SearchUsersAsync(string query, int limit = 20, CancellationToken cancellationToken = default);
     Task<Dictionary<UserRole, int>> GetUserStatsAsync(CancellationToken cancellationToken = default);
     Task<UserDto?> ExportUserAsync(Guid id, CancellationToken cancellationToken = default);
@@ -29,12 +44,18 @@ public class UserManagementService : IUserManagementService
 {
     private readonly UserDbContext _context;
     private readonly IAuditLogger _audit;
+    private readonly IAccountStateClient _accountState;
     private readonly ILogger<UserManagementService> _logger;
 
-    public UserManagementService(UserDbContext context, IAuditLogger audit, ILogger<UserManagementService> logger)
+    public UserManagementService(
+        UserDbContext context,
+        IAuditLogger audit,
+        IAccountStateClient accountState,
+        ILogger<UserManagementService> logger)
     {
         _context = context;
         _audit = audit;
+        _accountState = accountState;
         _logger = logger;
     }
 
@@ -146,7 +167,7 @@ public class UserManagementService : IUserManagementService
         return true;
     }
 
-    public async Task<bool> SetUserActiveAsync(Guid id, bool isActive, Caller caller, CancellationToken cancellationToken = default)
+    public async Task<SetActiveOutcome> SetUserActiveAsync(Guid id, bool isActive, Caller caller, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(caller);
 
@@ -154,17 +175,26 @@ public class UserManagementService : IUserManagementService
         if (!isActive && caller.Is(id))
         {
             _logger.LogWarning("User {UserId} attempted to deactivate their own account", caller.UserId);
-            return false;
+            return SetActiveOutcome.Forbidden;
         }
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-        if (user == null) return false;
+        if (user == null) return SetActiveOutcome.NotFound;
 
         if (!isActive && user.Role == UserRole.SuperAdmin && caller.Role != UserRole.SuperAdmin)
         {
             _logger.LogWarning(
                 "User {UserId} attempted to deactivate SuperAdmin {TargetUserId}", caller.UserId, id);
-            return false;
+            return SetActiveOutcome.Forbidden;
+        }
+
+        // AuthService owns the flag that login actually checks, so it goes first. Updating only this
+        // service's copy is what made the admin toggle cosmetic: the directory said "Pasif" while the
+        // account kept working. If AuthService cannot be reached the operation fails outright rather
+        // than leaving an administrator believing an account is disabled when it is not.
+        if (!await _accountState.SetActiveAsync(id, isActive, cancellationToken))
+        {
+            return SetActiveOutcome.AuthServiceUnavailable;
         }
 
         user.IsActive = isActive;
@@ -176,7 +206,7 @@ public class UserManagementService : IUserManagementService
 
         _logger.LogInformation(
             "User {TargetUserId} {Action} by {UserId}", id, isActive ? "activated" : "deactivated", caller.UserId);
-        return true;
+        return SetActiveOutcome.Updated;
     }
 
     /// <summary>
@@ -239,6 +269,63 @@ public class UserManagementService : IUserManagementService
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
         await _audit.WriteAsync(new AuditRecord("AccountDeleted", id, "User", id.ToString()), cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> UpsertProfileAsync(AccountProfileSync profile, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+
+        var role = Enum.TryParse<UserRole>(profile.Role, ignoreCase: true, out var parsed)
+            ? parsed
+            : UserRole.Student;
+        var email = EmailNormalizer.Normalize(profile.Email);
+
+        var existing = await _context.Users.FirstOrDefaultAsync(u => u.Id == profile.Id, cancellationToken);
+
+        if (existing is null)
+        {
+            // An account may already have a profile under a different id — from before ids were shared,
+            // or from a seed. Adopt that row rather than inserting a duplicate the unique e-mail index
+            // would reject anyway.
+            existing = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        }
+
+        if (existing is null)
+        {
+            _context.Users.Add(new User
+            {
+                Id = profile.Id,
+                Email = email,
+                // Authentication lives in AuthService; this directory never verifies a password.
+                PasswordHash = string.Empty,
+                FirstName = profile.FirstName,
+                LastName = profile.LastName,
+                Role = role,
+                PhoneNumber = profile.PhoneNumber,
+                IsActive = profile.IsActive,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Profile created for account {UserId}", profile.Id);
+            return true;
+        }
+
+        // A profile deleted here should stay deleted; re-syncing must not resurrect it.
+        if (existing.DeletedAt is not null)
+        {
+            return false;
+        }
+
+        // Role and active state are administered in this service, so a routine re-sync must not overwrite
+        // them — only the identity fields AuthService owns are refreshed.
+        existing.Email = email;
+        existing.FirstName = profile.FirstName;
+        existing.LastName = profile.LastName;
+        existing.PhoneNumber = profile.PhoneNumber ?? existing.PhoneNumber;
+        existing.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 

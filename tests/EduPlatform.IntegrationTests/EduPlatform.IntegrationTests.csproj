@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\Services\ClassroomService\ClassroomService\ClassroomService.csproj" />
     <ProjectReference Include="..\..\src\Services\ExamService\ExamService\ExamService.csproj" />
     <ProjectReference Include="..\..\src\Services\HomeworkService\HomeworkService\HomeworkService.csproj" />
+    <ProjectReference Include="..\..\src\Services\UserService\UserService\UserService.csproj" />
   </ItemGroup>
 
 </Project>

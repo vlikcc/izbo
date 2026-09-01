@@ -85,6 +85,7 @@ public class AuthEnumerationTests
             configuration,
             new NullAccountEmailService(),
             new NullAuditLogger(),
+            new RecordingAccountDirectoryClient(),
             NullLogger<AuthenticationService>.Instance);
     }
 }

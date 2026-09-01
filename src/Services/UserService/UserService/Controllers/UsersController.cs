@@ -117,25 +117,40 @@ public class UsersController : ControllerBase
     [Authorize(Roles = UserRoles.Administrators)]
     public async Task<ActionResult<ApiResponse<bool>>> DeactivateUser(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _userService.SetUserActiveAsync(id, isActive: false, Caller, cancellationToken);
-
-        if (!result)
-            return BadRequest(new ApiResponse<bool>(false, false, "User could not be deactivated"));
-
-        return Ok(new ApiResponse<bool>(true, true, "User deactivated"));
+        var outcome = await _userService.SetUserActiveAsync(id, isActive: false, Caller, cancellationToken);
+        return AccountStateResult(outcome, isActive: false);
     }
 
     [HttpPost("{id}/activate")]
     [Authorize(Roles = UserRoles.Administrators)]
     public async Task<ActionResult<ApiResponse<bool>>> ActivateUser(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _userService.SetUserActiveAsync(id, isActive: true, Caller, cancellationToken);
-
-        if (!result)
-            return BadRequest(new ApiResponse<bool>(false, false, "User could not be activated"));
-
-        return Ok(new ApiResponse<bool>(true, true, "User activated"));
+        var outcome = await _userService.SetUserActiveAsync(id, isActive: true, Caller, cancellationToken);
+        return AccountStateResult(outcome, isActive: true);
     }
+
+    /// <summary>
+    /// The previous version answered every failure with one generic 400, so an administrator clicking a
+    /// button that could not work saw nothing explaining why. Each outcome now carries its own reason.
+    /// </summary>
+    private ActionResult<ApiResponse<bool>> AccountStateResult(SetActiveOutcome outcome, bool isActive) => outcome switch
+    {
+        SetActiveOutcome.Updated =>
+            Ok(new ApiResponse<bool>(true, true, isActive ? "Kullanıcı etkinleştirildi" : "Kullanıcı pasifleştirildi")),
+
+        SetActiveOutcome.NotFound =>
+            NotFound(new ApiResponse<bool>(false, false, "Kullanıcı bulunamadı")),
+
+        SetActiveOutcome.Forbidden =>
+            StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<bool>(
+                false, false, "Kendi hesabınızı veya bir SuperAdmin hesabını pasifleştiremezsiniz")),
+
+        SetActiveOutcome.AuthServiceUnavailable =>
+            StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse<bool>(
+                false, false, "Kimlik servisine ulaşılamadı; hesap durumu değiştirilmedi. Lütfen tekrar deneyin.")),
+
+        _ => BadRequest(new ApiResponse<bool>(false, false, "Hesap durumu güncellenemedi"))
+    };
 
     /// <summary>
     /// Used by instructors to find students to enrol. Restricted to content managers so students cannot

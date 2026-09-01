@@ -48,6 +48,18 @@
     margin-bottom: var(--space-1);
 }
 
+.admin-user-self {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    vertical-align: middle;
+}
+
 .admin-user-email {
     font-size: var(--font-size-sm);
     color: var(--color-gray-500);

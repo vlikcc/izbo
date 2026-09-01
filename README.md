@@ -15,6 +15,21 @@ kurumları (`Organization`) yönetir. `/api/plans` herkese açık; `/api/subscri
 `/api/organizations/*` JWT gerektirir; `/api/admin/*` Admin/SuperAdmin ister. `/api/internal/*`
 gateway’den **geçirilmez**, yalnızca docker ağı içinden diğer servislerin ulaştığı uçlardır.
 
+### Hesap kimliği (Auth ↔ User)
+
+**AuthService** hesabın sahibidir: parola, oturum ve girişi belirleyen `IsActive` bayrağı ondadır.
+**UserService** aynı `Id` ile profil dizinini tutar; admin panelindeki rol ve aktiflik yönetimi buradadır.
+
+İki yön de `/api/internal/*` üzerinden, `INTERNAL_API_KEY` ile kimliklenir (gateway bu yolları
+**geçirmez**):
+
+- Kayıtta ve her girişte AuthService, UserService'e profili aynı `Id` ile yazar (idempotent). Giriş
+  sırasındaki tekrar, bu mekanizmadan önce açılmış hesapları kendiliğinden dizine taşır.
+- Admin panelinden aktiflik değiştirildiğinde UserService önce AuthService'e yazar. AuthService'e
+  ulaşılamazsa işlem **başarısız olur** (`503`) ve dizin değişmez — yöneticinin kapattığını sanıp
+  kapatmamış olması, sessizce yarım uygulamaktan daha kötüdür. Pasifleştirme ayrıca hesabın mevcut
+  refresh token'larını iptal eder.
+
 Classroom/Exam/Homework/LiveSession/File servisleri `Shared.Subscription.IQuotaGuard` üzerinden
 kota kontrolü yapar (bkz. `src/Shared/Shared/Subscription/`). SubscriptionService'e ulaşılamazsa
 istekler **fail-open** olarak geçer (`Subscription__FailOpen=true`) — faturalama kesintisi dersleri
@@ -109,6 +124,7 @@ Tablolar servis ilk açılışta EF migration’larıyla kurulur. Temiz kuruluml
 | Değişken | Açıklama |
 |----------|----------|
 | `JWT_SECRET` | En az 32 karakter |
+| `INTERNAL_API_KEY` | Servisler arası hesap/profil senkronu için paylaşılan anahtar |
 | `POSTGRES_PASSWORD` | PostgreSQL şifresi |
 | `FRONTEND_URL` | CORS origin (`https://app...`) |
 | `API_PUBLIC_URL` | Ocelot BaseUrl |

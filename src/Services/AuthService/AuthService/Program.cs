@@ -4,6 +4,7 @@ using Shared.Audit;
 using Shared.Configuration;
 using Shared.Email;
 using Shared.Extensions;
+using Shared.Internal;
 using Shared.Messaging;
 using Shared.RateLimiting;
 
@@ -21,6 +22,8 @@ builder.Services.AddSingleton<IMessageBus>(sp => sp.GetRequiredService<RabbitMqM
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddHostedService<OutboxProcessor>();
 builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
+
+builder.Services.AddAccountDirectoryClient(builder.Configuration);
 
 builder.Services.AddAuthRateLimiting(builder.Configuration.GetConnectionString("Redis"));
 

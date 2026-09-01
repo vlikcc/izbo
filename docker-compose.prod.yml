@@ -75,6 +75,8 @@ services:
       Frontend__Url: ${FRONTEND_URL:?FRONTEND_URL is required}
       OTEL_SERVICE_NAME: authservice
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      Internal__ApiKey: ${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
+      Internal__UserServiceUrl: http://userservice:80
       Smtp__Host: ${SMTP_HOST:-}
       Smtp__Port: ${SMTP_PORT:-587}
       Smtp__From: ${SMTP_FROM:-noreply@eduplatform.local}
@@ -114,6 +116,8 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      Internal__ApiKey: ${INTERNAL_API_KEY}
+      Internal__AuthServiceUrl: http://authservice:80
       OTEL_SERVICE_NAME: userservice
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:

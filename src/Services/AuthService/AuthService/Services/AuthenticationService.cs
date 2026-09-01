@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Shared.Audit;
 using Shared.DTOs;
+using Shared.Internal;
 using Shared.Models;
 using Shared.Security;
 using Shared.Text;
@@ -44,6 +45,13 @@ public interface IAuthService
     Task<AuthResponse?> RefreshTokenAsync(string refreshToken, ClientFingerprint client, CancellationToken cancellationToken = default);
     Task<bool> LogoutAsync(Guid userId, string refreshToken, CancellationToken cancellationToken = default);
     Task<bool> RevokeAllTokensAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Enables or disables the account. This is the flag <see cref="LoginAsync"/> and
+    /// <see cref="RefreshTokenAsync"/> check, so it is what actually grants or removes access; the
+    /// admin directory in UserService drives it through the internal endpoint.
+    /// </summary>
+    Task<bool> SetAccountActiveAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
 }
 
 public class AuthenticationService : IAuthService
@@ -59,6 +67,7 @@ public class AuthenticationService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly IAccountEmailService _accountEmail;
     private readonly IAuditLogger _audit;
+    private readonly IAccountDirectoryClient _directory;
     private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
@@ -66,11 +75,13 @@ public class AuthenticationService : IAuthService
         IConfiguration configuration,
         IAccountEmailService accountEmail,
         IAuditLogger audit,
+        IAccountDirectoryClient directory,
         ILogger<AuthenticationService> logger)
     {
         _context = context;
         _configuration = configuration;
         _accountEmail = accountEmail;
+        _directory = directory;
         _audit = audit;
         _logger = logger;
     }
@@ -114,6 +125,7 @@ public class AuthenticationService : IAuthService
         _context.Users.Add(user);
         await _context.SaveChangesAsync(cancellationToken);
         await _accountEmail.RequestEmailVerificationAsync(user, cancellationToken);
+        await MirrorProfileAsync(user, cancellationToken);
 
         _logger.LogInformation("User {UserId} registered", user.Id);
 
@@ -154,6 +166,10 @@ public class AuthenticationService : IAuthService
 
         _logger.LogInformation("User {UserId} logged in", user.Id);
         await _audit.WriteAsync(new AuditRecord("Login", user.Id, "User", user.Id.ToString(), IpAddress: client?.IpAddress), cancellationToken);
+
+        // Backfills accounts created before profiles were mirrored, so the admin directory fills in on
+        // its own instead of needing a migration. Idempotent and best-effort.
+        await MirrorProfileAsync(user, cancellationToken);
 
         return await IssueTokensAsync(user, client, cancellationToken);
     }
@@ -235,6 +251,52 @@ public class AuthenticationService : IAuthService
 
         await _context.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<bool> SetAccountActiveAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user is null)
+        {
+            _logger.LogWarning("Account state change requested for unknown user {UserId}", userId);
+            return false;
+        }
+
+        user.IsActive = isActive;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // A disabled account must lose the sessions it already holds, or its existing refresh token keeps
+        // minting access tokens and the account stays usable for as long as that token lives.
+        if (!isActive)
+        {
+            await RevokeAllTokensAsync(userId, RevocationReasons.RevokedByUser, cancellationToken);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation(
+            "Account {UserId} {Action}", userId, isActive ? "activated" : "deactivated");
+        return true;
+    }
+
+    /// <summary>
+    /// Gives UserService a profile row carrying this account's id. Best-effort on purpose: the directory
+    /// being down must not stop somebody registering or signing in, and the next login retries it.
+    /// </summary>
+    private async Task MirrorProfileAsync(User user, CancellationToken cancellationToken)
+    {
+        var profile = new AccountProfileSync(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            user.Role.ToString(),
+            user.PhoneNumber,
+            user.IsActive);
+
+        if (!await _directory.EnsureProfileAsync(profile, cancellationToken))
+        {
+            _logger.LogWarning("Profile for {UserId} could not be mirrored to UserService", user.Id);
+        }
     }
 
     /// <summary>Registration may only ask for a teaching or learning role; elevation is an admin action.</summary>

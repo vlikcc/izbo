@@ -72,6 +72,17 @@ api.interceptors.response.use(
             }
         }
 
+        // Axios sets message to "Request failed with status code 400", which tells the user nothing.
+        // The API answers failures with ApiResponse { success:false, message } or ProblemDetails
+        // { title, detail }, so promote that text onto the error: every `catch` that reads
+        // error.message then shows what actually went wrong instead of a status code.
+        const body = error.response?.data as
+            { message?: string; detail?: string; title?: string } | undefined;
+        const serverMessage = body?.message || body?.detail || body?.title;
+        if (serverMessage) {
+            error.message = serverMessage;
+        }
+
         return Promise.reject(error);
     }
 );

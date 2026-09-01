@@ -1,6 +1,7 @@
 using Shared.Audit;
 using Shared.Configuration;
 using Shared.Extensions;
+using Shared.Internal;
 using UserService.Data;
 using UserService.Services;
 
@@ -12,6 +13,7 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 
 builder.Services.AddEduPlatformAudit<UserDbContext>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddAccountStateClient(builder.Configuration);
 builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 
 var app = builder.Build();

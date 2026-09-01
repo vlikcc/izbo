@@ -105,6 +105,8 @@ services:
       - Seed__Enabled=${SEED_ENABLED:-true}
       - Seed__Email=${SEED_ADMIN_EMAIL:-admin@eduplatform.local}
       - Seed__Password=${SEED_ADMIN_PASSWORD}
+      - Internal__ApiKey=${INTERNAL_API_KEY:-dev-internal-key}
+      - Internal__UserServiceUrl=http://userservice:80
       - OTEL_SERVICE_NAME=authservice
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       - Smtp__Host=${SMTP_HOST:-}
@@ -136,6 +138,8 @@ services:
       - Seed__Enabled=${SEED_ENABLED:-true}
       - Seed__Email=${SEED_ADMIN_EMAIL:-admin@eduplatform.local}
       - Seed__Password=${SEED_ADMIN_PASSWORD}
+      - Internal__ApiKey=${INTERNAL_API_KEY:-dev-internal-key}
+      - Internal__AuthServiceUrl=http://authservice:80
       - OTEL_SERVICE_NAME=userservice
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:

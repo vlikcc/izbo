@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Card, Select } from '../../components/ui';
 import { Pagination } from '../../components/ui/Pagination';
 import { userService } from '../../services/user.service';
+import { useAuthStore } from '../../stores/authStore';
 import { toast } from '../../lib/toast';
 import type { User } from '../../types';
 import './AdminUsersPage.css';
@@ -14,6 +15,7 @@ export const AdminUsersPage: React.FC = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [stats, setStats] = useState<Record<string, number>>({});
     const [roleFilter, setRoleFilter] = useState('');
+    const currentUserId = useAuthStore((state) => state.user?.id);
 
     const load = async (nextPage: number, role?: string) => {
         try {
@@ -111,7 +113,12 @@ export const AdminUsersPage: React.FC = () => {
                     <Card key={user.id} variant="default" padding="md">
                         <div className="admin-user-row">
                             <div className="admin-user-identity">
-                                <div className="admin-user-name">{user.firstName} {user.lastName}</div>
+                                <div className="admin-user-name">
+                                    {user.firstName} {user.lastName}
+                                    {user.id === currentUserId && (
+                                        <span className="admin-user-self">bu sizsiniz</span>
+                                    )}
+                                </div>
                                 <div className="admin-user-email">{user.email}</div>
                                 <span className={`admin-user-status ${user.isActive ? 'is-active' : 'is-inactive'}`}>
                                     {user.isActive ? 'Aktif' : 'Pasif'}
@@ -124,15 +131,23 @@ export const AdminUsersPage: React.FC = () => {
                                     label="Rol"
                                     value={user.role}
                                     onChange={(event) => void changeRole(user, event.target.value)}
+                                    disabled={user.id === currentUserId}
                                 >
                                     {ROLES.map((role) => (
                                         <option key={role} value={role}>{role}</option>
                                     ))}
                                 </Select>
+                                {/* The server refuses to let anyone deactivate or demote themselves. Showing
+                                    an enabled button that always fails reads as the page being broken, so the
+                                    control is disabled up front and says why. */}
                                 <Button
                                     variant={user.isActive ? 'danger' : 'secondary'}
                                     size="md"
                                     onClick={() => void toggleActive(user)}
+                                    disabled={user.id === currentUserId}
+                                    title={user.id === currentUserId
+                                        ? 'Kendi hesabınızın durumunu değiştiremezsiniz'
+                                        : undefined}
                                 >
                                     {user.isActive ? 'Pasifleştir' : 'Etkinleştir'}
                                 </Button>
