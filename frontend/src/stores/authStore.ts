@@ -6,6 +6,12 @@ import { useSubscriptionStore } from './subscriptionStore';
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
+    /**
+     * False until checkAuth has settled. isAuthenticated is seeded synchronously from the stored
+     * token, but `user` — and therefore the role — only arrives once the profile is fetched. Route
+     * guards must wait for this instead of reading a null user as "not permitted".
+     */
+    isInitialized: boolean;
     isLoading: boolean;
     error: string | null;
 
@@ -21,6 +27,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     isAuthenticated: authService.isAuthenticated(),
+    isInitialized: false,
     isLoading: false,
     error: null,
 
@@ -28,7 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await authService.login({ email, password });
-            set({ user: response.user, isAuthenticated: true, isLoading: false });
+            set({ user: response.user, isAuthenticated: true, isInitialized: true, isLoading: false });
             useSubscriptionStore.getState().load();
         } catch (error) {
             set({
@@ -59,24 +66,26 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             await authService.logout();
         } finally {
-            set({ user: null, isAuthenticated: false, isLoading: false });
+            set({ user: null, isAuthenticated: false, isInitialized: true, isLoading: false });
             useSubscriptionStore.getState().reset();
         }
     },
 
     checkAuth: async () => {
+        // Every exit sets isInitialized, including this one: with no token there is nothing to resolve,
+        // and leaving the flag false would hang the guards on a spinner forever.
         if (!authService.isAuthenticated()) {
-            set({ isAuthenticated: false, user: null });
+            set({ isAuthenticated: false, user: null, isInitialized: true });
             return;
         }
 
         set({ isLoading: true });
         try {
             const user = await authService.getCurrentUser();
-            set({ user, isAuthenticated: !!user, isLoading: false });
+            set({ user, isAuthenticated: !!user, isInitialized: true, isLoading: false });
             if (user) useSubscriptionStore.getState().load();
         } catch {
-            set({ user: null, isAuthenticated: false, isLoading: false });
+            set({ user: null, isAuthenticated: false, isInitialized: true, isLoading: false });
         }
     },
 

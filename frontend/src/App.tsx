@@ -1,12 +1,12 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './stores/authStore';
+import { ProtectedRoute, RoleRoute } from './components/auth/RouteGuards';
 import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastHost } from './components/ui/ToastHost';
 import { UpgradeModal } from './components/subscription/UpgradeModal';
-import type { User } from './types';
 import './index.css';
 
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
@@ -52,35 +52,6 @@ const PageFallback = () => (
         <span className="sr-only">Yükleniyor</span>
     </div>
 );
-
-const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-    const { isAuthenticated, isLoading } = useAuthStore();
-    const location = useLocation();
-
-    if (isLoading) {
-        return <PageFallback />;
-    }
-
-    if (!isAuthenticated) {
-        return <Navigate to="/login" state={{ from: location }} replace />;
-    }
-
-    return <>{children}</>;
-};
-
-const RoleRoute = ({
-    children,
-    roles,
-}: {
-    children: ReactNode;
-    roles: User['role'][];
-}) => {
-    const { user } = useAuthStore();
-    if (!user || !roles.includes(user.role)) {
-        return <Navigate to="/app" replace />;
-    }
-    return <>{children}</>;
-};
 
 function AppRoutes() {
     const { checkAuth } = useAuthStore();
