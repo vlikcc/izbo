@@ -65,6 +65,23 @@
     color: var(--color-primary-600);
 }
 
+/* Destructive actions. The brand primary is a coral red, so a filled danger button would be nearly
+   indistinguishable from it — this stays outlined and reserves the fill for hover. */
+.btn-danger {
+    background: transparent;
+    color: var(--color-error);
+    border: 2px solid var(--color-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: var(--color-error);
+    color: var(--color-white);
+}
+
+.btn-danger:focus {
+    box-shadow: 0 0 0 3px rgba(250, 82, 82, 0.25);
+}
+
 .btn-ghost {
     background: transparent;
     color: var(--color-gray-700);

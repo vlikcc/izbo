@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Card } from '../../components/ui';
+import { Button, Card, Select } from '../../components/ui';
 import { classroomService } from '../../services/classroom.service';
 import { examService } from '../../services/exam.service';
 import { homeworkService } from '../../services/homework.service';
@@ -120,40 +120,46 @@ export const GradebookPage: React.FC = () => {
                     <h1 className="page-title">Not defteri</h1>
                     <p className="page-subtitle">Sınıf bazlı ödev ve sınav notları</p>
                 </div>
-                <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>CSV indir</Button>
+                <Button variant="secondary" onClick={exportCsv} disabled={rows.length === 0}>CSV indir</Button>
             </div>
 
-            <label htmlFor="gradebook-classroom">Sınıf</label>
-            <select
-                id="gradebook-classroom"
-                value={classroomId}
-                onChange={(event) => setClassroomId(event.target.value)}
-            >
-                <option value="">Seçin</option>
-                {classrooms.map((classroom) => (
-                    <option key={classroom.id} value={classroom.id}>{classroom.name}</option>
-                ))}
-            </select>
+            <div className="filter-bar">
+                <Select
+                    id="gradebook-classroom"
+                    className="select-inline"
+                    label="Sınıf"
+                    value={classroomId}
+                    onChange={(event) => setClassroomId(event.target.value)}
+                >
+                    <option value="">Seçin</option>
+                    {classrooms.map((classroom) => (
+                        <option key={classroom.id} value={classroom.id}>{classroom.name}</option>
+                    ))}
+                </Select>
+            </div>
 
             {classroomId && (
-                <Card variant="default" padding="md" style={{ overflowX: 'auto', marginTop: 16 }}>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Öğrenci</th>
-                                {columns.map((column) => <th key={column.key}>{column.label}</th>)}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((row) => (
-                                <tr key={row.studentId}>
-                                    <td>{row.studentName}</td>
-                                    {columns.map((column) => <td key={column.key}>{row.scores[column.key] ?? '—'}</td>)}
+                <Card variant="default" padding="md" style={{ overflowX: 'auto' }}>
+                    {rows.length === 0 ? (
+                        <p className="table-empty">Bu sınıfta henüz not yok.</p>
+                    ) : (
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Öğrenci</th>
+                                    {columns.map((column) => <th key={column.key}>{column.label}</th>)}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {rows.length === 0 && <p>Bu sınıfta henüz not yok.</p>}
+                            </thead>
+                            <tbody>
+                                {rows.map((row) => (
+                                    <tr key={row.studentId}>
+                                        <td>{row.studentName}</td>
+                                        {columns.map((column) => <td key={column.key}>{row.scores[column.key] ?? '—'}</td>)}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </Card>
             )}
         </div>

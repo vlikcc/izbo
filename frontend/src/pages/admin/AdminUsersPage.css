@@ -1,0 +1,114 @@
+/* Admin user management */
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.admin-stat-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-gray-500);
+    margin-bottom: var(--space-1);
+}
+
+.admin-stat-value {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    line-height: 1.2;
+}
+
+.admin-user-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+/* Identity on the left, controls on the right; they wrap onto separate rows when narrow. */
+.admin-user-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.admin-user-identity {
+    min-width: 0;
+}
+
+.admin-user-name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-1);
+}
+
+.admin-user-email {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-500);
+    margin-bottom: var(--space-2);
+    overflow-wrap: anywhere;
+}
+
+/* The status pill and the action button share a baseline, so the row reads left to right. */
+.admin-user-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 2px var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.admin-user-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: currentColor;
+}
+
+/* --color-success (#40C057) is too light to sit on a pale fill at this size, so the pill uses a
+   darkened shade of it that clears 4.5:1 against the tint. */
+.admin-user-status.is-active {
+    background: #EBFBEE;
+    color: #2B8A3E;
+}
+
+.admin-user-status.is-inactive {
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+}
+
+.admin-user-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-3);
+}
+
+/* btn-md is 40px but a bordered select is 48px; match them so the row has one bottom edge and one
+   top edge rather than a step. */
+.admin-user-actions .btn {
+    height: 48px;
+}
+
+.admin-user-actions .select-wrapper {
+    width: 180px;
+}
+
+@media (max-width: 640px) {
+    .admin-user-actions {
+        width: 100%;
+    }
+
+    .admin-user-actions .select-wrapper {
+        flex: 1;
+        width: auto;
+    }
+}

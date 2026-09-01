@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Card } from '../../components/ui';
+import { Button, Card, Select } from '../../components/ui';
 import { Pagination } from '../../components/ui/Pagination';
 import { userService } from '../../services/user.service';
 import { toast } from '../../lib/toast';
 import type { User } from '../../types';
+import './AdminUsersPage.css';
 
 const ROLES: User['role'][] = ['Student', 'Instructor', 'Admin', 'SuperAdmin'];
 
@@ -81,46 +82,62 @@ export const AdminUsersPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="dashboard-stats">
+            <div className="admin-stats">
                 {Object.entries(stats).map(([role, count]) => (
                     <Card key={role} variant="default" padding="md">
-                        <strong>{role}</strong>
-                        <p>{count}</p>
+                        <span className="admin-stat-label">{role}</span>
+                        <span className="admin-stat-value">{count}</span>
                     </Card>
                 ))}
             </div>
 
-            <label htmlFor="role-filter">Rol filtresi</label>
-            <select
-                id="role-filter"
-                value={roleFilter}
-                onChange={(event) => setRoleFilter(event.target.value)}
-            >
-                <option value="">Tümü</option>
-                {ROLES.map((role) => (
-                    <option key={role} value={role}>{role}</option>
-                ))}
-            </select>
+            <div className="filter-bar">
+                <Select
+                    id="role-filter"
+                    className="select-inline"
+                    label="Rol filtresi"
+                    value={roleFilter}
+                    onChange={(event) => setRoleFilter(event.target.value)}
+                >
+                    <option value="">Tümü</option>
+                    {ROLES.map((role) => (
+                        <option key={role} value={role}>{role}</option>
+                    ))}
+                </Select>
+            </div>
 
-            <div className="homework-list" style={{ marginTop: 16 }}>
+            <div className="admin-user-list">
                 {users.map((user) => (
                     <Card key={user.id} variant="default" padding="md">
-                        <h3>{user.firstName} {user.lastName}</h3>
-                        <p>{user.email}</p>
-                        <p>Durum: {user.isActive ? 'Aktif' : 'Pasif'}</p>
-                        <label htmlFor={`role-${user.id}`}>Rol</label>
-                        <select
-                            id={`role-${user.id}`}
-                            value={user.role}
-                            onChange={(event) => void changeRole(user, event.target.value)}
-                        >
-                            {ROLES.map((role) => (
-                                <option key={role} value={role}>{role}</option>
-                            ))}
-                        </select>
-                        <Button variant="outline" size="sm" onClick={() => void toggleActive(user)}>
-                            {user.isActive ? 'Pasifleştir' : 'Etkinleştir'}
-                        </Button>
+                        <div className="admin-user-row">
+                            <div className="admin-user-identity">
+                                <div className="admin-user-name">{user.firstName} {user.lastName}</div>
+                                <div className="admin-user-email">{user.email}</div>
+                                <span className={`admin-user-status ${user.isActive ? 'is-active' : 'is-inactive'}`}>
+                                    {user.isActive ? 'Aktif' : 'Pasif'}
+                                </span>
+                            </div>
+
+                            <div className="admin-user-actions">
+                                <Select
+                                    id={`role-${user.id}`}
+                                    label="Rol"
+                                    value={user.role}
+                                    onChange={(event) => void changeRole(user, event.target.value)}
+                                >
+                                    {ROLES.map((role) => (
+                                        <option key={role} value={role}>{role}</option>
+                                    ))}
+                                </Select>
+                                <Button
+                                    variant={user.isActive ? 'danger' : 'secondary'}
+                                    size="md"
+                                    onClick={() => void toggleActive(user)}
+                                >
+                                    {user.isActive ? 'Pasifleştir' : 'Etkinleştir'}
+                                </Button>
+                            </div>
+                        </div>
                     </Card>
                 ))}
             </div>

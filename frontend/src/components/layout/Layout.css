@@ -177,8 +177,20 @@
     margin: 0 auto;
 }
 
+/* Title block on the left, page actions on the right. Defined here rather than in a page stylesheet
+   so every page gets the same header instead of inheriting whichever page CSS happened to load. */
 .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
     margin-bottom: var(--space-8);
+}
+
+.page-header-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .page-title {
@@ -190,6 +202,52 @@
 .page-subtitle {
     color: var(--color-gray-500);
     font-size: var(--font-size-base);
+}
+
+/* Row of filter controls between the header and the content it filters. */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+/* Shared tabular data styling. */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.data-table th {
+    text-align: left;
+    padding: var(--space-3);
+    color: var(--color-gray-500);
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.data-table td {
+    padding: var(--space-3);
+    color: var(--color-gray-800);
+    border-bottom: 1px solid var(--color-gray-100);
+    vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover td {
+    background: var(--color-gray-50);
+}
+
+.table-empty {
+    padding: var(--space-6) 0;
+    text-align: center;
+    color: var(--color-gray-500);
 }
 
 .sidebar-toggle,
@@ -234,5 +292,25 @@
     .main-content {
         margin-left: 0;
         padding-top: 56px;
+    }
+}
+
+@media (max-width: 768px) {
+    .page {
+        padding: var(--space-4);
+    }
+
+    /* Stack the title above its actions, and let each action span the row. */
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-bar > * {
+        width: 100%;
+    }
+
+    .select-wrapper.select-inline {
+        width: 100%;
     }
 }
