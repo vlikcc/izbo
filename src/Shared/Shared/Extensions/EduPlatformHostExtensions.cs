@@ -82,9 +82,12 @@ public static class EduPlatformHostExtensions
         app.UseForwardedHeadersFromProxy();
         app.UseCorrelationId();
         app.UseExceptionHandler();
-        app.UseSwagger();
+
+        // The generated spec enumerates every endpoint, parameter and model of the service. That is a
+        // free map of the attack surface, so neither the document nor the UI is served outside development.
         if (app.Environment.IsDevelopment())
         {
+            app.UseSwagger();
             app.UseSwaggerUI();
         }
 

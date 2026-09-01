@@ -222,6 +222,7 @@ services:
       dockerfile: src/Services/LiveSessionService/LiveSessionService/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
       - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
       - JWT__Issuer=EduPlatform
       - JWT__Audience=EduPlatformUsers

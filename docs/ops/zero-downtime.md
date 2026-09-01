@@ -1,6 +1,7 @@
 # Zero-downtime notes
 
-Caddy only forwards to healthy upstreams (`health /health/ready`). Replace one service at a time:
+Caddy actively health-checks its upstreams (`health_uri /health/ready` on the API, `/` on the frontend,
+every 10s) and takes a failing one out of rotation. Replace one service at a time:
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --no-deps --build authservice

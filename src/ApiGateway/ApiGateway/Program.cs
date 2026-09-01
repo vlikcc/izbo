@@ -82,20 +82,27 @@ app.UseCorrelationId();
 app.UseRateLimiter();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+
+// The aggregated UI reads each service's spec through the /openapi/* routes, which ocelot.Production.json
+// deliberately does not define. Publishing the whole platform's endpoint map unauthenticated is
+// reconnaissance for free, so docs stay a development-only affordance.
+if (app.Environment.IsDevelopment())
 {
-    options.RoutePrefix = "docs";
-    options.DocumentTitle = "EduPlatform API";
-    options.SwaggerEndpoint("/openapi/auth/v1/swagger.json", "Auth");
-    options.SwaggerEndpoint("/openapi/users/v1/swagger.json", "Users");
-    options.SwaggerEndpoint("/openapi/classrooms/v1/swagger.json", "Classrooms");
-    options.SwaggerEndpoint("/openapi/homework/v1/swagger.json", "Homework");
-    options.SwaggerEndpoint("/openapi/exams/v1/swagger.json", "Exams");
-    options.SwaggerEndpoint("/openapi/live/v1/swagger.json", "Live");
-    options.SwaggerEndpoint("/openapi/notifications/v1/swagger.json", "Notifications");
-    options.SwaggerEndpoint("/openapi/files/v1/swagger.json", "Files");
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.RoutePrefix = "docs";
+        options.DocumentTitle = "EduPlatform API";
+        options.SwaggerEndpoint("/openapi/auth/v1/swagger.json", "Auth");
+        options.SwaggerEndpoint("/openapi/users/v1/swagger.json", "Users");
+        options.SwaggerEndpoint("/openapi/classrooms/v1/swagger.json", "Classrooms");
+        options.SwaggerEndpoint("/openapi/homework/v1/swagger.json", "Homework");
+        options.SwaggerEndpoint("/openapi/exams/v1/swagger.json", "Exams");
+        options.SwaggerEndpoint("/openapi/live/v1/swagger.json", "Live");
+        options.SwaggerEndpoint("/openapi/notifications/v1/swagger.json", "Notifications");
+        options.SwaggerEndpoint("/openapi/files/v1/swagger.json", "Files");
+    });
+}
 
 app.UseWebSockets();
 app.UseRouting();

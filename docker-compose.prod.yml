@@ -256,6 +256,7 @@ services:
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
       JWT__Secret: ${JWT_SECRET}
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}

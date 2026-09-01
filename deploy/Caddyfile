@@ -21,7 +21,11 @@
 {$APP_DOMAIN} {
 	encode gzip
 	import security_headers
-	reverse_proxy frontend:80
+	reverse_proxy frontend:80 {
+		health_uri /
+		health_interval 10s
+		health_timeout 5s
+	}
 }
 
 {$API_DOMAIN} {
@@ -40,7 +44,13 @@
 		respond 404
 	}
 
+	# Active health checks so a gateway that is restarting (or still applying migrations) is taken out
+	# of rotation instead of serving errors. This is what makes one-service-at-a-time replacement safe.
 	reverse_proxy apigateway:8080 {
+		health_uri /health/ready
+		health_interval 10s
+		health_timeout 5s
+
 		transport http {
 			versions 1.1
 		}

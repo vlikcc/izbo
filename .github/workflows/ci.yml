@@ -58,6 +58,12 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Trivy covers the image and check-vulnerable-packages.sh covers NuGet; without this the
+      # npm dependency tree is the one supply chain nothing looks at. Runtime deps only —
+      # a build-time advisory does not ship to users and should not block a release.
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Lint
         run: npm run lint
 
@@ -69,8 +75,38 @@ jobs:
         env:
           VITE_API_URL: https://api.example.com
 
+  # Every service that owns a DbContext, so a model that drifted from its migrations fails here
+  # instead of at container start in production. LiveSessionService is stateless and has none.
   migrations:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Auth
+            project: src/Services/AuthService/AuthService
+            database: eduplatform_auth
+          - name: User
+            project: src/Services/UserService/UserService
+            database: eduplatform_user
+          - name: Classroom
+            project: src/Services/ClassroomService/ClassroomService
+            database: eduplatform_classroom
+          - name: Homework
+            project: src/Services/HomeworkService/HomeworkService
+            database: eduplatform_homework
+          - name: Exam
+            project: src/Services/ExamService/ExamService
+            database: eduplatform_exam
+          - name: Notification
+            project: src/Services/NotificationService/NotificationService
+            database: eduplatform_notification
+          - name: File
+            project: src/Services/FileService/FileService
+            database: eduplatform_file
+          - name: Subscription
+            project: src/Services/SubscriptionService/SubscriptionService
+            database: eduplatform_subscription
     services:
       postgres:
         image: postgres:16-alpine
@@ -92,18 +128,10 @@ jobs:
         run: dotnet restore EduPlatform.sln
       - name: Install EF tools
         run: dotnet tool install --global dotnet-ef --version 10.0.0
-      - name: Validate Auth migrations
+      - name: Validate ${{ matrix.name }} migrations
         run: |
-          dotnet ef database update --project src/Services/AuthService/AuthService --connection "Host=localhost;Database=eduplatform_auth;Username=postgres"
-          dotnet ef migrations has-pending-model-changes --project src/Services/AuthService/AuthService
-      - name: Validate User migrations
-        run: |
-          dotnet ef database update --project src/Services/UserService/UserService --connection "Host=localhost;Database=eduplatform_user;Username=postgres"
-          dotnet ef migrations has-pending-model-changes --project src/Services/UserService/UserService
-      - name: Validate Classroom migrations
-        run: |
-          dotnet ef database update --project src/Services/ClassroomService/ClassroomService --connection "Host=localhost;Database=eduplatform_classroom;Username=postgres"
-          dotnet ef migrations has-pending-model-changes --project src/Services/ClassroomService/ClassroomService
+          dotnet ef database update --project ${{ matrix.project }} --connection "Host=localhost;Database=${{ matrix.database }};Username=postgres"
+          dotnet ef migrations has-pending-model-changes --project ${{ matrix.project }}
 
   docker:
     runs-on: ubuntu-latest
@@ -138,6 +166,9 @@ jobs:
             context: .
           - name: fileservice
             file: src/Services/FileService/FileService/Dockerfile
+            context: .
+          - name: subscriptionservice
+            file: src/Services/SubscriptionService/SubscriptionService/Dockerfile
             context: .
           - name: frontend
             file: frontend/Dockerfile

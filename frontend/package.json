@@ -16,17 +16,17 @@
     "@jitsi/react-sdk": "^1.4.4",
     "@microsoft/signalr": "^10.0.0",
     "@tanstack/react-query": "^5.90.19",
-    "axios": "^1.13.2",
+    "axios": "^1.20.0",
     "i18next": "^26.4.0",
-    "mammoth": "^1.11.0",
+    "mammoth": "^1.12.2",
     "pdfjs-dist": "^6.3.289",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-i18next": "^17.0.12",
-    "react-router-dom": "^7.12.0",
+    "react-router-dom": "^7.18.3",
     "tldraw": "^5.3.2",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
@@ -48,5 +48,10 @@
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "^0.8.15",
+    "underscore": "^1.13.8",
+    "ws": "^7.5.13"
   }
 }

@@ -24,7 +24,10 @@ Bu fazda gerçek ödeme sağlayıcısı yok: abonelikler admin panelinden (`/api
 manuel onaylanır. İleride bir ödeme sağlayıcısı eklemek `IPaymentProvider` arkasına yeni bir
 implementasyon yazmaktan ibarettir.
 
-SignalR hub’ları (Classroom, Notification) production MVP’de **tek instance** için yapılandırılmıştır. Yatay ölçek için Redis backplane eklenmelidir (ExamService’te mevcut).
+SignalR hub’larının dördü de (Classroom, Exam, Live, Notification) `AddEduPlatformSignalR` üzerinden
+Redis backplane kullanır (`src/Shared/Shared/Extensions/SignalRExtensions.cs`); backplane yalnızca
+`ConnectionStrings__Redis` doluysa devreye girer ve prod compose dördüne de bu değeri verir. Yani hub’lar
+yatay ölçeğe hazırdır.
 
 ## Geliştirme (yerel)
 
@@ -86,6 +89,20 @@ chmod +x scripts/init-minio-bucket.sh
 ```bash
 curl -f "https://${API_DOMAIN}/health"
 ```
+
+`docker compose -f docker-compose.prod.yml ps` çıktısında **on servisin de** `healthy` olması beklenir.
+
+### Mevcut bir kurulumu yükseltmek
+
+`scripts/init-db.sh` yalnızca **boş** bir postgres volume’ünde çalışır. Bu sürümden önce kurulmuş bir
+stack’te `eduplatform_subscription` veritabanı yoktur; SubscriptionService onsuz açılmaz ve ona bağlı
+servisler de başlamaz. Yükseltmeden önce bir kez elle oluşturun:
+
+```bash
+docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -c "CREATE DATABASE eduplatform_subscription;"
+```
+
+Tablolar servis ilk açılışta EF migration’larıyla kurulur. Temiz kurulumlarda bu adım gerekmez.
 
 ### Ortam değişkenleri
 

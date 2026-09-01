@@ -25,6 +25,7 @@ DATABASES=(
   eduplatform_exam
   eduplatform_notification
   eduplatform_file
+  eduplatform_subscription
 )
 
 mkdir -p "${OUTPUT_DIR}"
