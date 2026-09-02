@@ -17,17 +17,26 @@ builder.Services.AddDbContext<FileDbContext>(options =>
     options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
 var minioUseSsl = builder.Configuration.GetValue<bool>("MinIO:UseSsl");
-builder.Services.AddMinio(configureClient =>
+
+// Registered from Build()'s return value rather than through AddMinio(Action<IMinioClient>). That
+// overload hands the action a client and registers that same instance, so Build()'s result is thrown
+// away — and the half-configured client it leaves behind accepts PutObject without throwing while
+// writing an empty object. Uploads reported success, MinIO held zero bytes, and every download then
+// died on a Content-Length mismatch.
+builder.Services.AddSingleton<IMinioClient>(_ =>
 {
-    configureClient
+    var client = new MinioClient()
         .WithEndpoint(builder.Configuration["MinIO:Endpoint"] ?? "localhost:9000")
         .WithCredentials(
             builder.Configuration["MinIO:AccessKey"] ?? "minioadmin",
             builder.Configuration["MinIO:SecretKey"] ?? "minioadmin");
+
     if (minioUseSsl)
     {
-        configureClient.WithSSL();
+        client = client.WithSSL();
     }
+
+    return client.Build();
 });
 
 builder.Services.AddClassroomAccessClient(builder.Configuration);

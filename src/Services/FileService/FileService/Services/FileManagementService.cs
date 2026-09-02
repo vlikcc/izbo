@@ -109,12 +109,26 @@ public class FileManagementService : IFileManagementService
         // metadata only, so it can never influence the storage layout or escape the prefix.
         var storagePath = $"{validation.Type.ToString().ToLowerInvariant()}/{fileId:N}{StoredFileName.ExtensionOf(fileName)}";
 
-        await _minioClient.PutObjectAsync(new PutObjectArgs()
+        var stored = await _minioClient.PutObjectAsync(new PutObjectArgs()
             .WithBucket(_bucketName)
             .WithObject(storagePath)
             .WithStreamData(fileStream)
             .WithObjectSize(fileStream.Length)
             .WithContentType(validation.ContentType), cancellationToken);
+
+        // PutObjectAsync does not throw when the write never reached the server — it answers with the
+        // size that was *asked* for and an empty ETag. Trusting it recorded metadata for files MinIO
+        // never held: uploads reported success and every later download failed. The ETag is the
+        // server's receipt, so it is what decides whether this upload happened.
+        if (string.IsNullOrEmpty(stored?.Etag))
+        {
+            // The quota was charged before the write; a failed upload must not keep costing the tenant.
+            await _quotaGuard.ReleaseAsync(QuotaMetric.StorageMegabytes, ToMegabytes(fileStream.Length), cancellationToken);
+            _logger.LogError(
+                "Storing {FileId} at {StoragePath} produced no ETag; treating the upload as failed",
+                fileId, storagePath);
+            throw new FileStorageException("Dosya depolama servisine yazılamadı.");
+        }
 
         var fileMetadata = new FileMetadata
         {

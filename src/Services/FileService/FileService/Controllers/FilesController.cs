@@ -49,8 +49,20 @@ public class FilesController : ControllerBase
             return BadRequest(new ApiResponse<FileUploadResponse>(false, null, validation.Error));
         }
 
-        var result = await _fileService.UploadFileAsync(
-            stream, file.FileName, validation, Caller, entityId, cancellationToken);
+        FileUploadResponse? result;
+        try
+        {
+            result = await _fileService.UploadFileAsync(
+                stream, file.FileName, validation, Caller, entityId, cancellationToken);
+        }
+        catch (FileStorageException ex)
+        {
+            _logger.LogError(ex, "Upload of {FileName} by {UserId} could not be stored", file.FileName, Caller.UserId);
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new ApiResponse<FileUploadResponse>(
+                    false, null, "Dosya şu anda kaydedilemedi. Lütfen tekrar deneyin."));
+        }
 
         if (result == null)
         {
