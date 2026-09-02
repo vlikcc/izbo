@@ -29,6 +29,12 @@ public class FileDbContext : DbContext
             entity.Property(e => e.Type).HasConversion<string>();
             entity.HasIndex(e => e.UploadedBy);
             entity.HasIndex(e => e.EntityId);
+            // Ignore User navigation - User is in different database.
+            // Left mapped, EF pulled the whole shared User entity into this service: it built a User
+            // table inside eduplatform_file plus a files.UploaderId foreign key pointing at it, and
+            // every later change to Shared.Models.User silently drifted this service's schema. The
+            // uploader is referenced by UploadedBy, which is the id and needs no navigation.
+            entity.Ignore(e => e.Uploader);
         });
     }
 }
