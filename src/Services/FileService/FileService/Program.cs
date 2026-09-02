@@ -1,6 +1,7 @@
 using FileService.Data;
 using FileService.Services;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Minio;
 using Shared.Audit;
 using Shared.Authorization;
@@ -38,6 +39,14 @@ builder.Services.AddSingleton<IMinioClient>(_ =>
 
     return client.Build();
 });
+
+// Prepares the bucket at boot and surfaces the object store's state, so a deployment that never ran
+// the bucket script is caught at start-up rather than by the first user who tries to upload.
+builder.Services.AddHostedService<MinioBucketProvisioner>();
+builder.Services.AddHttpClient(MinioHealthCheck.HttpClientName,
+    client => client.Timeout = TimeSpan.FromSeconds(5));
+builder.Services.AddHealthChecks()
+    .AddCheck<MinioHealthCheck>("minio", failureStatus: HealthStatus.Degraded);
 
 builder.Services.AddClassroomAccessClient(builder.Configuration);
 builder.Services.AddEduPlatformAuditLogger();

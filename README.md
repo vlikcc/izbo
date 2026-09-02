@@ -92,12 +92,17 @@ cp .env.example .env
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 ```
 
-3. (İsteğe bağlı) MinIO bucket:
+3. (İsteğe bağlı) MinIO bucket — FileService bucket'ı **açılışta kendisi oluşturur**, bu adım yalnızca
+   bucket'ı elle önceden hazırlamak isteyenler içindir:
 
 ```bash
 chmod +x scripts/init-minio-bucket.sh
 ./scripts/init-minio-bucket.sh
 ```
+
+Nesne deposu açılışta erişilemezse servis yine ayağa kalkar ama log'a hata düşer ve `/health`
+çıktısında `minio` **Degraded** görünür (uçun tamamı `200` dönmeye devam eder, aksi halde tek bir
+depolama kesintisi gateway'i de düşürürdü). Depo geri geldiğinde durum kendiliğinden düzelir.
 
 4. Doğrulama:
 
