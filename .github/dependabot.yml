@@ -26,7 +26,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+  # Every Dockerfile lives in a service directory, so scanning "/" found nothing and the job failed
+  # weekly with "No Dockerfiles nor Kubernetes YAML found in /" — meaning base image updates
+  # (aspnet, node, nginx) were never actually being tracked.
   - package-ecosystem: docker
-    directory: /
+    directories:
+      - /frontend
+      - /src/ApiGateway/*
+      - /src/Services/*/*
     schedule:
       interval: weekly
