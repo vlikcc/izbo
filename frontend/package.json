@@ -23,7 +23,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-i18next": "^17.0.12",
+    "react-i18next": "^17.0.13",
     "react-router-dom": "^7.18.3",
     "tldraw": "^5.3.2",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
