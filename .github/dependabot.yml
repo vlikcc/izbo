@@ -8,6 +8,20 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+    # Majors on these three are toolchain migrations, not dependency bumps, and each was opened,
+    # failed CI and had to be closed once already:
+    #   vite 8       needs @vitejs/plugin-react 6, which pulls in the rolldown toolchain
+    #   typescript 7 has no typescript-eslint release that accepts it
+    #   jsdom 30     breaks the vitest forks pool; unblocking it means moving to vitest 5
+    # Minor and patch updates still come through, so security fixes on the current majors are not
+    # suppressed. Drop the entry for a package when its migration is actually being taken on.
+    ignore:
+      - dependency-name: vite
+        update-types: ["version-update:semver-major"]
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      - dependency-name: jsdom
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
