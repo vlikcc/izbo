@@ -33,7 +33,12 @@
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
+    <!--
+      Kept at or above what Microsoft.AspNetCore.Authentication.JwtBearer drags in transitively via
+      Microsoft.IdentityModel.Protocols.OpenIdConnect. Pinning it lower fails the restore outright with
+      NU1109 (package downgrade), which is what blocked the JwtBearer 10.0.11 bump.
+    -->
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
   </ItemGroup>
 
   <!-- Test-only packages -->
