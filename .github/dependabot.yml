@@ -22,10 +22,16 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: jsdom
         update-types: ["version-update:semver-major"]
-      # @eslint/js 10 declares a peer of eslint ^10, so it cannot land while eslint is on 9 —
-      # the two have to move together. eslint itself is deliberately not ignored: @eslint/js 9
-      # declares no peer, so an eslint major can go in on its own and unblock this one.
+      # The eslint stack moves as a unit: @eslint/js 10 peers on eslint ^10, and eslint 10 needs
+      # eslint-plugin-react-hooks >= 7.1.1. Once all three do resolve together, react-hooks 7.1.1
+      # turns on new rules that the codebase violates in 17 places, so the major is a piece of work
+      # rather than a bump.
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
       - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      # Pairs with vite: plugin-react 6 peers on vite ^8, so neither half can move alone.
+      - dependency-name: "@vitejs/plugin-react"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
