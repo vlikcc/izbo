@@ -112,6 +112,12 @@ curl -f "https://${API_DOMAIN}/health"
 
 `docker compose -f docker-compose.prod.yml ps` çıktısında **on servisin de** `healthy` olması beklenir.
 
+### Dokploy ile yayına alma
+
+Dokploy kullanıyorsanız `docker-compose.dokploy.yml` dosyasını kullanın: caddy servisi yoktur,
+TLS'i Dokploy'un Traefik'i sonlandırır ve Caddy'nin yaptığı yönlendirme/güvenlik başlıkları
+Traefik etiketlerine taşınmıştır. Adımlar: [docs/ops/dokploy.md](docs/ops/dokploy.md).
+
 ### Mevcut bir kurulumu yükseltmek
 
 `scripts/init-db.sh` yalnızca **boş** bir postgres volume’ünde çalışır. Bu sürümden önce kurulmuş bir
