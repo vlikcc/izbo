@@ -83,6 +83,12 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       Internal__ApiKey: ${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
       Internal__UserServiceUrl: http://userservice:80
+      # Creates the first SuperAdmin. Documented as a production step in the README, but the wiring
+      # was missing here, so SEED_ENABLED did nothing and no admin account was ever created.
+      # Turn SEED_ENABLED back to false once the account exists.
+      Seed__Enabled: ${SEED_ENABLED:-false}
+      Seed__Email: ${SEED_ADMIN_EMAIL:-}
+      Seed__Password: ${SEED_ADMIN_PASSWORD:-}
       Smtp__Host: ${SMTP_HOST:-}
       Smtp__Port: ${SMTP_PORT:-587}
       Smtp__From: ${SMTP_FROM:-noreply@eduplatform.local}
@@ -124,6 +130,12 @@ services:
       Frontend__Url: ${FRONTEND_URL}
       Internal__ApiKey: ${INTERNAL_API_KEY}
       Internal__AuthServiceUrl: http://authservice:80
+      # Creates the first SuperAdmin. Documented as a production step in the README, but the wiring
+      # was missing here, so SEED_ENABLED did nothing and no admin account was ever created.
+      # Turn SEED_ENABLED back to false once the account exists.
+      Seed__Enabled: ${SEED_ENABLED:-false}
+      Seed__Email: ${SEED_ADMIN_EMAIL:-}
+      Seed__Password: ${SEED_ADMIN_PASSWORD:-}
       OTEL_SERVICE_NAME: userservice
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
