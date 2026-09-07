@@ -455,6 +455,9 @@ services:
       - traefik.http.routers.eduplatform-api.tls.certresolver=letsencrypt
       - traefik.http.routers.eduplatform-api.middlewares=eduplatform-api-sec@docker
       - traefik.http.services.eduplatform-api.loadbalancer.server.port=8080
+      - traefik.http.routers.eduplatform-api-http.rule=Host(`${API_DOMAIN}`)
+      - traefik.http.routers.eduplatform-api-http.entrypoints=web
+      - traefik.http.routers.eduplatform-api-http.middlewares=eduplatform-redirect@docker
       # The API returns data, never a document, so nothing it serves should be rendered or framed.
       - traefik.http.middlewares.eduplatform-api-sec.headers.stsSeconds=31536000
       - traefik.http.middlewares.eduplatform-api-sec.headers.stsIncludeSubdomains=true
@@ -505,6 +508,13 @@ services:
       - traefik.http.routers.eduplatform-app.tls.certresolver=letsencrypt
       - traefik.http.routers.eduplatform-app.middlewares=eduplatform-sec@docker
       - traefik.http.services.eduplatform-app.loadbalancer.server.port=80
+      # Caddy redirected http to https on its own; Traefik needs it spelled out, or port 80 answers
+      # nothing and a plain http:// link looks like the site is down.
+      - traefik.http.routers.eduplatform-app-http.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.eduplatform-app-http.entrypoints=web
+      - traefik.http.routers.eduplatform-app-http.middlewares=eduplatform-redirect@docker
+      - traefik.http.middlewares.eduplatform-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.eduplatform-redirect.redirectscheme.permanent=true
       # Caddy's shared security_headers snippet. HSTS belongs to whatever terminates TLS, which is
       # now Traefik, so it is set here rather than in the app.
       - traefik.http.middlewares.eduplatform-sec.headers.stsSeconds=31536000
