@@ -22,6 +22,11 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: jsdom
         update-types: ["version-update:semver-major"]
+      # @eslint/js 10 declares a peer of eslint ^10, so it cannot land while eslint is on 9 —
+      # the two have to move together. eslint itself is deliberately not ignored: @eslint/js 9
+      # declares no peer, so an eslint major can go in on its own and unblock this one.
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
