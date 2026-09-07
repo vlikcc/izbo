@@ -37,13 +37,6 @@ export const LandingPage: React.FC = () => {
         },
     ];
 
-    const stats = [
-        { value: '1000+', label: 'Aktif Kullanıcı' },
-        { value: '500+', label: 'Sanal Sınıf' },
-        { value: '10000+', label: 'Tamamlanan Ders' },
-        { value: '99%', label: 'Memnuniyet' },
-    ];
-
     return (
         <div className="landing">
             {/* Navigation */}
@@ -114,16 +107,6 @@ export const LandingPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            </section>
-
-            {/* Stats Section */}
-            <section className="landing-stats">
-                {stats.map((stat, index) => (
-                    <div key={index} className="landing-stat">
-                        <span className="landing-stat-value">{stat.value}</span>
-                        <span className="landing-stat-label">{stat.label}</span>
-                    </div>
-                ))}
             </section>
 
             {/* Features Section */}
