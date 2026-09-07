@@ -230,11 +230,11 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: csharp, javascript
       - name: Build
         run: |
           dotnet restore EduPlatform.sln
           dotnet build EduPlatform.sln -c Release --no-restore
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
