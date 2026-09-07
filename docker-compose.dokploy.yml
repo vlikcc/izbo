@@ -449,7 +449,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
-      - traefik.http.routers.eduplatform-api.rule=Host(`${API_DOMAIN}`)
+      - traefik.http.routers.eduplatform-api.rule=Host(`${API_DOMAIN:?API_DOMAIN is required}`)
       - traefik.http.routers.eduplatform-api.entrypoints=websecure
       - traefik.http.routers.eduplatform-api.tls=true
       - traefik.http.routers.eduplatform-api.tls.certresolver=letsencrypt
@@ -499,7 +499,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
-      - traefik.http.routers.eduplatform-app.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.eduplatform-app.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`)
       - traefik.http.routers.eduplatform-app.entrypoints=websecure
       - traefik.http.routers.eduplatform-app.tls=true
       - traefik.http.routers.eduplatform-app.tls.certresolver=letsencrypt
