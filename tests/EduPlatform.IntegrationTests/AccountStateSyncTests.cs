@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared.Authorization;
+using Shared.DTOs;
 using Shared.Internal;
 using Shared.Models;
 using Shouldly;
@@ -165,6 +166,28 @@ public class AccountStateSyncTests
         profile.Email.ShouldBe("renamed@test.local");
         profile.Role.ShouldBe(UserRole.Student);
         profile.IsActive.ShouldBeFalse();
+    }
+
+    [SkippableFact]
+    public async Task Updating_a_profile_pushes_identity_to_the_authentication_store()
+    {
+        Skip.If(!_postgres.Available, "Docker is not available for Testcontainers.");
+
+        await using var db = await SeededDbAsync();
+        var authStore = new RecordingAccountStateClient();
+        var service = CreateService(db, authStore);
+
+        var updated = await service.UpdateUserAsync(
+            StudentId, new UpdateUserRequest("Renamed", "Learner", "+905551112233", null));
+
+        updated.ShouldNotBeNull();
+        updated.FirstName.ShouldBe("Renamed");
+        authStore.Identities.ShouldContain(entry =>
+            entry.UserId == StudentId &&
+            entry.Identity.FirstName == "Renamed" &&
+            entry.Identity.LastName == "Learner" &&
+            entry.Identity.PhoneNumber == "+905551112233");
+        (await db.Users.FirstAsync(u => u.Id == StudentId)).FirstName.ShouldBe("Renamed");
     }
 
     [SkippableFact]

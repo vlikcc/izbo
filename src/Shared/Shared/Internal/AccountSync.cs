@@ -19,6 +19,12 @@ public record AccountProfileSync(
 public record AccountActiveRequest(bool IsActive);
 
 /// <summary>
+/// Identity fields AuthService owns and re-mirrors into UserService on login. A profile edit that
+/// writes only the directory is overwritten at the next sign-in unless this is pushed back.
+/// </summary>
+public record AccountIdentityRequest(string FirstName, string LastName, string? PhoneNumber, string? ProfileImageUrl);
+
+/// <summary>
 /// Used by AuthService to give UserService a profile row carrying the same id as the account. Without
 /// it the two services hold unrelated records for the same person and the admin directory shows only
 /// whoever was seeded.
@@ -36,6 +42,12 @@ public interface IAccountDirectoryClient
 public interface IAccountStateClient
 {
     Task<bool> SetActiveAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Pushes a directory profile edit onto the account that issues tokens. Returns false when
+    /// AuthService could not be reached; callers should still keep the directory write.
+    /// </summary>
+    Task<bool> UpdateIdentityAsync(Guid userId, AccountIdentityRequest identity, CancellationToken cancellationToken = default);
 }
 
 internal sealed class AccountDirectoryClient : IAccountDirectoryClient
@@ -115,6 +127,40 @@ internal sealed class AccountStateClient : IAccountStateClient
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             _logger.LogError(ex, "Applying account state for {UserId} on AuthService failed", userId);
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateIdentityAsync(
+        Guid userId,
+        AccountIdentityRequest identity,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+
+        if (_http.BaseAddress is null)
+        {
+            _logger.LogError("AuthService base address is not configured; identity for {UserId} not applied", userId);
+            return false;
+        }
+
+        try
+        {
+            var response = await _http.PutAsJsonAsync(
+                $"api/internal/accounts/{userId}/identity", identity, cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+
+            _logger.LogError(
+                "Applying identity for {UserId} on AuthService failed with {StatusCode}", userId, response.StatusCode);
+            return false;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogError(ex, "Applying identity for {UserId} on AuthService failed", userId);
             return false;
         }
     }

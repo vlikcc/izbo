@@ -6,7 +6,7 @@ import { toast } from '../../lib/toast';
 import './Profile.css';
 
 export const ProfilePage: React.FC = () => {
-    const { user, checkAuth, logout } = useAuthStore();
+    const { user, applyUser, logout } = useAuthStore();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,8 +39,11 @@ export const ProfilePage: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            await userService.updateProfile(editForm);
-            await checkAuth();
+            const updated = await userService.updateProfile(editForm);
+            applyUser({
+                ...(user ?? updated),
+                ...updated,
+            });
             setSuccess('Profil başarıyla güncellendi!');
             setIsEditModalOpen(false);
             setTimeout(() => setSuccess(''), 3000);
@@ -128,6 +131,10 @@ export const ProfilePage: React.FC = () => {
                         <div className="profile-field">
                             <label className="profile-label">Soyad</label>
                             <span className="profile-value">{user?.lastName || '-'}</span>
+                        </div>
+                        <div className="profile-field">
+                            <label className="profile-label">Telefon</label>
+                            <span className="profile-value">{user?.phoneNumber || '-'}</span>
                         </div>
                         <div className="profile-field">
                             <label className="profile-label">E-posta</label>

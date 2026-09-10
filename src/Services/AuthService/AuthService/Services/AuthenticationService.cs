@@ -52,6 +52,11 @@ public interface IAuthService
     /// admin directory in UserService drives it through the internal endpoint.
     /// </summary>
     Task<bool> SetAccountActiveAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the identity fields that are copied into JWTs and re-mirrored to UserService on login.
+    /// </summary>
+    Task<bool> UpdateAccountIdentityAsync(Guid userId, AccountIdentityRequest identity, CancellationToken cancellationToken = default);
 }
 
 public class AuthenticationService : IAuthService
@@ -275,6 +280,34 @@ public class AuthenticationService : IAuthService
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation(
             "Account {UserId} {Action}", userId, isActive ? "activated" : "deactivated");
+        return true;
+    }
+
+    public async Task<bool> UpdateAccountIdentityAsync(
+        Guid userId,
+        AccountIdentityRequest identity,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user is null)
+        {
+            _logger.LogWarning("Identity change requested for unknown user {UserId}", userId);
+            return false;
+        }
+
+        user.FirstName = identity.FirstName;
+        user.LastName = identity.LastName;
+        user.PhoneNumber = identity.PhoneNumber;
+        if (!string.IsNullOrEmpty(identity.ProfileImageUrl))
+        {
+            user.ProfileImageUrl = identity.ProfileImageUrl;
+        }
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Account {UserId} identity updated", userId);
         return true;
     }
 

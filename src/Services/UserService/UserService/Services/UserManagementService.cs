@@ -122,6 +122,14 @@ public class UserManagementService : IUserManagementService
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        if (!await _accountState.UpdateIdentityAsync(
+            id,
+            new AccountIdentityRequest(user.FirstName, user.LastName, user.PhoneNumber, user.ProfileImageUrl),
+            cancellationToken))
+        {
+            _logger.LogWarning("User {UserId} updated in the directory but identity was not applied to AuthService", id);
+        }
+
         _logger.LogInformation("User {UserId} updated", id);
         return MapToDto(user);
     }

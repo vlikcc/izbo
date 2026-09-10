@@ -59,6 +59,8 @@ internal sealed class RecordingAccountStateClient : IAccountStateClient
 {
     public List<(Guid UserId, bool IsActive)> Applied { get; } = [];
 
+    public List<(Guid UserId, AccountIdentityRequest Identity)> Identities { get; } = [];
+
     /// <summary>Set false to simulate AuthService being unreachable.</summary>
     public bool Available { get; set; } = true;
 
@@ -67,6 +69,16 @@ internal sealed class RecordingAccountStateClient : IAccountStateClient
         if (Available)
         {
             Applied.Add((userId, isActive));
+        }
+
+        return Task.FromResult(Available);
+    }
+
+    public Task<bool> UpdateIdentityAsync(Guid userId, AccountIdentityRequest identity, CancellationToken cancellationToken = default)
+    {
+        if (Available)
+        {
+            Identities.Add((userId, identity));
         }
 
         return Task.FromResult(Available);

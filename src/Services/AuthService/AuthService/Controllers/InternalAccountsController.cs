@@ -39,4 +39,22 @@ public class InternalAccountsController : ControllerBase
 
         return Ok(new ApiResponse<bool>(true, true, "Account state updated"));
     }
+
+    [HttpPut("accounts/{id}/identity")]
+    public async Task<ActionResult<ApiResponse<bool>>> UpdateAccountIdentity(
+        Guid id,
+        [FromBody] AccountIdentityRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var updated = await _authService.UpdateAccountIdentityAsync(id, request, cancellationToken);
+
+        if (!updated)
+        {
+            return NotFound(new ApiResponse<bool>(false, false, "Account not found"));
+        }
+
+        return Ok(new ApiResponse<bool>(true, true, "Account identity updated"));
+    }
 }

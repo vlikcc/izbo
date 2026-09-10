@@ -21,6 +21,8 @@ interface AuthState {
     register: (data: { email: string; password: string; firstName: string; lastName: string; role?: string }) => Promise<string>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
+    /** Replace the in-memory profile after a successful directory update, without re-reading JWT claims. */
+    applyUser: (user: User) => void;
     clearError: () => void;
 }
 
@@ -88,6 +90,8 @@ export const useAuthStore = create<AuthState>((set) => ({
             set({ user: null, isAuthenticated: false, isInitialized: true, isLoading: false });
         }
     },
+
+    applyUser: (user) => set({ user, isAuthenticated: true }),
 
     clearError: () => set({ error: null }),
 }));

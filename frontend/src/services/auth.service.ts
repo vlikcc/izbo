@@ -39,6 +39,15 @@ export const authService = {
 
     async getCurrentUser(): Promise<User | null> {
         try {
+            const profile = await api.get<ApiResponse<User>>('/api/users/me');
+            if (profile.data.success && profile.data.data) {
+                return profile.data.data;
+            }
+        } catch {
+            // Directory may be briefly unavailable; JWT claims still prove the session.
+        }
+
+        try {
             const response = await api.get<ApiResponse<{ userId: string; email: string; role: string; firstName: string; lastName: string }>>('/api/auth/me');
             if (response.data.success && response.data.data) {
                 const userData = response.data.data;
