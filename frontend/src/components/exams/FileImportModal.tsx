@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '../ui';
+import { useDialogFocus } from '../ui/useDialogFocus';
 import { parseQuestionFile, convertToCreateRequests, type ParsedQuestion } from '../../utils/questionImportUtils';
 import type { CreateQuestionRequest } from '../../types';
 import './FileImportModal.css';
@@ -17,6 +18,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
     onImport,
     startOrderIndex,
 }) => {
+    const dialogRef = useRef<HTMLDivElement>(null);
     const [file, setFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +95,10 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
         onClose();
     };
 
+    // Escape, the focus trap and returning focus on close, shared with Modal so there is one
+    // implementation of it. handleClose also resets the wizard, so Escape leaves it on step one.
+    useDialogFocus(isOpen, handleClose, dialogRef);
+
     const removeQuestion = (index: number) => {
         setParsedQuestions(prev => prev.filter((_, i) => i !== index));
     };
@@ -101,10 +107,17 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
 
     return (
         <div className="file-import-overlay" onClick={handleClose}>
-            <div className="file-import-modal" onClick={e => e.stopPropagation()}>
+            <div
+                className="file-import-modal"
+                onClick={e => e.stopPropagation()}
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="file-import-title"
+            >
                 <div className="file-import-header">
-                    <h2>📁 Dosyadan Soru İçe Aktar</h2>
-                    <button className="file-import-close" onClick={handleClose}>×</button>
+                    <h2 id="file-import-title">📁 Dosyadan Soru İçe Aktar</h2>
+                    <button type="button" className="file-import-close" onClick={handleClose}>×</button>
                 </div>
 
                 {step === 'upload' ? (

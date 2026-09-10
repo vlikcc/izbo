@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button } from '../../components/ui';
+import { Card, Button, Modal } from '../../components/ui';
 import { CreateExamModal } from '../../components/exams/CreateExamModal';
 import { CreateHomeworkModal } from '../../components/homework/CreateHomeworkModal';
 import { AnnouncementBoard } from '../../components/classroom/AnnouncementBoard';
@@ -406,66 +406,63 @@ export const ClassroomDetailPage: React.FC = () => {
             </div>
 
             {/* Add Student Modal */}
-            {isAddStudentModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-container">
-                        <div className="modal-header">
-                            <h3>Öğrenci Ekle</h3>
-                            <button className="modal-close" onClick={() => setIsAddStudentModalOpen(false)}>×</button>
-                        </div>
-                        <div className="modal-content">
-                            <div className="search-box">
-                                <input
-                                    type="text"
-                                    placeholder="Öğrenci adı veya e-posta ara..."
-                                    className="modal-input"
-                                    value={studentSearchQuery}
-                                    onChange={(e) => handleSearchStudents(e.target.value)}
-                                />
-                            </div>
+            <Modal
+                isOpen={isAddStudentModalOpen}
+                onClose={() => setIsAddStudentModalOpen(false)}
+                title="Öğrenci Ekle"
+                size="md"
+            >
+                <div className="modal-content">
+                    <div className="search-box">
+                        <input
+                            type="text"
+                            placeholder="Öğrenci adı veya e-posta ara..."
+                            className="modal-input"
+                            value={studentSearchQuery}
+                            onChange={(e) => handleSearchStudents(e.target.value)}
+                        />
+                    </div>
 
-                            <div className="search-results">
-                                {isSearching ? (
-                                    <div className="search-loading">Aranıyor...</div>
-                                ) : searchResults.length > 0 ? (
-                                    <ul className="search-list">
-                                        {searchResults.map(user => (
-                                            <li
-                                                key={user.id}
-                                                className={`search-item ${selectedStudent?.id === user.id ? 'selected' : ''}`}
-                                                onClick={() => setSelectedStudent(user)}
-                                            >
-                                                <div className="user-avatar-xs">
-                                                    {(user.firstName || 'U').charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="user-info">
-                                                    <span className="user-name">{user.firstName} {user.lastName}</span>
-                                                    <span className="user-email">{user.email}</span>
-                                                </div>
-                                                {selectedStudent?.id === user.id && <span className="check-icon">✓</span>}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : studentSearchQuery.length >= 3 ? (
-                                    <div className="no-results">Öğrenci bulunamadı.</div>
-                                ) : (
-                                    <div className="search-hint">Aramak için en az 3 karakter girin.</div>
-                                )}
-                            </div>
-                        </div>
-                        <div className="modal-footer">
-                            <Button variant="ghost" onClick={() => setIsAddStudentModalOpen(false)}>İptal</Button>
-                            <Button
-                                variant="primary"
-                                disabled={!selectedStudent || isEnrolling}
-                                onClick={handleEnrollStudent}
-                            >
-                                {isEnrolling ? 'Ekleniyor...' : 'Öğrenciyi Ekle'}
-                            </Button>
-                        </div>
+                    <div className="search-results">
+                        {isSearching ? (
+                            <div className="search-loading">Aranıyor...</div>
+                        ) : searchResults.length > 0 ? (
+                            <ul className="search-list">
+                                {searchResults.map(user => (
+                                    <li
+                                        key={user.id}
+                                        className={`search-item ${selectedStudent?.id === user.id ? 'selected' : ''}`}
+                                        onClick={() => setSelectedStudent(user)}
+                                    >
+                                        <div className="user-avatar-xs">
+                                            {(user.firstName || 'U').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="user-info">
+                                            <span className="user-name">{user.firstName} {user.lastName}</span>
+                                            <span className="user-email">{user.email}</span>
+                                        </div>
+                                        {selectedStudent?.id === user.id && <span className="check-icon">✓</span>}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : studentSearchQuery.length >= 3 ? (
+                            <div className="no-results">Öğrenci bulunamadı.</div>
+                        ) : (
+                            <div className="search-hint">Aramak için en az 3 karakter girin.</div>
+                        )}
                     </div>
                 </div>
-            )}
+                <div className="modal-footer">
+                    <Button variant="ghost" onClick={() => setIsAddStudentModalOpen(false)}>İptal</Button>
+                    <Button
+                        variant="primary"
+                        disabled={!selectedStudent || isEnrolling}
+                        onClick={handleEnrollStudent}
+                    >
+                        {isEnrolling ? 'Ekleniyor...' : 'Öğrenciyi Ekle'}
+                    </Button>
+                </div>
+            </Modal>
 
             <CreateExamModal
                 isOpen={isCreateExamModalOpen}

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Modal } from './Modal';
+import { useDialogFocus } from './useDialogFocus';
 
 /**
  * Mirrors how every caller uses Modal: the form state lives in the parent, and onClose is an inline
@@ -69,5 +70,56 @@ describe('Modal', () => {
         // Inside a <form>, a button without an explicit type submits it.
         render(<EditHarness />);
         expect(screen.getByRole('button', { name: 'Kapat' })).toHaveAttribute('type', 'button');
+    });
+});
+
+/**
+ * Dialogs that keep their own markup get the same behaviour through the hook rather than a second
+ * copy of the effects. This covers that path directly, since the component test above cannot.
+ */
+function BespokeDialog() {
+    const [open, setOpen] = useState(true);
+    const [value, setValue] = useState('');
+    const ref = useRef<HTMLDivElement>(null);
+    useDialogFocus(open, () => setOpen(false), ref);
+
+    if (!open) return <p>kapandı</p>;
+    return (
+        <div ref={ref} role="dialog" aria-modal="true">
+            <button type="button" className="thing-close">×</button>
+            <input aria-label="Alan" value={value} onChange={(e) => setValue(e.target.value)} />
+        </div>
+    );
+}
+
+describe('useDialogFocus', () => {
+    it('keeps focus on the field while typing in a dialog with its own markup', async () => {
+        const user = userEvent.setup();
+        render(<BespokeDialog />);
+        await flushFrame();
+
+        const field = screen.getByLabelText('Alan');
+        await user.click(field);
+        await user.type(field, 'abc');
+        await flushFrame();
+
+        expect(field).toHaveFocus();
+        expect(field).toHaveValue('abc');
+    });
+
+    it('skips the close control when moving focus in', async () => {
+        render(<BespokeDialog />);
+        await flushFrame();
+
+        expect(screen.getByLabelText('Alan')).toHaveFocus();
+    });
+
+    it('closes on Escape', async () => {
+        const user = userEvent.setup();
+        render(<BespokeDialog />);
+        await flushFrame();
+
+        await user.keyboard('{Escape}');
+        expect(await screen.findByText('kapandı')).toBeInTheDocument();
     });
 });
