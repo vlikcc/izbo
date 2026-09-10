@@ -134,16 +134,10 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                             required
                         >
                             <option value="">Sınıf seçiniz...</option>
-                            <option value="all">🌐 Tüm Sınıflar (Herkes katılabilir)</option>
                             {classrooms.map(c => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
-                        {formData.classroomId === 'all' && (
-                            <span className="form-helper" style={{ color: 'var(--color-info)' }}>
-                                ℹ️ Bu sınav tüm sınıflardaki öğrencilere açık olacaktır
-                            </span>
-                        )}
                     </div>
                 )}
 

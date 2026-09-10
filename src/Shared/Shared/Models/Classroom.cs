@@ -41,7 +41,8 @@ public enum SessionStatus
 public class ClassSession
 {
     public Guid Id { get; set; }
-    public Guid ClassroomId { get; set; }
+    public Guid? ClassroomId { get; set; }
+    public Guid InstructorId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public DateTime ScheduledStartTime { get; set; }
@@ -55,4 +56,5 @@ public class ClassSession
 
     // Navigation properties
     public virtual Classroom? Classroom { get; set; }
+    public virtual User? Instructor { get; set; }
 }

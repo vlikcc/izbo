@@ -23,7 +23,8 @@ public record BulkEnrollRequest(List<Guid> StudentIds);
 // Session DTOs
 public record ClassSessionDto(
     Guid Id, 
-    Guid ClassroomId, 
+    Guid? ClassroomId, 
+    Guid InstructorId,
     string Title, 
     string? Description, 
     DateTime ScheduledStartTime, 
@@ -32,7 +33,7 @@ public record ClassSessionDto(
     string? RecordingUrl, 
     string Status);
 
-public record CreateSessionRequest(string Title, string? Description, DateTime ScheduledStartTime, DateTime ScheduledEndTime);
+public record CreateSessionRequest(Guid? ClassroomId, string Title, string? Description, DateTime ScheduledStartTime, DateTime ScheduledEndTime);
 public record UpdateSessionRequest(string? Title, string? Description, DateTime? ScheduledStartTime, DateTime? ScheduledEndTime);
 
 public record AnnouncementDto(Guid Id, Guid ClassroomId, Guid AuthorId, string Title, string Body, DateTime CreatedAt);

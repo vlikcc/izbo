@@ -120,10 +120,6 @@ export const LivePage: React.FC = () => {
         e.preventDefault();
         setError('');
 
-        if (!formData.classroomId) {
-            setError('Sınıf seçmelisiniz');
-            return;
-        }
         if (!formData.title.trim()) {
             setError('Başlık zorunludur');
             return;
@@ -301,9 +297,8 @@ export const LivePage: React.FC = () => {
                             value={formData.classroomId}
                             onChange={handleChange}
                             className="modal-select"
-                            required
                         >
-                            <option value="">Sınıf Seçin</option>
+                            <option value="">Sınıf Seçiniz (Genel Oturum)</option>
                             {classrooms.map(classroom => (
                                 <option key={classroom.id} value={classroom.id}>
                                     {classroom.name}

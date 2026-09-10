@@ -212,6 +212,16 @@ public class ClassroomHub : Hub
         await Clients.Group(group).SendAsync("QuizEnded");
     }
 
+    public async Task ForceMuteParticipant(string sessionId, string toUserId, string mediaType)
+    {
+        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
+        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+            return;
+
+        RequireJoinedSession(sessionId);
+        await Clients.User(toUserId).SendAsync("ForceMuted", new { mediaType });
+    }
+
     // WebRTC signalling. Messages are addressed to a user rather than a connection, so the only
     // guarantee available here is that the sender is a member of the session it names.
     public Task SendOffer(string sessionId, string toUserId, string offer)

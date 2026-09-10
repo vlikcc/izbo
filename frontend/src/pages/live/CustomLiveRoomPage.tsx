@@ -7,6 +7,7 @@ import { Whiteboard } from '../../components/live/Whiteboard';
 import { FloatingToolbar } from '../../components/live/FloatingToolbar';
 import { LiveQuizInstructorPanel } from '../../components/live/LiveQuizInstructorPanel';
 import { LiveQuizStudentPanel } from '../../components/live/LiveQuizStudentPanel';
+import { QRCodeSVG } from 'qrcode.react';
 import './LiveClassroom.css';
 
 // Simple Icons
@@ -19,7 +20,9 @@ const Icons = {
     Hand: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg>,
     MessageSquare: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>,
     X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
-    Send: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    Send: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>,
+    Share: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>,
+    Users: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
 };
 
 interface ChatMessage {
@@ -45,7 +48,8 @@ export const CustomLiveRoomPage: React.FC = () => {
 
     // UI States
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [sidebarView, setSidebarView] = useState<'chat' | 'quiz'>('chat');
+    const [sidebarView, setSidebarView] = useState<'chat' | 'quiz' | 'participants'>('chat');
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isMicMuted, setIsMicMuted] = useState(false);
     const [isCameraOff, setIsCameraOff] = useState(false);
     const [isHandRaised, setIsHandRaised] = useState(false);
@@ -238,6 +242,19 @@ export const CustomLiveRoomPage: React.FC = () => {
 
                     connection.on('QuizEnded', () => {
                         setActiveQuizCode(null);
+                    });
+
+                    connection.on('ForceMuted', (data: { mediaType: string }) => {
+                        console.log('Force muted by instructor:', data.mediaType);
+                        if (activeStreamRef.current) {
+                            if (data.mediaType === 'audio') {
+                                activeStreamRef.current.getAudioTracks().forEach(t => t.enabled = false);
+                                setIsMicMuted(true);
+                            } else if (data.mediaType === 'video') {
+                                activeStreamRef.current.getVideoTracks().forEach(t => t.enabled = false);
+                                setIsCameraOff(true);
+                            }
+                        }
                     });
 
                     // --- WebRTC Signaling ---
@@ -443,7 +460,7 @@ export const CustomLiveRoomPage: React.FC = () => {
         connection?.invoke('NotifyQuizEnded', sessionId);
     };
 
-    const openPanel = (view: 'chat' | 'quiz') => {
+    const openPanel = (view: 'chat' | 'quiz' | 'participants') => {
         setSidebarView(view);
         setIsSidebarOpen(true);
     };
@@ -505,6 +522,23 @@ export const CustomLiveRoomPage: React.FC = () => {
                     />
                 )}
 
+                {isShareModalOpen && (
+                    <div className="modal-overlay" onClick={() => setIsShareModalOpen(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ background: '#1f2937', padding: '24px', borderRadius: '12px', color: 'white', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
+                            <h3 style={{ marginTop: 0, marginBottom: '8px' }}>Dersi Paylaş</h3>
+                            <p style={{ color: '#9ca3af', marginBottom: '24px', fontSize: '14px' }}>Öğrencileriniz bu QR kodu okutarak veya linke tıklayarak derse katılabilir.</p>
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', padding: '16px', background: 'white', borderRadius: '8px' }}>
+                                <QRCodeSVG value={window.location.href} size={200} />
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <input type="text" readOnly value={window.location.href} style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #374151', background: '#111827', color: 'white' }} />
+                                <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert('Kopyalandı!'); }} style={{ padding: '10px 16px', borderRadius: '6px', border: 'none', background: '#4f46e5', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>Kopyala</button>
+                            </div>
+                            <button onClick={() => setIsShareModalOpen(false)} style={{ marginTop: '16px', padding: '10px', borderRadius: '6px', border: 'none', background: '#374151', color: 'white', cursor: 'pointer', width: '100%', fontWeight: 'bold' }}>Kapat</button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Video Grid */}
                 <div className={`video-grid ${!isSidebarOpen ? 'full-width' : ''} ${Object.keys(remoteStreams).length > 0 ? 'multi-user' : 'single-user'}`}>
                     {/* Local User */}
@@ -547,6 +581,12 @@ export const CustomLiveRoomPage: React.FC = () => {
                                     Sohbet
                                 </button>
                                 <button
+                                    className={`sidebar-tab ${sidebarView === 'participants' ? 'active' : ''}`}
+                                    onClick={() => setSidebarView('participants')}
+                                >
+                                    Katılımcılar
+                                </button>
+                                <button
                                     className={`sidebar-tab ${sidebarView === 'quiz' ? 'active' : ''} ${activeQuizCode ? 'has-badge' : ''}`}
                                     onClick={() => setSidebarView('quiz')}
                                 >
@@ -581,6 +621,27 @@ export const CustomLiveRoomPage: React.FC = () => {
                                     <button className="send-btn" onClick={sendMessage}><Icons.Send /></button>
                                 </div>
                             </>
+                        ) : sidebarView === 'participants' ? (
+                            <div className="participants-list" style={{ padding: '16px', overflowY: 'auto', flex: 1 }}>
+                                {participants.map(p => (
+                                    <div key={p.userId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', padding: '8px', background: '#1f2937', borderRadius: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
+                                                {p.userName.charAt(0).toUpperCase()}
+                                            </div>
+                                            <span style={{ color: 'white', fontSize: '14px' }}>{p.userName}</span>
+                                            {p.handRaised && <span title="El Kaldırdı">✋</span>}
+                                        </div>
+                                        {isInstructor && (
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                <button title="Mikrofonu Kapat" onClick={() => connection?.invoke('ForceMuteParticipant', sessionId, p.userId, 'audio')} style={{ background: '#374151', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.MicOff /></button>
+                                                <button title="Kamerayı Kapat" onClick={() => connection?.invoke('ForceMuteParticipant', sessionId, p.userId, 'video')} style={{ background: '#374151', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.CameraOff /></button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                {participants.length === 0 && <p style={{ color: '#9ca3af', textAlign: 'center', fontSize: '14px', marginTop: '32px' }}>Henüz başka katılımcı yok.</p>}
+                            </div>
                         ) : isInstructor ? (
                             classroomId && (
                                 <LiveQuizInstructorPanel
@@ -630,6 +691,22 @@ export const CustomLiveRoomPage: React.FC = () => {
                 >
                     <span className="control-icon"><Icons.Hand /></span>
                     <span className="control-label">El Kaldır</span>
+                </button>
+
+                <button
+                    className={`control-btn ${isShareModalOpen ? 'active' : ''}`}
+                    onClick={() => setIsShareModalOpen(true)}
+                >
+                    <span className="control-icon"><Icons.Share /></span>
+                    <span className="control-label">Paylaş</span>
+                </button>
+
+                <button
+                    className="control-btn"
+                    onClick={() => (isSidebarOpen && sidebarView === 'participants' ? setIsSidebarOpen(false) : openPanel('participants'))}
+                >
+                    <span className="control-icon"><Icons.Users /></span>
+                    <span className="control-label">Kişiler</span>
                 </button>
 
                 <button

@@ -45,7 +45,7 @@ export const liveService = {
     },
 
     async createSession(data: {
-        classroomId: string;
+        classroomId?: string;
         title: string;
         description?: string;
         scheduledStartTime: string;
@@ -53,15 +53,19 @@ export const liveService = {
         meetingUrl?: string;
     }): Promise<LiveSession> {
         const { classroomId, ...rest } = data;
-        // Backend DTO only accepts: title, description, scheduledStartTime, scheduledEndTime
-        // Convert datetime-local format to ISO string for proper backend parsing
         const sessionData = {
+            classroomId: classroomId || null,
             title: rest.title,
             description: rest.description || null,
             scheduledStartTime: new Date(rest.scheduledStartTime).toISOString(),
             scheduledEndTime: new Date(rest.scheduledEndTime).toISOString(),
         };
-        const response = await api.post<ApiResponse<LiveSession>>(`/api/classrooms/${classroomId}/sessions`, sessionData);
+
+        const endpoint = classroomId 
+            ? `/api/classrooms/${classroomId}/sessions`
+            : `/api/classrooms/sessions`;
+
+        const response = await api.post<ApiResponse<LiveSession>>(endpoint, sessionData);
         if (response.data.success && response.data.data) {
             return response.data.data;
         }

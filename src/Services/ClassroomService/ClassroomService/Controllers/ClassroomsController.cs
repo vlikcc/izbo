@@ -197,6 +197,18 @@ public class ClassroomsController : ControllerBase
         return Ok(new ApiResponse<ClassSessionDto>(true, result, "Session created successfully"));
     }
 
+    [HttpPost("sessions")]
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<ClassSessionDto>>> CreateGlobalSession([FromBody] CreateSessionRequest request)
+    {
+        var result = await _sessionService.CreateSessionAsync(null, request, Caller);
+
+        if (result == null)
+            return BadRequest(new ApiResponse<ClassSessionDto>(false, null, "Could not create global session"));
+
+        return Ok(new ApiResponse<ClassSessionDto>(true, result, "Global session created successfully"));
+    }
+
     [HttpGet("{id}/sessions")]
     public async Task<ActionResult<ApiResponse<List<ClassSessionDto>>>> GetSessions(Guid id)
     {

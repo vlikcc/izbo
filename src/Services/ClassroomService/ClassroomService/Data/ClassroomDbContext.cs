@@ -58,9 +58,13 @@ public class ClassroomDbContext : DbContext
             entity.HasOne(e => e.Classroom)
                 .WithMany(c => c.Sessions)
                 .HasForeignKey(e => e.ClassroomId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => new { e.ClassroomId, e.ScheduledStartTime });
+            entity.HasIndex(e => e.InstructorId);
             entity.HasIndex(e => e.Status);
+            // Ignore User navigation - User is in different database
+            entity.Ignore(e => e.Instructor);
         });
 
         modelBuilder.Entity<Announcement>(entity =>
