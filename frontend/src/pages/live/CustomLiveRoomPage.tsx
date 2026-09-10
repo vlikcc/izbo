@@ -15,7 +15,7 @@ const Icons = {
     MicOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>,
     Camera: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>,
     CameraOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 21l-9.19-9.19a4 4 0 0 0-5.66 5.66L21 21z"></path><path d="M17 17l-1-1"></path><path d="M3 7v12a2 2 0 0 0 2 2h2"></path><path d="M7 7h10"></path><path d="M2 2l20 20"></path></svg>,
-    ScreenShare: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3"></path><polyline points="8 21 12 17 16 21"></polyline><line x1="12" y1="17" x2="12" y2="21"></line><path d="M17 8l4-4-4-4-4"></path><path d="M21 4H10a5 5 0 0 0-5 5v2"></path></svg>,
+    ScreenShare: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3"></path><polyline points="8 21 12 17 16 21"></polyline><line x1="12" y1="17" x2="12" y2="21"></line><path d="M17 8l4-4-4-4"></path><path d="M21 4H10a5 5 0 0 0-5 5v2"></path></svg>,
     Hand: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg>,
     MessageSquare: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>,
     X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
@@ -65,6 +65,11 @@ export const CustomLiveRoomPage: React.FC = () => {
     // Media States
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const activeStreamRef = useRef<MediaStream | null>(null);
+
+    useEffect(() => {
+        activeStreamRef.current = localStream;
+    }, [localStream]);
 
     // WebRTC States
     const peersRef = useRef<{ [key: string]: RTCPeerConnection }>({});
@@ -262,9 +267,12 @@ export const CustomLiveRoomPage: React.FC = () => {
                         peersRef.current[participant.userId] = peer;
 
                         // Add local tracks
-                        localStream?.getTracks().forEach(track => {
-                            peer.addTrack(track, localStream);
-                        });
+                        const streamToUse = activeStreamRef.current;
+                        if (streamToUse) {
+                            streamToUse.getTracks().forEach(track => {
+                                peer.addTrack(track, streamToUse);
+                            });
+                        }
 
                         const offer = await peer.createOffer();
                         await peer.setLocalDescription(offer);
@@ -291,9 +299,12 @@ export const CustomLiveRoomPage: React.FC = () => {
                         peersRef.current[data.fromUserId] = peer;
 
                         // Add local tracks
-                        localStream?.getTracks().forEach(track => {
-                            peer.addTrack(track, localStream!);
-                        });
+                        const streamToUse = activeStreamRef.current;
+                        if (streamToUse) {
+                            streamToUse.getTracks().forEach(track => {
+                                peer.addTrack(track, streamToUse);
+                            });
+                        }
 
                         await peer.setRemoteDescription(offer);
                         const answer = await peer.createAnswer();
@@ -325,9 +336,9 @@ export const CustomLiveRoomPage: React.FC = () => {
                 void connection.stop();
             };
         }
-        // Signaling handlers close over the current stream; recreate only when the hub or stream changes.
+        // Signaling handlers close over the current stream via activeStreamRef.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [connection, sessionId, localStream]);
+    }, [connection, sessionId]);
 
     const toggleMic = () => {
         if (localStream) {

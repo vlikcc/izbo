@@ -35,10 +35,15 @@ type EventHandler<T> = (data: T) => void;
 class LiveQuizHubService {
     private connection: signalR.HubConnection | null = null;
     private eventHandlers: Map<string, Set<EventHandler<unknown>>> = new Map();
+    private connectPromise: Promise<void> | null = null;
 
     async connect(token: string): Promise<void> {
         if (this.connection?.state === signalR.HubConnectionState.Connected) {
             return;
+        }
+
+        if (this.connectPromise) {
+            return this.connectPromise;
         }
 
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050';
@@ -53,13 +58,19 @@ class LiveQuizHubService {
 
         this.setupEventListeners();
 
-        try {
-            await this.connection.start();
-            console.log('LiveQuizHub connected');
-        } catch (error) {
-            console.error('Failed to connect to LiveQuizHub:', error);
-            throw error;
-        }
+        this.connectPromise = (async () => {
+            try {
+                await this.connection!.start();
+                console.log('LiveQuizHub connected');
+            } catch (error) {
+                console.error('Failed to connect to LiveQuizHub:', error);
+                throw error;
+            } finally {
+                this.connectPromise = null;
+            }
+        })();
+
+        return this.connectPromise;
     }
 
     private setupEventListeners(): void {
@@ -183,6 +194,13 @@ class LiveQuizHubService {
     }
 
     async disconnect(): Promise<void> {
+        if (this.connectPromise) {
+            try {
+                await this.connectPromise;
+            } catch (e) {
+                // Ignore connection errors if disconnecting
+            }
+        }
         if (this.connection) {
             await this.connection.stop();
             this.connection = null;
