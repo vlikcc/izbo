@@ -233,7 +233,6 @@ export const LivePage: React.FC = () => {
                                                     size="md"
                                                     fullWidth
                                                     onClick={() => handleStartSession(session.id)}
-                                                    style={{ marginBottom: '8px' }}
                                                 >
                                                     Dersi Başlat 🚀
                                                 </Button>
@@ -258,6 +257,18 @@ export const LivePage: React.FC = () => {
                                             )}
                                         </>
                                     )}
+                                    <Button
+                                        variant="outline"
+                                        size="md"
+                                        fullWidth
+                                        onClick={() => {
+                                            setCreatedSession({ id: session.id, title: session.title });
+                                            setIsShareModalOpen(true);
+                                        }}
+                                        style={{ marginTop: '8px' }}
+                                    >
+                                        🔗 Paylaş / QR Kod
+                                    </Button>
                                 </div>
                             </Card>
                         )
