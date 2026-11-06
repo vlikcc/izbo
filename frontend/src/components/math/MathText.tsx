@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { splitMath } from './splitMath';
@@ -14,6 +14,20 @@ const KATEX_OPTIONS = {
     output: 'htmlAndMathml' as const,
 };
 
+/**
+ * One formula. KaTeX builds the DOM itself into this element, so no HTML string from author text is
+ * ever handed to React's innerHTML.
+ */
+const Formula: React.FC<{ tex: string; display: boolean }> = ({ tex, display }) => {
+    const ref = useRef<HTMLSpanElement>(null);
+
+    useLayoutEffect(() => {
+        if (ref.current) katex.render(tex, ref.current, { ...KATEX_OPTIONS, displayMode: display });
+    }, [tex, display]);
+
+    return <span ref={ref} className={display ? 'math-display' : 'math-inline'} />;
+};
+
 interface MathTextProps {
     text: string;
     className?: string;
@@ -21,19 +35,14 @@ interface MathTextProps {
 
 /** Question text with formulas. Plain text keeps its line breaks; formulas render through KaTeX. */
 export const MathText: React.FC<MathTextProps> = ({ text, className }) => {
-    const parts = useMemo(() => splitMath(text ?? '').map(segment =>
-        segment.kind === 'text'
-            ? segment
-            : { ...segment, value: katex.renderToString(segment.value, { ...KATEX_OPTIONS, displayMode: segment.kind === 'display' }) }),
-    [text]);
+    const parts = useMemo(() => splitMath(text ?? ''), [text]);
 
     return (
         <span className={['math-text', className].filter(Boolean).join(' ')}>
             {parts.map((part, index) =>
                 part.kind === 'text'
                     ? <React.Fragment key={index}>{part.value}</React.Fragment>
-                    // KaTeX output is generated markup, not author HTML: the author's text never reaches innerHTML raw.
-                    : <span key={index} className={part.kind === 'display' ? 'math-display' : 'math-inline'} dangerouslySetInnerHTML={{ __html: part.value }} />)}
+                    : <Formula key={`${index}-${part.kind}`} tex={part.value} display={part.kind === 'display'} />)}
         </span>
     );
 };
