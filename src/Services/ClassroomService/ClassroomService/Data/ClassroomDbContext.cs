@@ -32,6 +32,8 @@ public class ClassroomDbContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.HasIndex(e => e.InstructorId);
             entity.HasIndex(e => e.IsActive);
+            entity.Property(e => e.InviteCode).HasMaxLength(16);
+            entity.HasIndex(e => e.InviteCode).IsUnique().HasFilter("\"InviteCode\" IS NOT NULL");
             // Ignore User navigation - User is in different database
             entity.Ignore(e => e.Instructor);
         });

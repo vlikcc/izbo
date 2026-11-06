@@ -4,6 +4,9 @@ import { Card, Button, Modal } from '../../components/ui';
 import { CreateExamModal } from '../../components/exams/CreateExamModal';
 import { CreateHomeworkModal } from '../../components/homework/CreateHomeworkModal';
 import { AnnouncementBoard } from '../../components/classroom/AnnouncementBoard';
+import { InviteCodeCard } from '../../components/classroom/InviteCodeCard';
+import { isStaff } from '../../utils/roles';
+import { formatCode } from '../../utils/codes';
 import { classroomService } from '../../services/classroom.service';
 import { homeworkService } from '../../services/homework.service';
 import { examService } from '../../services/exam.service';
@@ -16,7 +19,7 @@ export const ClassroomDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+    const isInstructor = isStaff(user);
 
     // Core data state
     const [classroom, setClassroom] = useState<Classroom | null>(null);
@@ -267,17 +270,20 @@ export const ClassroomDetailPage: React.FC = () => {
                                     )}
                                 </section>
 
-                                <section className="section-block">
-                                    <h3 className="section-title">📌 Sınıf Kodu</h3>
-                                    <Card variant="default" padding="md">
-                                        <div className="class-code-box">
-                                            <code>{classroom.id.split('-')[0].toUpperCase()}</code>
-                                            <Button size="sm" variant="ghost" onClick={() => {
-                                                navigator.clipboard.writeText(classroom.id.split('-')[0].toUpperCase());
-                                            }}>kopyala</Button>
-                                        </div>
-                                    </Card>
-                                </section>
+                                {/* The join code is only handed out by the people who run the class. */}
+                                {isInstructor && classroom.inviteCode && (
+                                    <section className="section-block">
+                                        <h3 className="section-title">📌 Sınıf Kodu</h3>
+                                        <Card variant="default" padding="md">
+                                            <div className="class-code-box">
+                                                <code>{formatCode(classroom.inviteCode)}</code>
+                                                <Button size="sm" variant="ghost" onClick={() => setActiveTab('people')}>
+                                                    paylaş
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    </section>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -362,6 +368,13 @@ export const ClassroomDetailPage: React.FC = () => {
                 {/* People Tab */}
                 {activeTab === 'people' && (
                     <div className="tab-content animate-slideUp">
+                        {isInstructor && classroom.inviteCode && (
+                            <InviteCodeCard
+                                classroomId={classroom.id}
+                                code={classroom.inviteCode}
+                                onChanged={code => setClassroom(prev => (prev ? { ...prev, inviteCode: code } : prev))}
+                            />
+                        )}
                         <div className="section-header">
                             <h3>Katılımcılar ({enrollments.length})</h3>
                             {isInstructor && <Button variant="primary" size="sm" onClick={() => setIsAddStudentModalOpen(true)}>+ Öğrenci Ekle</Button>}

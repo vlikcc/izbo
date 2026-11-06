@@ -19,6 +19,12 @@ public interface IHomeworkManagementService
     Task<SubmissionDto?> GetSubmissionAsync(Guid homeworkId, Guid studentId, CancellationToken cancellationToken = default);
     Task<List<SubmissionDto>?> GetSubmissionsAsync(Guid homeworkId, Caller caller, CancellationToken cancellationToken = default);
     Task<SubmissionDto?> GradeSubmissionAsync(Guid submissionId, GradeSubmissionRequest request, Caller caller, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The latest assignments across a student's classrooms with that student's submissions, for a linked
+    /// parent. The classroom list comes from ClassroomService, which performs the guardianship check.
+    /// </summary>
+    Task<List<StudentHomeworkDto>> GetStudentHomeworkAsync(Guid studentId, int limit = 20, CancellationToken cancellationToken = default);
 }
 
 public class HomeworkManagementService : IHomeworkManagementService
@@ -387,6 +393,34 @@ public class HomeworkManagementService : IHomeworkManagementService
         h.IsActive,
         h.CreatedAt
     );
+
+    public async Task<List<StudentHomeworkDto>> GetStudentHomeworkAsync(Guid studentId, int limit = 20, CancellationToken cancellationToken = default)
+    {
+        var classroomIds = (await _classroomAccess.GetStudentClassroomIdsAsync(studentId, cancellationToken)).ToList();
+        if (classroomIds.Count == 0)
+        {
+            return [];
+        }
+
+        var homeworks = await _context.Homeworks
+            .AsNoTracking()
+            .Where(h => h.IsActive && classroomIds.Contains(h.ClassroomId))
+            .OrderByDescending(h => h.DueDate)
+            .Take(Math.Clamp(limit, 1, 100))
+            .ToListAsync(cancellationToken);
+
+        var homeworkIds = homeworks.Select(h => h.Id).ToList();
+        var submissions = await _context.Submissions
+            .AsNoTracking()
+            .Where(s => s.StudentId == studentId && homeworkIds.Contains(s.HomeworkId))
+            .ToDictionaryAsync(s => s.HomeworkId, cancellationToken);
+
+        return homeworks
+            .Select(h => new StudentHomeworkDto(
+                MapToDto(h),
+                submissions.TryGetValue(h.Id, out var submission) ? MapSubmissionToDto(submission) : null))
+            .ToList();
+    }
 
     private static SubmissionDto MapSubmissionToDto(HomeworkSubmission s) => new(
         s.Id,

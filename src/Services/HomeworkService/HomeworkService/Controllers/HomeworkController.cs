@@ -12,15 +12,36 @@ namespace HomeworkService.Controllers;
 public class HomeworkController : ControllerBase
 {
     private readonly IHomeworkManagementService _homeworkService;
+    private readonly IGuardianAccessClient _guardianAccess;
     private readonly ILogger<HomeworkController> _logger;
 
-    public HomeworkController(IHomeworkManagementService homeworkService, ILogger<HomeworkController> logger)
+    public HomeworkController(
+        IHomeworkManagementService homeworkService,
+        IGuardianAccessClient guardianAccess,
+        ILogger<HomeworkController> logger)
     {
         _homeworkService = homeworkService;
+        _guardianAccess = guardianAccess;
         _logger = logger;
     }
 
     private Caller Caller => User.GetCaller();
+
+    /// <summary>A student's assignments and submissions, for the student, a linked parent, or an admin.</summary>
+    [HttpGet("student/{studentId}")]
+    public async Task<ActionResult<ApiResponse<List<StudentHomeworkDto>>>> GetStudentHomework(
+        Guid studentId,
+        [FromQuery] int limit = 20,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _guardianAccess.CanViewStudentAsync(studentId, Caller, cancellationToken))
+        {
+            return NotFound(new ApiResponse<List<StudentHomeworkDto>>(false, null, "Student not found"));
+        }
+
+        var result = await _homeworkService.GetStudentHomeworkAsync(studentId, limit, cancellationToken);
+        return Ok(new ApiResponse<List<StudentHomeworkDto>>(true, result));
+    }
 
     [HttpPost]
     [Authorize(Roles = UserRoles.ContentManagers)]

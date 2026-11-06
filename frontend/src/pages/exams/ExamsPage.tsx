@@ -8,6 +8,7 @@ import { useSubscriptionStore } from '../../stores/subscriptionStore';
 import { useUpgradeStore } from '../../stores/upgradeStore';
 import type { Exam } from '../../types';
 import './Exams.css';
+import { isStaff } from '../../utils/roles';
 
 export const ExamsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -17,7 +18,7 @@ export const ExamsPage: React.FC = () => {
     const [exams, setExams] = useState<Exam[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+    const isInstructor = isStaff(user);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const fetchExams = async () => {

@@ -16,6 +16,7 @@ const admin: User = {
 };
 
 const student: User = { ...admin, id: 's1', role: 'Student' };
+const parent: User = { ...admin, id: 'p1', role: 'Parent' };
 
 function setAuth(state: Partial<ReturnType<typeof useAuthStore.getState>>) {
     useAuthStore.setState(state);
@@ -103,5 +104,24 @@ describe('ProtectedRoute', () => {
         renderGuarded(<ProtectedRoute><div>private page</div></ProtectedRoute>);
 
         expect(screen.getByText('login')).toBeInTheDocument();
+    });
+});
+
+describe('RoleRoute for parents', () => {
+    it('sends a parent away from the classroom tools', () => {
+        setAuth({ user: parent, isAuthenticated: true, isInitialized: true });
+
+        renderGuarded(<RoleRoute roles={['Student', 'Instructor', 'Admin', 'SuperAdmin']}><div>exams page</div></RoleRoute>);
+
+        expect(screen.queryByText('exams page')).not.toBeInTheDocument();
+        expect(screen.getByText('dashboard')).toBeInTheDocument();
+    });
+
+    it('lets a parent into parent pages', () => {
+        setAuth({ user: parent, isAuthenticated: true, isInitialized: true });
+
+        renderGuarded(<RoleRoute roles={['Parent']}><div>children page</div></RoleRoute>);
+
+        expect(screen.getByText('children page')).toBeInTheDocument();
     });
 });

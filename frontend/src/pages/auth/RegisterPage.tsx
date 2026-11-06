@@ -3,7 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button, Input, Card } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { PASSWORD_HINT, validatePassword } from '../../utils/passwordPolicy';
+import { EXAM_LABELS, GRADES, examTargetsForGrade } from '../../utils/roles';
+import type { ExamTarget, RegisterRequest } from '../../types';
 import './Auth.css';
+
+type SelfServiceRole = NonNullable<RegisterRequest['role']>;
+
+const ROLE_CHOICES: { role: SelfServiceRole; icon: string; title: string; text: string }[] = [
+    { role: 'Parent', icon: '👨‍👩‍👧', title: 'Veliyim', text: 'Çocuğumun hesabını açıp gelişimini takip edeceğim' },
+    { role: 'Student', icon: '🎒', title: 'Öğrenciyim', text: 'Kendi e-postamla kayıt olup ders çalışacağım' },
+    { role: 'Instructor', icon: '🧑‍🏫', title: 'Öğretmenim', text: 'Sınıf açıp ders, sınav ve ödev vereceğim' },
+];
 
 export const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
@@ -14,9 +24,14 @@ export const RegisterPage: React.FC = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        role: 'Student',
+        role: 'Parent' as SelfServiceRole,
+        gradeLevel: '',
+        examTarget: '' as ExamTarget | '',
     });
     const [validationError, setValidationError] = useState('');
+    const isStudentSignup = formData.role === 'Student';
+    const grade = formData.gradeLevel ? Number(formData.gradeLevel) : undefined;
+    const examChoices = examTargetsForGrade(grade);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,6 +49,11 @@ export const RegisterPage: React.FC = () => {
             return;
         }
 
+        if (isStudentSignup && !grade) {
+            setValidationError('Lütfen sınıfını seç');
+            return;
+        }
+
         try {
             const message = await register({
                 email: formData.email,
@@ -41,6 +61,12 @@ export const RegisterPage: React.FC = () => {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 role: formData.role,
+                ...(isStudentSignup && {
+                    gradeLevel: grade,
+                    examTarget: formData.examTarget && examChoices.includes(formData.examTarget)
+                        ? formData.examTarget
+                        : undefined,
+                }),
             });
 
             // Registration issues no session, so the next step is signing in.
@@ -72,7 +98,7 @@ export const RegisterPage: React.FC = () => {
                             <span className="auth-logo-text">EduPlatform</span>
                         </div>
                         <h1 className="auth-title">Hesap Oluştur</h1>
-                        <p className="auth-subtitle">Öğrenmeye başlamak için kayıt olun</p>
+                        <p className="auth-subtitle">Kim olarak katılıyorsunuz?</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="auth-form">
@@ -80,6 +106,29 @@ export const RegisterPage: React.FC = () => {
                             <div className="auth-error">
                                 {error || validationError}
                             </div>
+                        )}
+
+                        <div className="role-choices" role="radiogroup" aria-label="Hesap türü">
+                            {ROLE_CHOICES.map(choice => (
+                                <button
+                                    key={choice.role}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={formData.role === choice.role}
+                                    className={`role-choice${formData.role === choice.role ? ' role-choice-active' : ''}`}
+                                    onClick={() => setFormData(prev => ({ ...prev, role: choice.role }))}
+                                >
+                                    <span className="role-choice-icon" aria-hidden="true">{choice.icon}</span>
+                                    <span className="role-choice-title">{choice.title}</span>
+                                    <span className="role-choice-text">{choice.text}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {formData.role === 'Parent' && (
+                            <p className="auth-hint">
+                                E-postası olmayan çocuğunuz için kayıttan sonra panelinizden kullanıcı adıyla giriş yapan bir hesap açabilirsiniz.
+                            </p>
                         )}
 
                         <div className="auth-row">
@@ -113,18 +162,38 @@ export const RegisterPage: React.FC = () => {
                             required
                         />
 
-                        <div className="input-wrapper">
-                            <label className="input-label">Rol</label>
-                            <select
-                                name="role"
-                                value={formData.role}
-                                onChange={handleChange}
-                                className="auth-select"
-                            >
-                                <option value="Student">Öğrenci</option>
-                                <option value="Instructor">Eğitmen</option>
-                            </select>
-                        </div>
+                        {isStudentSignup && (
+                            <div className="auth-row">
+                                <div className="input-wrapper">
+                                    <label className="input-label" htmlFor="register-grade">Sınıf</label>
+                                    <select
+                                        id="register-grade"
+                                        name="gradeLevel"
+                                        value={formData.gradeLevel}
+                                        onChange={handleChange}
+                                        className="auth-select"
+                                        required
+                                    >
+                                        <option value="">Seçin</option>
+                                        {GRADES.map(g => <option key={g} value={g}>{g}. sınıf</option>)}
+                                    </select>
+                                </div>
+                                <div className="input-wrapper">
+                                    <label className="input-label" htmlFor="register-exam">Hedef sınav</label>
+                                    <select
+                                        id="register-exam"
+                                        name="examTarget"
+                                        value={formData.examTarget}
+                                        onChange={handleChange}
+                                        className="auth-select"
+                                        disabled={examChoices.length === 0}
+                                    >
+                                        <option value="">Yok</option>
+                                        {examChoices.map(t => <option key={t} value={t}>{EXAM_LABELS[t]}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
 
                         <Input
                             label="Şifre"

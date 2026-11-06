@@ -4,6 +4,8 @@ import { Card, Button, Modal, Input } from '../../components/ui';
 import { classroomService } from '../../services/classroom.service';
 import { useAuthStore } from '../../stores/authStore';
 import type { Classroom } from '../../types';
+import { isStaff, isStudent } from '../../utils/roles';
+import { JoinClassroomModal } from '../../components/classroom/JoinClassroomModal';
 import './Classrooms.css';
 
 export const ClassroomsPage: React.FC = () => {
@@ -18,7 +20,9 @@ export const ClassroomsPage: React.FC = () => {
     });
     const [error, setError] = useState('');
 
-    const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+    const isInstructor = isStaff(user);
+    const canJoin = isStudent(user);
+    const [isJoinOpen, setIsJoinOpen] = useState(false);
 
     const fetchClassrooms = async () => {
         try {
@@ -94,6 +98,11 @@ export const ClassroomsPage: React.FC = () => {
                         + Yeni Sınıf Oluştur
                     </Button>
                 )}
+                {canJoin && (
+                    <Button variant="primary" size="md" onClick={() => setIsJoinOpen(true)}>
+                        🔑 Kodla katıl
+                    </Button>
+                )}
             </div>
 
             {isLoading ? (
@@ -149,9 +158,14 @@ export const ClassroomsPage: React.FC = () => {
                         <p className="classrooms-empty-text">
                             {isInstructor
                                 ? 'İlk sınıfınızı oluşturarak başlayın!'
-                                : 'Bir sınıfa kayıt olduğunuzda burada görünecektir.'
+                                : 'Öğretmeninin verdiği kodla bir sınıfa katıl.'
                             }
                         </p>
+                        {canJoin && (
+                            <Button variant="primary" size="lg" style={{ marginTop: '16px' }} onClick={() => setIsJoinOpen(true)}>
+                                🔑 Kodla katıl
+                            </Button>
+                        )}
                         {isInstructor && (
                             <Button variant="primary" size="lg" style={{ marginTop: '16px' }} onClick={handleOpenModal}>
                                 + Sınıf Oluştur
@@ -160,6 +174,8 @@ export const ClassroomsPage: React.FC = () => {
                     </div>
                 </Card>
             )}
+
+            <JoinClassroomModal isOpen={isJoinOpen} onClose={() => setIsJoinOpen(false)} />
 
             {/* Create Classroom Modal */}
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Yeni Sınıf Oluştur" size="md">

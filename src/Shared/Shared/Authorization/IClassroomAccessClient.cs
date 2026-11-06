@@ -37,4 +37,10 @@ public interface IClassroomAccessClient
     /// Returns <c>null</c> for administrators, who are not restricted to a subset.
     /// </summary>
     Task<IReadOnlyCollection<Guid>?> GetAccessibleClassroomIdsAsync(Caller caller, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The classrooms a student is enrolled in, as seen by someone allowed to follow that student (a linked
+    /// parent). ClassroomService performs the guardianship check; an empty list is the fail-closed answer.
+    /// </summary>
+    Task<IReadOnlyCollection<Guid>> GetStudentClassroomIdsAsync(Guid studentId, CancellationToken cancellationToken = default);
 }

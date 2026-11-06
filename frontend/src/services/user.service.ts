@@ -1,8 +1,14 @@
 import api from './api';
-import type { ApiResponse, User } from '../types';
+import type { ApiResponse, ExamTarget, User } from '../types';
 
 export const userService = {
-    async updateProfile(data: { firstName?: string; lastName?: string; phoneNumber?: string }): Promise<User> {
+    async updateProfile(data: {
+        firstName?: string;
+        lastName?: string;
+        phoneNumber?: string;
+        gradeLevel?: number;
+        examTarget?: ExamTarget;
+    }): Promise<User> {
         const response = await api.put<ApiResponse<User>>('/api/users/me', data);
         if (response.data.success && response.data.data) {
             return response.data.data;
