@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Shared.Audit;
 using Shared.Models;
+using UserService.Services.Promotion;
 
 namespace UserService.Data;
 
@@ -13,6 +14,7 @@ public class UserDbContext : DbContext, IAuditDbContext
     public DbSet<AuditEvent> AuditEvents { get; set; }
     public DbSet<GuardianLink> GuardianLinks { get; set; }
     public DbSet<GuardianLinkCode> GuardianLinkCodes { get; set; }
+    public DbSet<PromotionRun> PromotionRuns { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -54,6 +56,13 @@ public class UserDbContext : DbContext, IAuditDbContext
             entity.Property(e => e.CodeHash).IsRequired().HasMaxLength(64);
             entity.HasIndex(e => e.CodeHash).IsUnique();
             entity.HasIndex(e => e.StudentId);
+        });
+
+        modelBuilder.Entity<PromotionRun>(entity =>
+        {
+            entity.ToTable("promotion_runs");
+            entity.HasKey(e => e.Year);
+            entity.Property(e => e.Year).ValueGeneratedNever();
         });
 
         modelBuilder.Entity<AuditEvent>(entity =>

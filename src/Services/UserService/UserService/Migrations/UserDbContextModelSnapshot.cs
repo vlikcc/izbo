@@ -195,6 +195,28 @@ namespace UserService.Migrations
 
                     b.ToTable("users", (string)null);
                 });
+
+            modelBuilder.Entity("UserService.Services.Promotion.PromotionRun", b =>
+                {
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LgsCleared")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Promoted")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("RanAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TriggeredBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Year");
+
+                    b.ToTable("promotion_runs", (string)null);
+                });
 #pragma warning restore 612, 618
         }
     }
