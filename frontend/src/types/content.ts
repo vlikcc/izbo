@@ -74,6 +74,8 @@ export interface ContentItemSummary {
     hasThumbnail: boolean;
     order: number;
     progress: ContentProgress | null;
+    /** Premium and not covered by the viewer's package: shown, but not playable. */
+    locked?: boolean;
 }
 
 export interface ContentItem {
@@ -102,6 +104,8 @@ export interface ContentItem {
     submittedAt: string | null;
     publishedAt: string | null;
     progress: ContentProgress | null;
+    /** Premium and not covered by the viewer's package: shown, but not playable. */
+    locked?: boolean;
 }
 
 export interface TopicDetail {

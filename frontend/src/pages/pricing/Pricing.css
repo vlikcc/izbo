@@ -198,3 +198,21 @@
     color: var(--color-success);
     font-weight: 700;
 }
+
+.pricing-audience-toggle {
+    margin-bottom: var(--space-4);
+}
+
+.pricing-header .pricing-audience-toggle + .pricing-cycle-toggle {
+    display: flex;
+    width: max-content;
+    margin: 0 auto;
+}
+
+.pricing-learner-note {
+    max-width: 720px;
+    margin: var(--space-6) auto var(--space-12);
+    padding: 0 var(--space-4);
+    text-align: center;
+    color: var(--color-gray-600);
+}

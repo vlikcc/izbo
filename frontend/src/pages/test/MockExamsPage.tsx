@@ -46,8 +46,10 @@ export const MockExamsPage: React.FC = () => {
             const attempt = await assessmentService.startAssessment(a.id);
             navigate(`/app/test/${attempt.summary.id}`);
         } catch (e) {
-            toast.error(e instanceof Error ? e.message : 'Sınav başlatılamadı');
             setStarting('');
+            // 402: the package modal is already open.
+            if ((e as { response?: { status?: number } }).response?.status === 402) return;
+            toast.error(e instanceof Error ? e.message : 'Sınav başlatılamadı');
         }
     };
 
@@ -64,6 +66,7 @@ export const MockExamsPage: React.FC = () => {
             <Card key={a.id} variant="default" padding="md">
                 <div className="exam-card">
                     {a.kind === 'MockExam' && <span className={`exam-state exam-state-${a.state}`}>{STATE_LABELS[a.state]}</span>}
+                    {a.accessTier === 'Premium' && <span className="badge badge-Premium" title="Plus ve Premium paketlere dahil">⭐ Plus</span>}
                     <h3 className="unit-title" style={{ margin: 0 }}>{a.title}</h3>
                     {a.description && <p className="content-muted">{a.description}</p>}
                     <p className="content-muted">{a.levelName} · {a.questionCount} soru · {a.durationMinutes} dakika</p>

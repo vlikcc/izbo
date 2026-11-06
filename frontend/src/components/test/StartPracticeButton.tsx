@@ -25,6 +25,9 @@ export const StartPracticeButton: React.FC<StartPracticeButtonProps> = ({ target
             navigate(`/app/test/${attempt.summary.id}${homeworkId ? `?odev=${encodeURIComponent(homeworkId)}` : ''}`);
         } catch (e) {
             const status = (e as { response?: { status?: number } }).response?.status;
+            setBusy(false);
+            // 402: the package modal is already open.
+            if (status === 402) return;
             toast.error(status === 400 ? 'Bu konu için henüz soru eklenmedi.' : e instanceof Error ? e.message : 'Test başlatılamadı');
             setBusy(false);
         }
