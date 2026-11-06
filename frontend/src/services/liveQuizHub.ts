@@ -1,4 +1,5 @@
 import * as signalR from '@microsoft/signalr';
+import { API_URL } from '../config';
 
 export interface LiveQuizParticipant {
     odaId: string;
@@ -46,7 +47,7 @@ class LiveQuizHubService {
             return this.connectPromise;
         }
 
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+        const baseUrl = API_URL;
 
         this.connection = new signalR.HubConnectionBuilder()
             .withUrl(`${baseUrl}/hubs/exam`, {

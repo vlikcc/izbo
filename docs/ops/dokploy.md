@@ -41,7 +41,6 @@ ACME_EMAIL=<let's encrypt bildirimleri için e-posta>
 
 FRONTEND_URL=https://eduplatform.velikececi.com
 API_PUBLIC_URL=https://api.eduplatform.velikececi.com
-VITE_API_URL=https://api.eduplatform.velikececi.com
 
 # Gizli değerler — her biri için: openssl rand -base64 32
 JWT_SECRET=
@@ -72,8 +71,12 @@ SMTP_ENABLE_SSL=true
 EMAIL_REQUIRE_VERIFICATION=false
 ```
 
-`VITE_API_URL` **derleme zamanında** frontend bundle'ının içine gömülür. Sonradan değiştirirseniz
-frontend imajının yeniden derlenmesi gerekir; sadece yeniden başlatmak yetmez.
+Frontend API adresini **çalışma anında** alır: konteyner `API_PUBLIC_URL`'i `/config.js` olarak sunar.
+Domain değiştirmek için yalnızca bu değişkenleri güncelleyip yeniden deploy etmek yeter; imaj yeniden
+derlenmez. (`VITE_API_URL` artık gerekmez; yalnızca yerel geliştirmede yedek değer olarak okunur.)
+
+İsteğe bağlı: `IMAGE_TAG` hangi imajın çekileceğini seçer (varsayılan `main`). Geri almak için önceki bir
+commit'in etiketini yazıp deploy edin, ör. `IMAGE_TAG=sha-8533ef8`.
 
 ## 3. Dokploy
 
@@ -81,7 +84,29 @@ frontend imajının yeniden derlenmesi gerekir; sadece yeniden başlatmak yetmez
 2. Kaynağı bu depoya, `main` dalına bağlayın.
 3. Compose dosyası olarak `docker-compose.dokploy.yml` seçin.
 4. Environment sekmesine yukarıdaki değerleri girin.
-5. Deploy.
+5. **Auto Deploy'u kapatın.** Deploy'u CI başlatır (aşağıda); Dokploy'un kendi tetiklemesi imajlar
+   GHCR'ye yüklenmeden çalışıp eski imajı çekerdi.
+6. Deploy.
+
+### Deploy akışı: CI derler, sunucu yalnızca çeker
+
+Sunucuda hiçbir şey derlenmez. `main`'e her push'ta CI:
+
+1. testleri çalıştırır, 12 imajı derler ve Trivy ile tarar;
+2. imajları `ghcr.io/vlikcc/izbo/<servis>` olarak `main` ve `sha-<commit>` etiketleriyle GHCR'ye yükler;
+3. Dokploy API'sine `compose.deploy` isteği gönderir; Dokploy imajları çekip konteynerleri yeniler.
+
+Bir kerelik GitHub ayarları (repo → Settings → Secrets and variables → Actions):
+
+| Tür | Ad | Değer |
+|-----|-----|-------|
+| Variable | `DOKPLOY_URL` | `https://dokploy.yargisalzeka.com` |
+| Variable | `DOKPLOY_COMPOSE_ID` | Dokploy'daki compose uygulamasının kimliği |
+| Secret | `DOKPLOY_API_KEY` | Dokploy → Settings → Profile → API/CLI'dan üretilen anahtar |
+
+Bunlar eksikse CI imajları yine yükler ama deploy'u başlatmaz (iş akışında uyarı görünür). Depo herkese
+açık olduğu için GHCR paketleri de herkese açıktır; sunucuda `docker login` gerekmez. Paketler özel
+yapılırsa sunucuda bir kez `docker login ghcr.io` (read:packages yetkili token) gerekir.
 
 Domainleri Dokploy arayüzünden ayrıca eklemeyin — yönlendirme, sertifika ve güvenlik başlıkları
 compose içindeki etiketlerle tanımlı. Arayüzden ikinci bir domain tanımı aynı hostname için çakışan

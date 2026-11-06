@@ -10,6 +10,7 @@ import { LiveQuizStudentPanel } from '../../components/live/LiveQuizStudentPanel
 import { QRCodeSVG } from 'qrcode.react';
 import './LiveClassroom.css';
 import { isStaff } from '../../utils/roles';
+import { API_URL } from '../../config';
 
 // Simple Icons
 const Icons = {
@@ -154,7 +155,6 @@ export const CustomLiveRoomPage: React.FC = () => {
     // Initialize SignalR
     useEffect(() => {
         const initSignalR = async () => {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
             const token = localStorage.getItem('accessToken');
 
             const newConnection = new HubConnectionBuilder()

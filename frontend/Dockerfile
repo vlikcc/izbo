@@ -13,7 +13,9 @@ RUN npm ci
 # Copy source code (node_modules excluded via .dockerignore)
 COPY . .
 
-ARG VITE_API_URL=https://api.example.com
+# Optional build-time fallback. Deployments set APP_API_URL at runtime instead, so the same image serves
+# any domain (see /config.js in nginx.conf.template).
+ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 
 # Build the application
@@ -31,7 +33,8 @@ COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 # Defaults keep a plain `docker run` working; deployments override them with their real origins.
 ENV CSP_CONNECT_SRC="https: wss:" \
     CSP_FRAME_SRC="https:" \
-    CSP_MEDIA_SRC="https:"
+    CSP_MEDIA_SRC="https:" \
+    APP_API_URL=""
 
 EXPOSE 80
 

@@ -16,8 +16,9 @@ import type {
     SaveBankQuestionRequest,
     SectionInput,
 } from '../types/assessment';
+import { API_URL } from '../config';
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:5050';
+const API_BASE = API_URL;
 
 function unwrap<T>(response: { data: ApiResponse<T> }, fallback: string): T {
     if (response.data.success && response.data.data !== null && response.data.data !== undefined) {

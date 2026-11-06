@@ -2,8 +2,8 @@ import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import { useUpgradeStore } from '../stores/upgradeStore';
 import type { QuotaExceededInfo } from '../types';
+import { API_URL } from '../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
 export const api = axios.create({
     baseURL: API_URL,
