@@ -91,9 +91,9 @@ public class ExamSessionService : IExamSessionService
 
         if (existingSession != null)
         {
-            if (existingSession.Status == ExamSessionStatus.Submitted || existingSession.Status == ExamSessionStatus.Graded)
+            if (existingSession.Status != ExamSessionStatus.InProgress)
             {
-                _logger.LogWarning("Student {StudentId} already submitted exam {ExamId}", studentId, examId);
+                _logger.LogWarning("Student {StudentId} already finished exam {ExamId}", studentId, examId);
                 return null;
             }
 
@@ -143,7 +143,7 @@ public class ExamSessionService : IExamSessionService
         var session = await _context.ExamSessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId && s.StudentId == caller.UserId)
-            .Select(s => new { s.Status })
+            .Select(s => new { s.Status, s.StartedAt, s.Exam!.DurationMinutes, s.Exam.EndTime })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (session == null)
@@ -156,6 +156,15 @@ public class ExamSessionService : IExamSessionService
 
         if (session.Status != ExamSessionStatus.InProgress)
         {
+            return false;
+        }
+
+        if (session.StartedAt is not { } startedAt ||
+            !ExamAttemptRules.AcceptsAnswersAt(DateTime.UtcNow, startedAt, session.DurationMinutes, session.EndTime))
+        {
+            _logger.LogWarning(
+                "Rejected answer for session {SessionId}, question {QuestionId}: time is up",
+                sessionId, questionId);
             return false;
         }
 
@@ -201,6 +210,11 @@ public class ExamSessionService : IExamSessionService
             return null;
         }
 
+        // A late submit is still graded, but only with what was saved in time (SaveAnswerAsync rejects
+        // anything after the deadline), and is recorded as timed out.
+        var timedOut = session.StartedAt is not { } startedAt ||
+            !ExamAttemptRules.AcceptsAnswersAt(DateTime.UtcNow, startedAt, session.Exam!.DurationMinutes, session.Exam.EndTime);
+
         // Get answers from cache
         var cacheKey = $"{ANSWER_CACHE_PREFIX}{sessionId}";
         var answersJson = await _cache.GetStringAsync(cacheKey, cancellationToken);
@@ -216,8 +230,9 @@ public class ExamSessionService : IExamSessionService
         {
             maxScore += question.Points;
             var studentAnswer = cachedAnswers.GetValueOrDefault(question.Id.ToString());
-            var isCorrect = AnswerEvaluator.IsCorrect(question.Type, question.CorrectAnswer, studentAnswer);
-            var pointsAwarded = AnswerEvaluator.Score(question.Type, question.Points, question.CorrectAnswer, studentAnswer);
+            var options = ParseOptions(question.Options);
+            var isCorrect = AnswerEvaluator.IsCorrect(question.Type, question.CorrectAnswer, studentAnswer, options);
+            var pointsAwarded = isCorrect ? question.Points : 0;
             totalScore += pointsAwarded;
 
             // Save to database
@@ -239,7 +254,7 @@ public class ExamSessionService : IExamSessionService
                     question.Id,
                     question.Content,
                     studentAnswer,
-                    question.CorrectAnswer,
+                    AnswerEvaluator.ResolveCorrectAnswer(question.Type, question.CorrectAnswer, options),
                     isCorrect,
                     pointsAwarded,
                     question.Points,
@@ -252,7 +267,7 @@ public class ExamSessionService : IExamSessionService
         session.TotalScore = totalScore;
         session.Percentage = maxScore > 0 ? (decimal)totalScore / maxScore * 100 : 0;
         session.IsPassed = session.Exam.PassingScore.HasValue && session.Percentage >= session.Exam.PassingScore;
-        session.Status = ExamSessionStatus.Graded;
+        session.Status = timedOut ? ExamSessionStatus.TimedOut : ExamSessionStatus.Graded;
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -263,8 +278,8 @@ public class ExamSessionService : IExamSessionService
         await _cache.RemoveAsync(cacheKey, cancellationToken);
         await _cache.RemoveAsync($"{SESSION_CACHE_PREFIX}{sessionId}", cancellationToken);
 
-        _logger.LogInformation("Session {SessionId} submitted. Score: {Score}/{MaxScore} ({Percentage}%)",
-            sessionId, totalScore, maxScore, session.Percentage);
+        _logger.LogInformation("Session {SessionId} submitted ({Status}). Score: {Score}/{MaxScore} ({Percentage}%)",
+            sessionId, session.Status, totalScore, maxScore, session.Percentage);
 
         // Notify via SignalR
         await _hubContext.Clients.User(session.StudentId.ToString())
@@ -342,7 +357,7 @@ public class ExamSessionService : IExamSessionService
             .ThenInclude(a => a.Question)
             .FirstOrDefaultAsync(s => s.Id == sessionId, cancellationToken);
 
-        if (session == null || session.Status != ExamSessionStatus.Graded)
+        if (session == null || session.Status is not (ExamSessionStatus.Graded or ExamSessionStatus.TimedOut))
             return null;
 
         if (!await CanReadSessionAsync(session, caller, cancellationToken))
@@ -353,7 +368,7 @@ public class ExamSessionService : IExamSessionService
                 a.QuestionId,
                 a.Question!.Content,
                 a.AnswerContent,
-                a.Question.CorrectAnswer,
+                AnswerEvaluator.ResolveCorrectAnswer(a.Question.Type, a.Question.CorrectAnswer, ParseOptions(a.Question.Options)),
                 a.IsCorrect ?? false,
                 a.PointsAwarded ?? 0,
                 a.Question.Points,
@@ -419,36 +434,33 @@ public class ExamSessionService : IExamSessionService
 
     private async Task<StartExamResponse> ResumeSessionAsync(ExamSession session, Exam exam, CancellationToken cancellationToken)
     {
-        // Calculate remaining time
-        var elapsedMinutes = (DateTime.UtcNow - session.StartedAt!.Value).TotalMinutes;
-        var remainingMinutes = Math.Max(0, exam.DurationMinutes - elapsedMinutes);
-
         await CacheSessionAsync(session, exam.DurationMinutes, cancellationToken);
 
-        _logger.LogInformation("Student {StudentId} resuming exam {ExamId}, {RemainingMinutes} minutes remaining",
-            session.StudentId, exam.Id, remainingMinutes);
+        var response = BuildStartExamResponse(session, exam);
 
-        return BuildStartExamResponse(session, exam, (int)(remainingMinutes * 60));
+        _logger.LogInformation("Student {StudentId} resuming exam {ExamId}, {RemainingSeconds} seconds remaining",
+            session.StudentId, exam.Id, response.RemainingSeconds);
+
+        return response;
     }
 
-    private static StartExamResponse BuildStartExamResponse(ExamSession session, Exam exam, int? remainingSeconds = null)
+    private static StartExamResponse BuildStartExamResponse(ExamSession session, Exam exam)
     {
         var questions = exam.Questions.OrderBy(q => q.OrderIndex).ToList();
 
+        // Seeded from the session so a resumed attempt keeps the order it started with.
         if (exam.ShuffleQuestions)
         {
-            questions = questions.OrderBy(_ => Guid.NewGuid()).ToList();
+            questions = ExamAttemptRules.Shuffle(questions, session.Id);
         }
 
         var questionDtos = questions.Select(q =>
         {
-            var options = !string.IsNullOrEmpty(q.Options)
-                ? JsonSerializer.Deserialize<List<string>>(q.Options)
-                : null;
+            var options = ParseOptions(q.Options);
 
             if (exam.ShuffleOptions && options != null)
             {
-                options = options.OrderBy(_ => Guid.NewGuid()).ToList();
+                options = ExamAttemptRules.Shuffle(options, session.Id, q.Id);
             }
 
             return new QuestionDto(
@@ -464,11 +476,15 @@ public class ExamSessionService : IExamSessionService
             );
         }).ToList();
 
-        var expiresAt = session.StartedAt!.Value.AddMinutes(exam.DurationMinutes);
-        var remaining = remainingSeconds ?? (int)(expiresAt - DateTime.UtcNow).TotalSeconds;
+        // The client timer counts down to the attempt's deadline, which the exam window can cut short.
+        var expiresAt = ExamAttemptRules.Deadline(session.StartedAt!.Value, exam.DurationMinutes, exam.EndTime);
+        var remaining = (int)(expiresAt - DateTime.UtcNow).TotalSeconds;
 
         return new StartExamResponse(session.Id, questionDtos, expiresAt, Math.Max(0, remaining));
     }
+
+    private static List<string>? ParseOptions(string? optionsJson) =>
+        string.IsNullOrEmpty(optionsJson) ? null : JsonSerializer.Deserialize<List<string>>(optionsJson);
 
     private async Task CacheSessionAsync(ExamSession session, int durationMinutes, CancellationToken cancellationToken)
     {

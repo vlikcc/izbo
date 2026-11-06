@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 import type { QuestionType, CreateQuestionRequest } from '../types';
+import { compactChoices } from './choiceKey';
 
 export interface ParsedQuestion {
     content: string;
@@ -75,6 +76,9 @@ export async function parseExcelFile(file: File): Promise<ImportResult> {
                 const question = parseExcelRow(row, columnMap);
                 if (question) {
                     result.questions.push(question);
+                    if (question.type === 'MultipleChoice' && !question.correctAnswer) {
+                        result.warnings.push(`Satır ${rowNum}: doğru cevap bir şıkla eşleşmedi (A–E harfi ya da şık metni girin).`);
+                    }
                 }
             } catch (error) {
                 result.warnings.push(`Satır ${rowNum}: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
@@ -161,26 +165,30 @@ function parseExcelRow(row: unknown[], columnMap: ColumnMapping): ParsedQuestion
         type = 'FillInBlank';
     }
 
+    // Doğru cevap
+    let correctAnswer = getValue(columnMap.correctAnswer);
+
     // Seçenekleri topla
-    const options: string[] = [];
+    let options: string[] = [];
     if (type === 'TrueFalse') {
         options.push('Doğru', 'Yanlış');
     } else if (type === 'MultipleChoice') {
-        const optA = getValue(columnMap.optionA);
-        const optB = getValue(columnMap.optionB);
-        const optC = getValue(columnMap.optionC);
-        const optD = getValue(columnMap.optionD);
-        const optE = getValue(columnMap.optionE);
-
-        if (optA) options.push(optA);
-        if (optB) options.push(optB);
-        if (optC) options.push(optC);
-        if (optD) options.push(optD);
-        if (optE) options.push(optE);
+        // Sınav servisi harf anahtarını şıkların kayıtlı sırasına göre çözer; boş sütunlar atlanınca
+        // harfin kaymaması ve metin olarak yazılmış cevabın harfe çevrilmesi için birlikte ayıklanır.
+        const compacted = compactChoices(
+            [
+                getValue(columnMap.optionA),
+                getValue(columnMap.optionB),
+                getValue(columnMap.optionC),
+                getValue(columnMap.optionD),
+                getValue(columnMap.optionE),
+            ],
+            correctAnswer,
+        );
+        options = compacted.options;
+        correctAnswer = compacted.correctAnswer;
     }
 
-    // Doğru cevap
-    let correctAnswer = getValue(columnMap.correctAnswer);
     if (type === 'TrueFalse') {
         if (correctAnswer.toLowerCase() === 'd' || correctAnswer.toLowerCase() === 'doğru' || correctAnswer === 'true') {
             correctAnswer = 'Doğru';
@@ -296,6 +304,9 @@ function parseQuestionsFromText(text: string, emptyTextError: string): ImportRes
             const question = parseWordQuestion(questionBlocks[i]);
             if (question) {
                 result.questions.push(question);
+                if (question.type === 'MultipleChoice' && !question.correctAnswer) {
+                    result.warnings.push(`Soru ${i + 1}: doğru cevap bulunamadı ("Doğru cevap: B" satırı ekleyin).`);
+                }
             }
         } catch (error) {
             result.warnings.push(`Soru ${i + 1}: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
