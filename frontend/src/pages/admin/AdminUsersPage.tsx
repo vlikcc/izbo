@@ -7,7 +7,7 @@ import { toast } from '../../lib/toast';
 import type { User } from '../../types';
 import './AdminUsersPage.css';
 
-const ROLES: User['role'][] = ['Student', 'Instructor', 'Admin', 'SuperAdmin'];
+const ROLES: User['role'][] = ['Student', 'Parent', 'Instructor', 'Admin', 'SuperAdmin'];
 
 export const AdminUsersPage: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -119,7 +119,7 @@ export const AdminUsersPage: React.FC = () => {
                                         <span className="admin-user-self">bu sizsiniz</span>
                                     )}
                                 </div>
-                                <div className="admin-user-email">{user.email}</div>
+                                <div className="admin-user-email">{user.email ?? user.username}</div>
                                 <span className={`admin-user-status ${user.isActive ? 'is-active' : 'is-inactive'}`}>
                                     {user.isActive ? 'Aktif' : 'Pasif'}
                                 </span>

@@ -9,6 +9,7 @@ import { LiveQuizInstructorPanel } from '../../components/live/LiveQuizInstructo
 import { LiveQuizStudentPanel } from '../../components/live/LiveQuizStudentPanel';
 import { QRCodeSVG } from 'qrcode.react';
 import './LiveClassroom.css';
+import { isStaff } from '../../utils/roles';
 
 // Simple Icons
 const Icons = {
@@ -44,7 +45,7 @@ export const CustomLiveRoomPage: React.FC = () => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
 
-    const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+    const isInstructor = isStaff(user);
 
     // UI States
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { User } from '../types';
+import type { RegisterRequest, User } from '../types';
 import authService from '../services/auth.service';
 import { useSubscriptionStore } from './subscriptionStore';
 
@@ -16,9 +16,10 @@ interface AuthState {
     error: string | null;
 
     // Actions
-    login: (email: string, password: string) => Promise<void>;
+    /** `identifier` is an e-mail address or, for child accounts, a user name. */
+    login: (identifier: string, password: string) => Promise<void>;
     /** Resolves with the message to show; registration does not start a session. */
-    register: (data: { email: string; password: string; firstName: string; lastName: string; role?: string }) => Promise<string>;
+    register: (data: RegisterRequest) => Promise<string>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
     /** Replace the in-memory profile after a successful directory update, without re-reading JWT claims. */
@@ -33,11 +34,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     isLoading: false,
     error: null,
 
-    login: async (email: string, password: string) => {
+    login: async (identifier: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await authService.login({ email, password });
-            set({ user: response.user, isAuthenticated: true, isInitialized: true, isLoading: false });
+            const trimmed = identifier.trim();
+            // User names cannot contain '@', so the two never collide.
+            const response = await authService.login(
+                trimmed.includes('@') ? { email: trimmed, password } : { username: trimmed, password });
+            // The token issuer does not keep school fields (grade, target exam); the directory does.
+            const profile = await authService.getCurrentUser().catch(() => null);
+            set({ user: { ...response.user, ...profile }, isAuthenticated: true, isInitialized: true, isLoading: false });
             useSubscriptionStore.getState().load();
         } catch (error) {
             set({

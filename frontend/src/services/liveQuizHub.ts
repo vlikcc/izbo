@@ -197,7 +197,7 @@ class LiveQuizHubService {
         if (this.connectPromise) {
             try {
                 await this.connectPromise;
-            } catch (e) {
+            } catch {
                 // Ignore connection errors if disconnecting
             }
         }

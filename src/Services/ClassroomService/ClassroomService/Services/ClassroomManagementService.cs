@@ -6,8 +6,24 @@ using Shared.Models;
 using Shared.Paging;
 using Shared.Subscription;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 
 namespace ClassroomService.Services;
+
+public enum JoinClassroomOutcome
+{
+    Joined,
+    AlreadyEnrolled,
+
+    /// <summary>No active classroom has this code. Also the answer for a wrong guess.</summary>
+    NotFound,
+
+    /// <summary>The caller teaches this classroom, or is not a student.</summary>
+    NotAllowed,
+    Full
+}
+
+public sealed record JoinClassroomResult(JoinClassroomOutcome Outcome, ClassroomDto? Classroom = null);
 
 public interface IClassroomManagementService
 {
@@ -33,6 +49,12 @@ public interface IClassroomManagementService
     /// queries over classroom-scoped content they store themselves.
     /// </summary>
     Task<List<Guid>> GetAccessibleClassroomIdsAsync(Caller caller, CancellationToken cancellationToken = default);
+
+    /// <summary>A student joins on their own with the code the teacher shared.</summary>
+    Task<JoinClassroomResult> JoinByCodeAsync(string code, Caller caller, CancellationToken cancellationToken = default);
+
+    /// <summary>Issues a fresh code, so a code that leaked stops working. Owner or admin only.</summary>
+    Task<string?> RegenerateInviteCodeAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default);
 }
 
 public class ClassroomManagementService : IClassroomManagementService
@@ -52,6 +74,9 @@ public class ClassroomManagementService : IClassroomManagementService
     {
         await _quotaGuard.TryConsumeAsync(QuotaMetric.Classrooms, ct: cancellationToken);
 
+        // Read while the teacher is the caller; see Classroom.MaxStudents.
+        var studentLimit = await _quotaGuard.GetLimitAsync(QuotaMetric.MaxStudentsPerClassroom, cancellationToken);
+
         var classroom = new Classroom
         {
             Id = Guid.NewGuid(),
@@ -59,6 +84,8 @@ public class ClassroomManagementService : IClassroomManagementService
             Description = request.Description,
             CoverImageUrl = request.CoverImageUrl,
             InstructorId = instructorId,
+            InviteCode = await NewUniqueInviteCodeAsync(cancellationToken),
+            MaxStudents = studentLimit is >= 0 and <= int.MaxValue ? (int)studentLimit : null,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -68,7 +95,7 @@ public class ClassroomManagementService : IClassroomManagementService
 
         _logger.LogInformation("Classroom {ClassroomId} created by instructor {InstructorId}", classroom.Id, instructorId);
 
-        return MapToDto(classroom);
+        return MapToDto(classroom, includeInviteCode: true);
     }
 
     public async Task<ClassroomAccess?> GetAccessAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default)
@@ -141,7 +168,8 @@ public class ClassroomManagementService : IClassroomManagementService
             .Include(c => c.Enrollments)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
-        return classroom != null ? MapToDto(classroom) : null;
+        // The code lets anyone in, so only the people who hand it out get to see it.
+        return classroom != null ? MapToDto(classroom, includeInviteCode: access.IsInstructor) : null;
     }
 
     public async Task<PagedResponse<ClassroomDto>> GetClassroomsAsync(Guid? instructorId, PagedRequest request, CancellationToken cancellationToken = default)
@@ -211,7 +239,111 @@ public class ClassroomManagementService : IClassroomManagementService
         classroom.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
-        return MapToDto(classroom);
+        return MapToDto(classroom, includeInviteCode: true);
+    }
+
+    public async Task<JoinClassroomResult> JoinByCodeAsync(string code, Caller caller, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(caller);
+
+        if (!caller.IsStudent)
+        {
+            return new JoinClassroomResult(JoinClassroomOutcome.NotAllowed);
+        }
+
+        var normalized = NormalizeInviteCode(code);
+        if (normalized.Length == 0)
+        {
+            return new JoinClassroomResult(JoinClassroomOutcome.NotFound);
+        }
+
+        var classroom = await _context.Classrooms
+            .Include(c => c.Enrollments)
+            .FirstOrDefaultAsync(c => c.InviteCode == normalized && c.IsActive, cancellationToken);
+
+        if (classroom is null)
+        {
+            _logger.LogInformation("User {UserId} presented an unknown classroom code", caller.UserId);
+            return new JoinClassroomResult(JoinClassroomOutcome.NotFound);
+        }
+
+        if (classroom.InstructorId == caller.UserId)
+        {
+            return new JoinClassroomResult(JoinClassroomOutcome.NotAllowed);
+        }
+
+        var existing = classroom.Enrollments.FirstOrDefault(e => e.StudentId == caller.UserId);
+        if (existing is { IsActive: true })
+        {
+            return new JoinClassroomResult(JoinClassroomOutcome.AlreadyEnrolled, MapToDto(classroom));
+        }
+
+        var activeCount = classroom.Enrollments.Count(e => e.IsActive);
+        if (classroom.MaxStudents is { } max && activeCount >= max)
+        {
+            return new JoinClassroomResult(JoinClassroomOutcome.Full);
+        }
+
+        if (existing is not null)
+        {
+            existing.IsActive = true;
+            existing.EnrolledAt = DateTime.UtcNow;
+        }
+        else
+        {
+            // Added through the DbSet, not the navigation: a pre-set Guid key found via a navigation is
+            // taken for an existing row and turned into an UPDATE that matches nothing.
+            var enrollment = new Enrollment
+            {
+                Id = Guid.NewGuid(),
+                ClassroomId = classroom.Id,
+                StudentId = caller.UserId,
+                EnrolledAt = DateTime.UtcNow,
+                IsActive = true
+            };
+            _context.Enrollments.Add(enrollment);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Student {StudentId} joined classroom {ClassroomId} by code", caller.UserId, classroom.Id);
+        return new JoinClassroomResult(JoinClassroomOutcome.Joined, MapToDto(classroom));
+    }
+
+    public async Task<string?> RegenerateInviteCodeAsync(Guid classroomId, Caller caller, CancellationToken cancellationToken = default)
+    {
+        var classroom = await FindManageableAsync(classroomId, caller, cancellationToken: cancellationToken);
+        if (classroom is null)
+        {
+            return null;
+        }
+
+        classroom.InviteCode = await NewUniqueInviteCodeAsync(cancellationToken);
+        classroom.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+        return classroom.InviteCode;
+    }
+
+    /// <summary>No 0/O or 1/I/L: the code is read aloud in class and typed by children.</summary>
+    private const string InviteCodeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    private const int InviteCodeLength = 8;
+
+    /// <summary>Case, spaces and dashes are forgiven.</summary>
+    public static string NormalizeInviteCode(string? code) =>
+        new((code ?? string.Empty).Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
+
+    private async Task<string> NewUniqueInviteCodeAsync(CancellationToken cancellationToken)
+    {
+        // 31^8 ≈ 8.5e11 codes; a collision is vanishingly rare, but the unique index would turn one into a 500.
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var code = new string(RandomNumberGenerator.GetItems<char>(InviteCodeAlphabet, InviteCodeLength));
+            if (!await _context.Classrooms.AnyAsync(c => c.InviteCode == code, cancellationToken))
+            {
+                return code;
+            }
+        }
+
+        throw new InvalidOperationException("Could not allocate a unique classroom invite code.");
     }
 
     public async Task<bool> DeleteClassroomAsync(Guid id, Caller caller, CancellationToken cancellationToken = default)
@@ -384,7 +516,7 @@ public class ClassroomManagementService : IClassroomManagementService
             ["name"] = c => c.Name
         };
 
-    private static ClassroomDto MapToDto(Classroom c) => new(
+    private static ClassroomDto MapToDto(Classroom c, bool includeInviteCode = false) => new(
         c.Id,
         c.Name,
         c.Description,
@@ -393,6 +525,7 @@ public class ClassroomManagementService : IClassroomManagementService
         c.CoverImageUrl,
         c.Enrollments?.Count(e => e.IsActive) ?? 0,
         c.IsActive,
-        c.CreatedAt
+        c.CreatedAt,
+        includeInviteCode ? c.InviteCode : null
     );
 }

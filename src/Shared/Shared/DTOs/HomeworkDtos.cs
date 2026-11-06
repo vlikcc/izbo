@@ -49,5 +49,8 @@ public record SubmissionDto(
     DateTime? SubmittedAt,
     DateTime? GradedAt);
 
+/// <summary>An assignment in one of a student's classrooms, with that student's submission if any.</summary>
+public record StudentHomeworkDto(HomeworkDto Homework, SubmissionDto? Submission);
+
 public record SubmitHomeworkRequest(string? Content, string? FileUrl);
 public record GradeSubmissionRequest(int Score, string? Feedback);

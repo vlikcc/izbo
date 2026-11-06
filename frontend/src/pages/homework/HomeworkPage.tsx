@@ -6,6 +6,7 @@ import { homeworkService } from '../../services/homework.service';
 import { useAuthStore } from '../../stores/authStore';
 import type { Homework } from '../../types';
 import './Homework.css';
+import { isStaff } from '../../utils/roles';
 
 export const HomeworkPage: React.FC = () => {
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ export const HomeworkPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+    const isInstructor = isStaff(user);
 
     const fetchHomeworks = async () => {
         setIsLoading(true);

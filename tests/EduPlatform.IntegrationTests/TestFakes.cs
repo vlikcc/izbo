@@ -83,4 +83,51 @@ internal sealed class RecordingAccountStateClient : IAccountStateClient
 
         return Task.FromResult(Available);
     }
+
+    public List<(Guid UserId, string Role)> Roles { get; } = [];
+
+    public List<(Guid UserId, string Password)> Passwords { get; } = [];
+
+    public List<CreateChildAccountRequest> CreatedChildren { get; } = [];
+
+    /// <summary>User names AuthService would report as taken.</summary>
+    public HashSet<string> TakenUsernames { get; } = new(StringComparer.Ordinal);
+
+    public Task<bool> SetRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default)
+    {
+        if (Available)
+        {
+            Roles.Add((userId, role));
+        }
+
+        return Task.FromResult(Available);
+    }
+
+    public Task<bool> SetPasswordAsync(Guid userId, string password, CancellationToken cancellationToken = default)
+    {
+        if (Available)
+        {
+            Passwords.Add((userId, password));
+        }
+
+        return Task.FromResult(Available);
+    }
+
+    public Task<CreateChildAccountResult> CreateChildAccountAsync(
+        CreateChildAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Available)
+        {
+            return Task.FromResult(new CreateChildAccountResult(CreateChildAccountStatus.Failed));
+        }
+
+        if (!TakenUsernames.Add(request.Username))
+        {
+            return Task.FromResult(new CreateChildAccountResult(CreateChildAccountStatus.UsernameTaken));
+        }
+
+        CreatedChildren.Add(request);
+        return Task.FromResult(new CreateChildAccountResult(CreateChildAccountStatus.Created, Guid.NewGuid()));
+    }
 }

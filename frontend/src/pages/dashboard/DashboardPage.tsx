@@ -4,9 +4,40 @@ import { Card } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { classroomService } from '../../services/classroom.service';
 import type { Classroom, ClassSession } from '../../types';
+import { isParent, isStudent } from '../../utils/roles';
+import { ParentDashboard } from '../parent/ParentDashboard';
 import './Dashboard.css';
 
+const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Günaydın';
+    if (hour < 18) return 'İyi günler';
+    return 'İyi akşamlar';
+};
+
+/** Parents follow their children; everyone else sees their own classrooms and lessons. */
 export const DashboardPage: React.FC = () => {
+    const { user } = useAuthStore();
+
+    if (isParent(user)) {
+        return (
+            <div className="page animate-fadeIn">
+                <div className="dashboard-welcome">
+                    <div className="dashboard-welcome-content">
+                        <h1 className="dashboard-welcome-title">{getGreeting()}, {user?.firstName}! 👋</h1>
+                        <p className="dashboard-welcome-text">Çocuklarınızın bu haftası bir bakışta.</p>
+                    </div>
+                    <div className="dashboard-welcome-illustration" aria-hidden="true">👨‍👩‍👧</div>
+                </div>
+                <ParentDashboard />
+            </div>
+        );
+    }
+
+    return <LearnerDashboard />;
+};
+
+const LearnerDashboard: React.FC = () => {
     const { user } = useAuthStore();
     const [classrooms, setClassrooms] = useState<Classroom[]>([]);
     const [upcomingSessions, setUpcomingSessions] = useState<ClassSession[]>([]);
@@ -31,13 +62,6 @@ export const DashboardPage: React.FC = () => {
         fetchData();
     }, []);
 
-    const getGreeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return 'Günaydın';
-        if (hour < 18) return 'İyi günler';
-        return 'İyi akşamlar';
-    };
-
     const formatDate = (date: string) => {
         return new Date(date).toLocaleDateString('tr-TR', {
             weekday: 'long',
@@ -57,7 +81,7 @@ export const DashboardPage: React.FC = () => {
                         {getGreeting()}, {user?.firstName}! 👋
                     </h1>
                     <p className="dashboard-welcome-text">
-                        {user?.role === 'Student'
+                        {isStudent(user)
                             ? 'Bugün öğrenmeye hazır mısın?'
                             : 'Sınıflarınız sizi bekliyor!'
                         }

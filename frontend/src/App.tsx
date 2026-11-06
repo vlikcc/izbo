@@ -7,7 +7,11 @@ import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastHost } from './components/ui/ToastHost';
 import { UpgradeModal } from './components/subscription/UpgradeModal';
+import type { User } from './types';
 import './index.css';
+
+/** Everyone who takes or teaches lessons. Parents follow progress from their own pages instead. */
+const LEARNER_ROLES: User['role'][] = ['Student', 'Instructor', 'Admin', 'SuperAdmin'];
 
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
@@ -27,6 +31,8 @@ const HomeworkSubmitPage = lazy(() => import('./pages/homework/HomeworkSubmitPag
 const HomeworkGradePage = lazy(() => import('./pages/homework/HomeworkGradePage').then((m) => ({ default: m.HomeworkGradePage })));
 const LivePage = lazy(() => import('./pages/live/LivePage'));
 const CustomLiveRoomPage = lazy(() => import('./pages/live/CustomLiveRoomPage').then((m) => ({ default: m.CustomLiveRoomPage })));
+const ChildrenPage = lazy(() => import('./pages/parent/ChildrenPage').then((m) => ({ default: m.ChildrenPage })));
+const JoinClassroomPage = lazy(() => import('./pages/classrooms/JoinClassroomPage').then((m) => ({ default: m.JoinClassroomPage })));
 const ProfilePage = lazy(() => import('./pages/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const LiveQuizPresenterPage = lazy(() => import('./pages/exams/LiveQuizPresenterPage').then((m) => ({ default: m.LiveQuizPresenterPage })));
 const LiveQuizVoterPage = lazy(() => import('./pages/exams/LiveQuizVoterPage').then((m) => ({ default: m.LiveQuizVoterPage })));
@@ -83,10 +89,38 @@ function AppRoutes() {
                 >
                     <Route index element={<Navigate to="/app/dashboard" replace />} />
                     <Route path="dashboard" element={<DashboardPage />} />
-                    <Route path="classrooms" element={<ClassroomsPage />} />
-                    <Route path="classrooms/:id" element={<ClassroomDetailPage />} />
-                    <Route path="homework" element={<HomeworkPage />} />
-                    <Route path="homework/:id/submit" element={<HomeworkSubmitPage />} />
+                    <Route
+                        path="classrooms"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <ClassroomsPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="classrooms/:id"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <ClassroomDetailPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="homework"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <HomeworkPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="homework/:id/submit"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <HomeworkSubmitPage />
+                            </RoleRoute>
+                        }
+                    />
                     <Route
                         path="homework/:id/grade"
                         element={
@@ -95,7 +129,14 @@ function AppRoutes() {
                             </RoleRoute>
                         }
                     />
-                    <Route path="exams" element={<ExamsPage />} />
+                    <Route
+                        path="exams"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <ExamsPage />
+                            </RoleRoute>
+                        }
+                    />
                     <Route
                         path="exams/:id/builder"
                         element={
@@ -104,10 +145,38 @@ function AppRoutes() {
                             </RoleRoute>
                         }
                     />
-                    <Route path="exams/:id/take" element={<ExamTakePage />} />
-                    <Route path="exams/sessions/:sessionId/result" element={<ExamResultPage />} />
-                    <Route path="live" element={<LivePage />} />
-                    <Route path="calendar" element={<CalendarPage />} />
+                    <Route
+                        path="exams/:id/take"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <ExamTakePage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="exams/sessions/:sessionId/result"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <ExamResultPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="live"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <LivePage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="calendar"
+                        element={
+                            <RoleRoute roles={LEARNER_ROLES}>
+                                <CalendarPage />
+                            </RoleRoute>
+                        }
+                    />
                     <Route
                         path="gradebook"
                         element={
@@ -121,6 +190,14 @@ function AppRoutes() {
                         element={
                             <RoleRoute roles={['Admin', 'SuperAdmin']}>
                                 <AdminUsersPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="children"
+                        element={
+                            <RoleRoute roles={['Parent']}>
+                                <ChildrenPage />
                             </RoleRoute>
                         }
                     />
@@ -149,6 +226,14 @@ function AppRoutes() {
                     element={
                         <ProtectedRoute>
                             <LiveQuizPresenterPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/join/:code?"
+                    element={
+                        <ProtectedRoute>
+                            <JoinClassroomPage />
                         </ProtectedRoute>
                     }
                 />

@@ -11,6 +11,8 @@ public class UserDbContext : DbContext, IAuditDbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<AuditEvent> AuditEvents { get; set; }
+    public DbSet<GuardianLink> GuardianLinks { get; set; }
+    public DbSet<GuardianLinkCode> GuardianLinkCodes { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -26,12 +28,32 @@ public class UserDbContext : DbContext, IAuditDbContext
         {
             entity.ToTable("users");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.Username).HasMaxLength(32);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Role).HasConversion<string>();
-            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.ExamTarget).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(e => e.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");
+            entity.HasIndex(e => e.Username).IsUnique().HasFilter("\"Username\" IS NOT NULL");
             entity.HasIndex(e => e.Role);
+        });
+
+        modelBuilder.Entity<GuardianLink>(entity =>
+        {
+            entity.ToTable("guardian_links");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.ParentId, e.StudentId }).IsUnique();
+            entity.HasIndex(e => e.StudentId);
+        });
+
+        modelBuilder.Entity<GuardianLinkCode>(entity =>
+        {
+            entity.ToTable("guardian_link_codes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CodeHash).IsRequired().HasMaxLength(64);
+            entity.HasIndex(e => e.CodeHash).IsUnique();
+            entity.HasIndex(e => e.StudentId);
         });
 
         modelBuilder.Entity<AuditEvent>(entity =>

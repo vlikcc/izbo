@@ -7,6 +7,7 @@ import { classroomService } from '../../services/classroom.service';
 import { useAuthStore } from '../../stores/authStore';
 import type { LiveSession, Classroom } from '../../types';
 import './Live.css';
+import { isStaff } from '../../utils/roles';
 
 export const LivePage: React.FC = () => {
     const { user } = useAuthStore();
@@ -31,7 +32,7 @@ export const LivePage: React.FC = () => {
         meetingUrl: '',
     });
 
-    const isInstructor = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+    const isInstructor = isStaff(user);
 
     const fetchSessions = async () => {
         try {

@@ -29,6 +29,24 @@ export interface AttendanceRecord {
 }
 
 export const classroomService = {
+    /** Students: join a classroom with the code the teacher shared. */
+    async joinByCode(code: string): Promise<Classroom> {
+        const response = await api.post<ApiResponse<Classroom>>('/api/classrooms/join', { code });
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        throw new Error(response.data.message || 'Sınıfa katılınamadı');
+    },
+
+    /** Teachers: issue a fresh join code so an old one stops working. */
+    async regenerateInviteCode(classroomId: string): Promise<string> {
+        const response = await api.post<ApiResponse<{ code: string }>>(`/api/classrooms/${classroomId}/invite-code/regenerate`);
+        if (response.data.success && response.data.data) {
+            return response.data.data.code;
+        }
+        throw new Error(response.data.message || 'Kod yenilenemedi');
+    },
+
     async getClassrooms(page = 1, pageSize = 20): Promise<PagedResponse<Classroom>> {
         const response = await api.get<ApiResponse<PagedResponse<Classroom>>>(`/api/classrooms?page=${page}&pageSize=${pageSize}`);
         if (response.data.success && response.data.data) {
@@ -78,10 +96,24 @@ export const classroomService = {
 
     async getEnrollments(classroomId: string): Promise<Enrollment[]> {
         const response = await api.get<ApiResponse<Enrollment[]>>(`/api/classrooms/${classroomId}/enrollments`);
-        if (response.data.success && response.data.data) {
-            return response.data.data;
+        if (!response.data.success || !response.data.data) {
+            throw new Error(response.data.message || 'Failed to fetch enrollments');
         }
-        throw new Error(response.data.message || 'Failed to fetch enrollments');
+
+        // ClassroomService does not hold names. Students now join on their own with a code, so without
+        // this the teacher could not tell who had joined.
+        const enrollments = response.data.data;
+        const names = await Promise.all(enrollments.map(async e => {
+            if (e.studentName) return e.studentName;
+            try {
+                const profile = await api.get<ApiResponse<{ firstName: string; lastName: string }>>(`/api/users/${e.studentId}`);
+                const p = profile.data.data;
+                return p ? `${p.firstName} ${p.lastName}`.trim() : '';
+            } catch {
+                return '';
+            }
+        }));
+        return enrollments.map((e, i) => ({ ...e, studentName: names[i] }));
     },
 
     async getSessions(classroomId: string): Promise<ClassSession[]> {

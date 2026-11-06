@@ -12,6 +12,10 @@ public sealed record Caller(Guid UserId, UserRole Role)
 
     public bool IsInstructor => Role is UserRole.Instructor;
 
+    public bool IsStudent => Role is UserRole.Student;
+
+    public bool IsParent => Role is UserRole.Parent;
+
     /// <summary>Instructors and administrators may author content; students may not.</summary>
     public bool CanManageContent => IsInstructor || IsPlatformAdmin;
 

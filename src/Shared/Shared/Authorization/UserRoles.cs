@@ -13,6 +13,7 @@ public static class UserRoles
     public const string Instructor = nameof(UserRole.Instructor);
     public const string Admin = nameof(UserRole.Admin);
     public const string SuperAdmin = nameof(UserRole.SuperAdmin);
+    public const string Parent = nameof(UserRole.Parent);
 
     /// <summary>Platform administrators. SuperAdmin must always accompany Admin.</summary>
     public const string Administrators = $"{Admin},{SuperAdmin}";

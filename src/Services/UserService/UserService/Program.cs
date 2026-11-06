@@ -13,6 +13,7 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 
 builder.Services.AddEduPlatformAudit<UserDbContext>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<IGuardianService, GuardianService>();
 builder.Services.AddAccountStateClient(builder.Configuration);
 builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 

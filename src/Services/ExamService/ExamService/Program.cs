@@ -27,6 +27,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 builder.Services.AddEduPlatformSignalR(builder.Configuration, "ExamHub");
 builder.Services.AddClassroomAccessClient(builder.Configuration);
+builder.Services.AddGuardianAccessClient(builder.Configuration);
 builder.Services.AddScoped<IExamManagementService, ExamManagementService>();
 builder.Services.AddScoped<IExamSessionService, ExamSessionService>();
 builder.Services.AddSingleton<ILiveQuizStore, InMemoryLiveQuizStore>();

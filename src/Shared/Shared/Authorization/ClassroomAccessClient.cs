@@ -102,6 +102,14 @@ public sealed class ClassroomAccessClient : IClassroomAccessClient
         return result.Value;
     }
 
+    public async Task<IReadOnlyCollection<Guid>> GetStudentClassroomIdsAsync(Guid studentId, CancellationToken cancellationToken = default)
+    {
+        var result = await GetAsync<List<Guid>>($"api/classrooms/student/{studentId}/ids", authorizationHeader: null, cancellationToken);
+        return result.Outcome == LookupOutcome.Success && result.Value is not null
+            ? result.Value
+            : Array.Empty<Guid>();
+    }
+
     private async Task<ClassroomAccess> GetAccessAsync(
         string relativeUrl,
         string cacheScope,
