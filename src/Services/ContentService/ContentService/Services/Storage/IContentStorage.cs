@@ -46,4 +46,6 @@ public static class ContentStorageKeys
     public static string HlsPrefix(Guid itemId) => $"{ItemPrefix(itemId)}hls/";
 
     public static string Thumbnail(Guid itemId) => $"{ItemPrefix(itemId)}thumbnail.jpg";
+
+    public static string QuestionAsset(Guid assetId, string extension) => $"questions/{assetId:N}{extension}";
 }

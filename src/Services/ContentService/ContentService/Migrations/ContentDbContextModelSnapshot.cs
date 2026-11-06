@@ -22,6 +22,124 @@ namespace ContentService.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Shared.Models.BankQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CorrectKey")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)")
+                        .HasColumnName("correct_key");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Difficulty")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("difficulty");
+
+                    b.Property<string>("Explanation")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)")
+                        .HasColumnName("explanation");
+
+                    b.Property<Guid?>("LearningOutcomeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("learning_outcome_id");
+
+                    b.Property<string>("Options")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("options");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("OwnerKind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("owner_kind");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("review_note");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by");
+
+                    b.Property<Guid?>("SolutionVideoItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("solution_video_item_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Stem")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)")
+                        .HasColumnName("stem");
+
+                    b.Property<Guid?>("StemAssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("stem_asset_id");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<Guid>("TopicId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("topic_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearningOutcomeId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("SolutionVideoItemId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TopicId", "Status");
+
+                    b.ToTable("bank_questions", (string)null);
+                });
+
             modelBuilder.Entity("Shared.Models.ContentItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -472,6 +590,44 @@ namespace ContentService.Migrations
                             Order = 103,
                             Slug = "yks-ydt"
                         });
+                });
+
+            modelBuilder.Entity("Shared.Models.QuestionAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("storage_key");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("question_assets", (string)null);
                 });
 
             modelBuilder.Entity("Shared.Models.Subject", b =>
@@ -1522,6 +1678,31 @@ namespace ContentService.Migrations
                         .IsUnique();
 
                     b.ToTable("topics", (string)null);
+                });
+
+            modelBuilder.Entity("Shared.Models.BankQuestion", b =>
+                {
+                    b.HasOne("Shared.Models.LearningOutcome", "LearningOutcome")
+                        .WithMany()
+                        .HasForeignKey("LearningOutcomeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Shared.Models.ContentItem", "SolutionVideo")
+                        .WithMany()
+                        .HasForeignKey("SolutionVideoItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Shared.Models.Topic", "Topic")
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LearningOutcome");
+
+                    b.Navigation("SolutionVideo");
+
+                    b.Navigation("Topic");
                 });
 
             modelBuilder.Entity("Shared.Models.ContentItem", b =>

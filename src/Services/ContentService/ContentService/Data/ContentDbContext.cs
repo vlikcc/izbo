@@ -1,5 +1,7 @@
 using System.Text;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Shared.Models;
 
@@ -17,6 +19,10 @@ public class ContentDbContext : DbContext
     public DbSet<ContentItem> ContentItems { get; set; }
     public DbSet<ContentItemOutcome> ContentItemOutcomes { get; set; }
     public DbSet<ContentProgress> Progress { get; set; }
+    public DbSet<BankQuestion> BankQuestions { get; set; }
+    public DbSet<QuestionAsset> QuestionAssets { get; set; }
+
+    private static readonly JsonSerializerOptions OptionJson = new(JsonSerializerDefaults.Web);
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -151,6 +157,59 @@ public class ContentDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => new { e.UserId, e.ContentItemId }).IsUnique();
             entity.HasIndex(e => new { e.UserId, e.UpdatedAt });
+        });
+
+        modelBuilder.Entity<BankQuestion>(entity =>
+        {
+            entity.ToTable("bank_questions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.Difficulty).HasConversion<string>().HasMaxLength(16);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.OwnerKind).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.Stem).IsRequired().HasMaxLength(8000);
+            entity.Property(e => e.CorrectKey).IsRequired().HasMaxLength(1);
+            entity.Property(e => e.Explanation).IsRequired().HasMaxLength(8000);
+            entity.Property(e => e.ReviewNote).HasMaxLength(2000);
+
+            // Options are always read and written with their question, so they live in one jsonb column.
+            entity.Property(e => e.Options)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, OptionJson),
+                    v => JsonSerializer.Deserialize<List<BankQuestionOption>>(v, OptionJson) ?? new List<BankQuestionOption>(),
+                    new ValueComparer<List<BankQuestionOption>>(
+                        (a, b) => a!.SequenceEqual(b!),
+                        v => v.Aggregate(0, (hash, option) => HashCode.Combine(hash, option.GetHashCode())),
+                        v => v.ToList()));
+
+            // Like content, questions outlive curriculum edits: a topic with questions cannot be deleted.
+            entity.HasOne(e => e.Topic)
+                .WithMany()
+                .HasForeignKey(e => e.TopicId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.LearningOutcome)
+                .WithMany()
+                .HasForeignKey(e => e.LearningOutcomeId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.SolutionVideo)
+                .WithMany()
+                .HasForeignKey(e => e.SolutionVideoItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => new { e.TopicId, e.Status });
+            entity.HasIndex(e => e.LearningOutcomeId);
+            entity.HasIndex(e => e.OwnerId);
+            entity.HasIndex(e => e.Status);
+        });
+
+        modelBuilder.Entity<QuestionAsset>(entity =>
+        {
+            entity.ToTable("question_assets");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.StorageKey).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.ContentType).IsRequired().HasMaxLength(64);
+            entity.HasIndex(e => e.OwnerId);
         });
 
         ApplySnakeCaseColumnNames(modelBuilder);

@@ -13,6 +13,9 @@
 | İçerik kaynağı | İkisi birden: merkezi (admin) MEB içerikleri + öğretmenlerin ürettiği içerik (onay akışıyla) |
 | Kapsam | 1–12. sınıf, LGS ve YKS (TYT/AYT/YDT) |
 | İlk adım | Faz 0 (rol ve hedef kitle dönüşümü) + Faz 1 (müfredat ve içerik kataloğu) |
+| Soru bankası yeri (Faz 2) | ContentService içinde: kazanıma doğrudan bağ, aynı onay akışı ve MinIO; öğretmen sınıf sınavları ExamService'te kalır ve bankadan soru kopyalar |
+| Soru biçimi (Faz 2) | Metin + `$...$` LaTeX formül (KaTeX) + isteğe bağlı görsel; çoktan seçmeli (A–E) ve doğru/yanlış |
+| Deneme sınavları (Faz 2) | Takvimli pencere + Türkiye geneli sıralama; net, sıra ve yüzdelik pencere kapanınca açıklanır, geç girenler sıralamaya girmez |
 
 Pazaryeri kararının getirdikleri: öğretmen vitrin profili (branş, seviye, puan, yorum), öğretmen onay/doğrulama
 süreci, içerik moderasyonu, öğretmen kazanç ve ödeme (hakediş) defteri, komisyon oranı. Bunlar Faz 3–4'e eklenir;
