@@ -10,9 +10,9 @@ const register = vi.fn().mockResolvedValue('Kayıt talebiniz alındı.');
 /** Made at run time so no credential-looking string lives in the repository. */
 const testPassword = `T${crypto.randomUUID().replace(/-/g, '').slice(0, 14)}-9`;
 
-function renderPage() {
+function renderPage(path = '/register') {
     return render(
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[path]}>
             <RegisterPage />
         </MemoryRouter>,
     );
@@ -44,6 +44,11 @@ describe('RegisterPage', () => {
 
         expect(register).toHaveBeenCalledWith(expect.objectContaining({ role: 'Parent', email: 'ayse@example.com' }));
         expect(register.mock.calls[0][0]).not.toHaveProperty('gradeLevel');
+    });
+
+    it('opens on the account type a public page linked to', () => {
+        renderPage('/register?rol=ogretmen');
+        expect(screen.getByRole('radio', { name: /Öğretmenim/ })).toHaveAttribute('aria-checked', 'true');
     });
 
     it('asks a student for their grade and sends the exam target that fits it', async () => {

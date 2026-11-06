@@ -134,6 +134,36 @@ export interface StudentContentActivity {
     recent: ContinueWatching[];
 }
 
+// ---- Public (no sign-in) ----
+
+export interface PublicSubjectStats {
+    id: string;
+    slug: string;
+    name: string;
+    color: string;
+    unitCount: number;
+    topicCount: number;
+    itemCount: number;
+    videoMinutes: number;
+}
+
+export interface PublicSampleItem {
+    id: string;
+    title: string;
+    type: ContentItemType;
+    subjectName: string;
+    topicName: string;
+    durationSeconds: number | null;
+}
+
+export interface PublicLevel {
+    level: Level;
+    subjects: PublicSubjectStats[];
+    totalItems: number;
+    totalVideoMinutes: number;
+    freeSamples: PublicSampleItem[];
+}
+
 export interface CreateContentItemRequest {
     topicId: string;
     type: ContentItemType;

@@ -1,219 +1,140 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui';
+import { GRADES } from '../../utils/roles';
+import { usePageMeta } from '../../utils/usePageMeta';
+import '../public/Public.css';
 import './Landing.css';
 
+const FEATURES = [
+    { icon: '🎬', title: 'Konu anlatımları', text: 'MEB müfredatına uygun videolar, çözümlü sorular ve çalışma kâğıtları; kaldığın yerden devam.' },
+    { icon: '🎥', title: 'Canlı dersler', text: 'Öğretmenle canlı ders, beyaz tahta ve anında soru sorma.' },
+    { icon: '📝', title: 'Sınav ve ödev', text: 'Online sınavlar, canlı quizler ve ödev teslimi; sonuçlar hemen görünür.' },
+    { icon: '👨‍👩‍👧', title: 'Veli takibi', text: 'Çocuğunuzun izlediği konuları, ödevlerini ve sınav sonuçlarını haftalık takip edin.' },
+    { icon: '🔑', title: 'Kodla sınıfa katılım', text: 'Öğretmenin verdiği kodla ya da QR ile sınıfa saniyeler içinde katılın.' },
+    { icon: '🎯', title: 'LGS ve YKS hazırlık', text: 'Sınıf derslerinin yanında LGS ve YKS (TYT/AYT/YDT) hazırlık içerikleri.' },
+];
+
+/** The home page, written for the people who choose and use the platform: students and their parents. */
 export const LandingPage: React.FC = () => {
-    const features = [
-        {
-            icon: '📚',
-            title: 'Sanal Sınıflar',
-            description: 'Kolayca sanal sınıflar oluşturun, öğrencilerinizi kaydedin ve içerikleri paylaşın.',
-        },
-        {
-            icon: '🎥',
-            title: 'Canlı Dersler',
-            description: 'Gerçek zamanlı canlı ders oturumları ile öğrencilerinizle etkileşimde kalın.',
-        },
-        {
-            icon: '📝',
-            title: 'Online Sınavlar',
-            description: 'Çoktan seçmeli, açık uçlu sorularla sınavlar oluşturun ve otomatik değerlendirin.',
-        },
-        {
-            icon: '📖',
-            title: 'Ödev Yönetimi',
-            description: 'Ödevler oluşturun, dosya yüklemeleri kabul edin ve geri bildirim verin.',
-        },
-        {
-            icon: '📊',
-            title: 'Detaylı Raporlar',
-            description: 'Öğrenci performansını takip edin, başarı oranlarını analiz edin.',
-        },
-        {
-            icon: '🔔',
-            title: 'Anlık Bildirimler',
-            description: 'Önemli güncellemelerden anında haberdar olun.',
-        },
-    ];
+    usePageMeta(
+        'EduPlatform — 1–12. Sınıf, LGS ve YKS için Online Kampüs',
+        'MEB müfredatına uygun konu anlatımları, canlı dersler, sınavlar ve veli takibi. 1–12. sınıf, LGS ve YKS için online eğitim.');
 
     return (
-        <div className="landing">
-            {/* Navigation */}
-            <nav className="landing-nav">
-                <div className="landing-nav-content">
-                    <div className="landing-logo">
-                        <span className="landing-logo-icon">📚</span>
-                        <span className="landing-logo-text">EduPlatform</span>
-                    </div>
-                    <div className="landing-nav-links">
-                        <a href="#features">Özellikler</a>
-                        <a href="#how-it-works">Nasıl Çalışır</a>
-                        <Link to="/pricing">Fiyatlandırma</Link>
-                    </div>
-                    <div className="landing-nav-actions">
-                        <Link to="/login">
-                            <Button variant="ghost" size="md">Giriş Yap</Button>
-                        </Link>
-                        <Link to="/register">
-                            <Button variant="primary" size="md">Ücretsiz Başla</Button>
-                        </Link>
-                    </div>
-                </div>
-            </nav>
-
-            {/* Hero Section */}
-            <section className="landing-hero">
+        <div>
+            <section className="landing-hero home-hero">
                 <div className="landing-hero-content">
                     <h1 className="landing-hero-title">
-                        Eğitimi <span className="landing-highlight">Dijitale</span> Taşıyın
+                        Okulda öğrendiğini <span className="landing-highlight">evde pekiştir</span>
                     </h1>
                     <p className="landing-hero-subtitle">
-                        EduPlatform ile sınıflarınızı çevrimiçi ortama taşıyın.
-                        Canlı dersler, online sınavlar ve ödev yönetimi tek bir platformda.
+                        1–12. sınıf ve LGS/YKS için konu anlatımları, canlı dersler, sınavlar ve ödevler tek yerde.
+                        Veliler çocuklarının gelişimini her hafta takip eder.
                     </p>
                     <div className="landing-hero-actions">
-                        <Link to="/register">
-                            <Button variant="primary" size="lg">
-                                Ücretsiz Hesap Oluştur
-                            </Button>
-                        </Link>
-                        <Button variant="outline" size="lg">
-                            Demo İzle 🎬
-                        </Button>
+                        <Link to="/register?rol=veli"><Button variant="primary" size="lg">Veli olarak başla</Button></Link>
+                        <Link to="/register?rol=ogrenci"><Button variant="outline" size="lg">Öğrenci olarak başla</Button></Link>
                     </div>
                 </div>
-                <div className="landing-hero-visual">
-                    <div className="landing-hero-mockup">
-                        <div className="landing-mockup-header">
-                            <span className="landing-mockup-dot"></span>
-                            <span className="landing-mockup-dot"></span>
-                            <span className="landing-mockup-dot"></span>
-                        </div>
-                        <div className="landing-mockup-content">
-                            <div className="landing-mockup-sidebar">
-                                <div className="landing-mockup-menu"></div>
-                                <div className="landing-mockup-menu"></div>
-                                <div className="landing-mockup-menu active"></div>
-                                <div className="landing-mockup-menu"></div>
-                            </div>
-                            <div className="landing-mockup-main">
-                                <div className="landing-mockup-card"></div>
-                                <div className="landing-mockup-cards">
-                                    <div className="landing-mockup-card small"></div>
-                                    <div className="landing-mockup-card small"></div>
-                                </div>
+
+                <div className="landing-hero-visual" aria-hidden="true">
+                    <div className="home-preview">
+                        <div className="home-preview-head">
+                            <span className="home-preview-avatar">E</span>
+                            <div>
+                                <strong>Ela · 8. sınıf</strong>
+                                <span>LGS hazırlık</span>
                             </div>
                         </div>
+                        <div className="home-preview-stats">
+                            <div><strong>6</strong><span>konu izledi</span></div>
+                            <div><strong>2</strong><span>ödev bekliyor</span></div>
+                            <div><strong>%84</strong><span>son deneme</span></div>
+                        </div>
+                        <div className="home-preview-row"><span>🎬 Üslü ifadeler</span><span className="home-preview-done">✓</span></div>
+                        <div className="home-preview-row"><span>📄 Kareköklü sayılar testi</span><span>yarın</span></div>
+                        <div className="home-preview-row"><span>🎥 Canlı ders: Fen</span><span>Cuma 17:00</span></div>
                     </div>
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section id="features" className="landing-features">
-                <div className="landing-section-header">
-                    <h2 className="landing-section-title">Öne Çıkan Özellikler</h2>
-                    <p className="landing-section-subtitle">
-                        Eğitim süreçlerinizi kolaylaştıran güçlü araçlar
-                    </p>
+            <section id="siniflar" className="lp-container lp-section">
+                <h2>Sınıfını seç, içerikleri keşfet</h2>
+                <div className="home-grades">
+                    {GRADES.map(g => (
+                        <Link key={g} to={`/sinif/${g}-sinif`} className="home-grade">
+                            <strong>{g}</strong>
+                            <span>SINIF</span>
+                        </Link>
+                    ))}
+                    <Link to="/lgs" className="home-grade home-grade-exam"><strong>LGS</strong><span>8. SINIF</span></Link>
+                    <Link to="/yks" className="home-grade home-grade-exam"><strong>YKS</strong><span>TYT · AYT · YDT</span></Link>
                 </div>
-                <div className="landing-features-grid">
-                    {features.map((feature, index) => (
-                        <div key={index} className="landing-feature-card">
-                            <span className="landing-feature-icon">{feature.icon}</span>
-                            <h3 className="landing-feature-title">{feature.title}</h3>
-                            <p className="landing-feature-desc">{feature.description}</p>
+            </section>
+
+            <section className="lp-container lp-section">
+                <h2>Nasıl çalışır?</h2>
+                <div className="home-steps">
+                    <div className="home-step">
+                        <h3>Öğren</h3>
+                        <p className="lp-muted">Konu anlatımlarını kendi hızında izle; çalışma kâğıtlarını indir, yazdır.</p>
+                    </div>
+                    <div className="home-step">
+                        <h3>Pekiştir</h3>
+                        <p className="lp-muted">Canlı derslere katıl, sınav ve ödevlerle öğrendiklerini sına.</p>
+                    </div>
+                    <div className="home-step">
+                        <h3>Takip et</h3>
+                        <p className="lp-muted">Kaldığın yerden devam et; velin de ilerlemeni haftalık görsün.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section className="lp-container lp-section">
+                <h2>Neler var?</h2>
+                <div className="home-cards">
+                    {FEATURES.map(f => (
+                        <div key={f.title} className="home-card">
+                            <span className="home-card-icon" aria-hidden="true">{f.icon}</span>
+                            <h3>{f.title}</h3>
+                            <p className="lp-muted">{f.text}</p>
                         </div>
                     ))}
                 </div>
             </section>
 
-            {/* How it works */}
-            <section id="how-it-works" className="landing-how">
-                <div className="landing-section-header">
-                    <h2 className="landing-section-title">Nasıl Çalışır?</h2>
-                    <p className="landing-section-subtitle">
-                        3 kolay adımda eğitime başlayın
-                    </p>
-                </div>
-                <div className="landing-steps">
-                    <div className="landing-step">
-                        <div className="landing-step-number">1</div>
-                        <h3 className="landing-step-title">Hesap Oluşturun</h3>
-                        <p className="landing-step-desc">
-                            E-posta adresinizle ücretsiz bir hesap oluşturun. Eğitmen veya öğrenci olarak kaydolabilirsiniz.
-                        </p>
+            <section className="lp-container lp-section">
+                <div className="home-split">
+                    <div id="veliler" className="home-panel">
+                        <h2>Veliler için</h2>
+                        <ul>
+                            <li>Çocuğunuza hesap açın; e-postası yoksa kullanıcı adıyla girer.</li>
+                            <li>Kendi hesabı varsa veli koduyla bağlanın.</li>
+                            <li>Derslerini, ödevlerini, sınav sonuçlarını ve izlediği konuları tek ekranda görün.</li>
+                        </ul>
+                        <Link to="/register?rol=veli"><Button variant="primary">Veli hesabı oluştur</Button></Link>
                     </div>
-                    <div className="landing-step-arrow">→</div>
-                    <div className="landing-step">
-                        <div className="landing-step-number">2</div>
-                        <h3 className="landing-step-title">Sınıf Oluşturun</h3>
-                        <p className="landing-step-desc">
-                            Sanal sınıfınızı oluşturun, öğrencilerinizi davet edin ve ders materyallerinizi yükleyin.
-                        </p>
-                    </div>
-                    <div className="landing-step-arrow">→</div>
-                    <div className="landing-step">
-                        <div className="landing-step-number">3</div>
-                        <h3 className="landing-step-title">Öğretmeye Başlayın</h3>
-                        <p className="landing-step-desc">
-                            Canlı dersler düzenleyin, sınavlar oluşturun ve öğrenci ilerlemesini takip edin.
-                        </p>
+                    <div id="ogretmenler" className="home-panel">
+                        <h2>Öğretmenler ve okullar için</h2>
+                        <ul>
+                            <li>Sınıf açın, öğrencileri kodla davet edin; canlı ders, sınav ve ödev verin.</li>
+                            <li>Kendi içeriklerinizi yükleyin; onaydan sonra tüm öğrencilere açılsın.</li>
+                            <li>Okullar için çok öğretmenli kurumsal plan.</li>
+                        </ul>
+                        <div className="lp-cta">
+                            <Link to="/register?rol=ogretmen"><Button variant="primary">Öğretmen olarak katıl</Button></Link>
+                            <Link to="/pricing"><Button variant="ghost">Planlar</Button></Link>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="landing-cta">
-                <div className="landing-cta-content">
-                    <h2 className="landing-cta-title">Eğitimi Dönüştürmeye Hazır mısınız?</h2>
-                    <p className="landing-cta-subtitle">
-                        Hemen ücretsiz hesabınızı oluşturun ve dijital eğitim deneyimine başlayın.
-                    </p>
-                    <Link to="/register">
-                        <Button variant="primary" size="lg">
-                            Şimdi Başla - Ücretsiz 🚀
-                        </Button>
-                    </Link>
-                </div>
+            <section className="home-final">
+                <h2>Hemen ücretsiz başlayın</h2>
+                <p>Hesap oluşturmak bir dakika sürer; kredi kartı gerekmez.</p>
+                <Link to="/register"><Button variant="secondary" size="lg">Ücretsiz üye ol</Button></Link>
             </section>
-
-            {/* Footer */}
-            <footer className="landing-footer">
-                <div className="landing-footer-content">
-                    <div className="landing-footer-brand">
-                        <div className="landing-logo">
-                            <span className="landing-logo-icon">📚</span>
-                            <span className="landing-logo-text">EduPlatform</span>
-                        </div>
-                        <p className="landing-footer-tagline">
-                            Eğitimin geleceğini bugünden yaşayın.
-                        </p>
-                    </div>
-                    <div className="landing-footer-links">
-                        <div className="landing-footer-col">
-                            <h4>Platform</h4>
-                            <a href="#features">Özellikler</a>
-                            <a href="#">Güvenlik</a>
-                        </div>
-                        <div className="landing-footer-col">
-                            <h4>Destek</h4>
-                            <a href="#">Yardım Merkezi</a>
-                            <a href="#">İletişim</a>
-                            <a href="#">SSS</a>
-                        </div>
-                        <div className="landing-footer-col">
-                            <h4>Yasal</h4>
-                            <Link to="/privacy">Gizlilik Politikası</Link>
-                            <Link to="/terms">Kullanım Şartları</Link>
-                            <Link to="/privacy">KVKK</Link>
-                        </div>
-                    </div>
-                </div>
-                <div className="landing-footer-bottom">
-                    <p>© 2024 EduPlatform. Tüm hakları saklıdır.</p>
-                </div>
-            </footer>
         </div>
     );
 };
