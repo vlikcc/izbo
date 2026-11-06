@@ -6,6 +6,12 @@
 #   CSP_MEDIA_SRC    origins <video>/<audio> may load from, e.g. "https://api.example.com" — hls.js plays
 #                    through blob: URLs, but native HLS (Safari) fetches playlists from the API directly
 
+# The public scheme as the visitor sees it: TLS ends at the proxy (Caddy/Traefik) in front of this container.
+map $http_x_forwarded_proto $public_scheme {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
 server {
     listen 80;
     server_name localhost;
@@ -21,6 +27,37 @@ server {
     # Handle SPA routing
     location / {
         try_files $uri $uri/ /index.html;
+    }
+
+    # robots.txt and sitemap.xml are built from the request's own host, so the image needs no domain setting.
+    # No add_header here: one would stop the server-level security headers from being inherited.
+    location = /robots.txt {
+        default_type text/plain;
+        return 200 "User-agent: *\nAllow: /\nDisallow: /app/\nDisallow: /live/\nDisallow: /quiz/\nDisallow: /join/\n\nSitemap: $public_scheme://$http_host/sitemap.xml\n";
+    }
+
+    location = /sitemap.xml {
+        default_type application/xml;
+        return 200 '<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>$public_scheme://$http_host/</loc></url>
+<url><loc>$public_scheme://$http_host/lgs</loc></url>
+<url><loc>$public_scheme://$http_host/yks</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/1-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/2-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/3-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/4-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/5-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/6-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/7-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/8-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/9-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/10-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/11-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/12-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/pricing</loc></url>
+</urlset>
+';
     }
 
     # The base image's mime.types maps .js but not .mjs, so dynamically-imported ES module chunks

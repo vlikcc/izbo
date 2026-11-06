@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import subscriptionService from '../../services/subscription.service';
@@ -52,25 +52,10 @@ export const PricingPage: React.FC = () => {
 
     return (
         <div className="pricing-page">
-            <nav className="pricing-nav">
-                <Link to="/" className="pricing-logo">
-                    <span>📚</span> EduPlatform
-                </Link>
-                <div className="pricing-nav-actions">
-                    {isAuthenticated ? (
-                        <Link to="/app/billing"><Button variant="ghost">Aboneliğim</Button></Link>
-                    ) : (
-                        <>
-                            <Link to="/login"><Button variant="ghost">Giriş Yap</Button></Link>
-                            <Link to="/register"><Button variant="primary">Ücretsiz Başla</Button></Link>
-                        </>
-                    )}
-                </div>
-            </nav>
 
             <header className="pricing-header">
                 <h1>Size uygun planı seçin</h1>
-                <p>Bireysel eğitmenden okula, her ölçeğe uygun fiyatlandırma.</p>
+                <p>Öğretmen ve okul planları. Öğrenci ve veli paketleri yakında burada olacak; şimdilik üyelik ücretsiz.</p>
 
                 <div className="pricing-cycle-toggle">
                     <button

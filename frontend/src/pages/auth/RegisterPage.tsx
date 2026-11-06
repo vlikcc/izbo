@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Input, Card } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { PASSWORD_HINT, validatePassword } from '../../utils/passwordPolicy';
@@ -15,8 +15,16 @@ const ROLE_CHOICES: { role: SelfServiceRole; icon: string; title: string; text: 
     { role: 'Instructor', icon: '🧑‍🏫', title: 'Öğretmenim', text: 'Sınıf açıp ders, sınav ve ödev vereceğim' },
 ];
 
+/** Links on the public pages say which kind of account the visitor came for: /register?rol=ogrenci. */
+const ROLE_FROM_QUERY: Record<string, SelfServiceRole> = {
+    veli: 'Parent',
+    ogrenci: 'Student',
+    ogretmen: 'Instructor',
+};
+
 export const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { register, isLoading, error, clearError } = useAuthStore();
     const [formData, setFormData] = useState({
         firstName: '',
@@ -24,7 +32,7 @@ export const RegisterPage: React.FC = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        role: 'Parent' as SelfServiceRole,
+        role: (ROLE_FROM_QUERY[searchParams.get('rol') ?? ''] ?? 'Parent') as SelfServiceRole,
         gradeLevel: '',
         examTarget: '' as ExamTarget | '',
     });

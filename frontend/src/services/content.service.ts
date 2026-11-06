@@ -5,6 +5,7 @@ import type {
     ContentItemSummary,
     ContentProgress,
     ContinueWatching,
+    PublicLevel,
     CreateContentItemRequest,
     CurriculumImportResult,
     LearningOutcome,
@@ -26,6 +27,15 @@ function unwrap<T>(response: { data: ApiResponse<T> }, fallback: string): T {
 
 /** Curriculum catalog, content items, playback and progress (ContentService, /api/content). */
 export const contentService = {
+    // ---- Public catalog (no sign-in) ----
+    async getPublicLevels(): Promise<Level[]> {
+        return unwrap(await api.get<ApiResponse<Level[]>>('/api/content/public/levels'), 'Seviyeler yüklenemedi');
+    },
+
+    async getPublicLevel(slug: string): Promise<PublicLevel> {
+        return unwrap(await api.get<ApiResponse<PublicLevel>>(`/api/content/public/levels/${encodeURIComponent(slug)}`), 'Seviye bulunamadı');
+    },
+
     // ---- Catalog ----
     async getLevels(): Promise<Level[]> {
         return unwrap(await api.get<ApiResponse<Level[]>>('/api/content/levels'), 'Seviyeler yüklenemedi');

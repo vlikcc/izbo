@@ -13,6 +13,8 @@ import './index.css';
 /** Everyone who takes or teaches lessons. Parents follow progress from their own pages instead. */
 const LEARNER_ROLES: User['role'][] = ['Student', 'Instructor', 'Admin', 'SuperAdmin'];
 
+const PublicLayout = lazy(() => import('./components/layout/PublicLayout').then((m) => ({ default: m.PublicLayout })));
+const LevelPage = lazy(() => import('./pages/public/LevelPage').then((m) => ({ default: m.LevelPage })));
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
@@ -75,10 +77,15 @@ function AppRoutes() {
     return (
         <Suspense fallback={<PageFallback />}>
             <Routes>
-                <Route path="/" element={<LandingPage />} />
+                <Route element={<PublicLayout />}>
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/pricing" element={<PricingPage />} />
+                    <Route path="/sinif/:slug" element={<LevelPage />} />
+                    <Route path="/lgs" element={<LevelPage slugs={['lgs']} />} />
+                    <Route path="/yks" element={<LevelPage slugs={['yks-tyt', 'yks-ayt', 'yks-ydt']} title="YKS" />} />
+                </Route>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
-                <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
