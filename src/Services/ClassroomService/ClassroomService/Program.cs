@@ -3,6 +3,7 @@ using ClassroomService.Data;
 using ClassroomService.Hubs;
 using ClassroomService.Services;
 using Microsoft.EntityFrameworkCore;
+using Shared.Authorization;
 using Shared.Extensions;
 using Shared.Subscription;
 
@@ -18,6 +19,7 @@ builder.Services.AddScoped<IClassroomManagementService, ClassroomManagementServi
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<IClassroomCommunityService, ClassroomCommunityService>();
 builder.Services.AddSubscriptionGuard(builder.Configuration);
+builder.Services.AddGuardianAccessClient(builder.Configuration);
 
 var app = builder.Build();
 app.UseEduPlatformPipeline(configure: pipeline => pipeline.UseSubscriptionQuotaExceptions());

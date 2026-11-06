@@ -65,10 +65,13 @@ export const LoginPage: React.FC = () => {
                         )}
 
                         <Input
-                            label="E-posta"
-                            type="email"
+                            label="E-posta veya kullanıcı adı"
+                            type="text"
                             name="email"
-                            placeholder="ornek@email.com"
+                            placeholder="ornek@email.com ya da kullanici.adi"
+                            autoComplete="username"
+                            autoCapitalize="none"
+                            spellCheck={false}
                             value={formData.email}
                             onChange={handleChange}
                             required

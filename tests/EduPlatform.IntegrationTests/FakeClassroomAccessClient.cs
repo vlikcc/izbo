@@ -38,4 +38,11 @@ internal sealed class FakeClassroomAccessClient : IClassroomAccessClient
 
         return Task.FromResult<IReadOnlyCollection<Guid>?>(Viewable.Union(Manageable).ToList());
     }
+
+    /// <summary>Classroom ids per student, as ClassroomService would answer a linked parent.</summary>
+    public Dictionary<Guid, List<Guid>> StudentClassrooms { get; } = [];
+
+    public Task<IReadOnlyCollection<Guid>> GetStudentClassroomIdsAsync(Guid studentId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyCollection<Guid>>(
+            StudentClassrooms.TryGetValue(studentId, out var ids) ? ids : []);
 }

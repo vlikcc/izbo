@@ -7,6 +7,16 @@ public class Classroom
     public string Description { get; set; } = string.Empty;
     public Guid InstructorId { get; set; }
     public string? CoverImageUrl { get; set; }
+
+    /// <summary>Code students type to join on their own. Unique while set; the owner can regenerate it.</summary>
+    public string? InviteCode { get; set; }
+
+    /// <summary>
+    /// The owner's students-per-classroom limit, captured when the classroom is created. A student joining by
+    /// code is the caller then, and their own plan says nothing about the teacher's capacity. Null = no limit.
+    /// </summary>
+    public int? MaxStudents { get; set; }
+
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }

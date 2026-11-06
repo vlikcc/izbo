@@ -3,6 +3,8 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore';
 import { useSubscriptionStore } from '../../stores/subscriptionStore';
+import { gradeLabel, roleLabel } from '../../utils/roles';
+import { buildNavItems } from './navItems';
 import './Layout.css';
 
 const PLAN_BADGE_LABELS: Record<string, string> = {
@@ -33,24 +35,7 @@ export const MainLayout: React.FC = () => {
         navigate('/login');
     };
 
-    const isStaff = user?.role === 'Instructor' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
-    const isAdmin = user?.role === 'Admin' || user?.role === 'SuperAdmin';
-
-    const navItems = [
-        { path: '/app/dashboard', icon: '🏠', label: t('nav.home') },
-        { path: '/app/classrooms', icon: '📚', label: t('nav.classrooms') },
-        { path: '/app/exams', icon: '📝', label: t('nav.exams') },
-        { path: '/app/homework', icon: '📖', label: t('nav.homework') },
-        { path: '/app/live', icon: '🎥', label: t('nav.live') },
-        { path: '/app/calendar', icon: '📅', label: t('nav.calendar') },
-        { path: '/app/billing', icon: '💳', label: 'Planım' },
-        ...(isStaff ? [{ path: '/app/gradebook', icon: '📊', label: t('nav.gradebook') }] : []),
-        ...(isAdmin ? [
-            { path: '/app/admin', icon: '🛡️', label: t('nav.admin') },
-            { path: '/app/admin/subscriptions', icon: '⚙️', label: 'Abonelikler' },
-        ] : []),
-        { path: '/app/profile', icon: '👤', label: t('nav.profile') },
-    ];
+    const navItems = buildNavItems(user, t);
 
     return (
         <div className="layout">
@@ -100,7 +85,10 @@ export const MainLayout: React.FC = () => {
                             <span className="sidebar-user-name">
                                 {user?.firstName} {user?.lastName}
                             </span>
-                            <span className="sidebar-user-role">{user?.role}</span>
+                            <span className="sidebar-user-role">
+                                {roleLabel(user?.role)}
+                                {user?.role === 'Student' && user.gradeLevel ? ` · ${gradeLabel(user.gradeLevel)}` : ''}
+                            </span>
                             {subscription && (
                                 <span className="sidebar-plan-badge">
                                     {PLAN_BADGE_LABELS[subscription.plan.code] ?? subscription.plan.name}

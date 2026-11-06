@@ -48,12 +48,13 @@ export const authService = {
         }
 
         try {
-            const response = await api.get<ApiResponse<{ userId: string; email: string; role: string; firstName: string; lastName: string }>>('/api/auth/me');
+            const response = await api.get<ApiResponse<{ userId: string; email: string | null; username?: string | null; role: string; firstName: string; lastName: string }>>('/api/auth/me');
             if (response.data.success && response.data.data) {
                 const userData = response.data.data;
                 return {
                     id: userData.userId,
-                    email: userData.email,
+                    email: userData.email ?? null,
+                    username: userData.username ?? null,
                     firstName: userData.firstName,
                     lastName: userData.lastName,
                     role: userData.role as User['role'],

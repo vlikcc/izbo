@@ -156,8 +156,15 @@ namespace ClassroomService.Migrations
                     b.Property<Guid>("InstructorId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("InviteCode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<int?>("MaxStudents")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -170,6 +177,10 @@ namespace ClassroomService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("InstructorId");
+
+                    b.HasIndex("InviteCode")
+                        .IsUnique()
+                        .HasFilter("\"InviteCode\" IS NOT NULL");
 
                     b.HasIndex("IsActive");
 

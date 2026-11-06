@@ -134,6 +134,62 @@
     font-size: var(--font-size-sm);
 }
 
+.role-choices {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+.role-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+    color: var(--color-gray-700);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.role-choice:hover {
+    border-color: var(--color-primary-300);
+}
+
+.role-choice:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.role-choice-active {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-50);
+}
+
+.role-choice-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.role-choice-title {
+    font-weight: 600;
+    color: var(--color-gray-900);
+}
+
+.role-choice-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+}
+
+.auth-hint {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+}
+
 .auth-select {
     width: 100%;
     height: 44px;
@@ -175,5 +231,19 @@
 @media (max-width: 480px) {
     .auth-row {
         grid-template-columns: 1fr;
+    }
+
+    .role-choices {
+        grid-template-columns: 1fr;
+    }
+
+    .role-choice {
+        flex-direction: row;
+        text-align: left;
+        gap: var(--space-3);
+    }
+
+    .role-choice-text {
+        display: none;
     }
 }

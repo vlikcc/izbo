@@ -160,8 +160,7 @@ public class ClassroomHub : Hub
     // snapshot pushed directly to them by the instructor's client (see SendWhiteboardSnapshot).
     public async Task SendWhiteboardDiff(string sessionId, string diffJson)
     {
-        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
-        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+        if (!CanPresent())
             return;
 
         RequireJoinedSession(sessionId);
@@ -170,8 +169,7 @@ public class ClassroomHub : Hub
 
     public async Task SendWhiteboardSnapshot(string sessionId, string toUserId, string snapshotJson)
     {
-        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
-        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+        if (!CanPresent())
             return;
 
         RequireJoinedSession(sessionId);
@@ -183,8 +181,7 @@ public class ClassroomHub : Hub
     // quiz has started so students can auto-join with the code instead of typing it in.
     public async Task NotifyQuizStarted(string sessionId, string examId, string quizCode)
     {
-        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
-        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+        if (!CanPresent())
             return;
 
         var group = RequireJoinedSession(sessionId);
@@ -195,8 +192,7 @@ public class ClassroomHub : Hub
     // broadcast above only reaches whoever was connected at that moment).
     public async Task NotifyQuizStartedTo(string toUserId, string examId, string quizCode)
     {
-        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
-        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+        if (!CanPresent())
             return;
 
         await Clients.User(toUserId).SendAsync("QuizStarted", new { examId, quizCode });
@@ -204,8 +200,7 @@ public class ClassroomHub : Hub
 
     public async Task NotifyQuizEnded(string sessionId)
     {
-        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
-        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+        if (!CanPresent())
             return;
 
         var group = RequireJoinedSession(sessionId);
@@ -214,8 +209,7 @@ public class ClassroomHub : Hub
 
     public async Task ForceMuteParticipant(string sessionId, string toUserId, string mediaType)
     {
-        var role = Context.User?.FindFirstValue(ClaimTypes.Role);
-        if (role is not ("Instructor" or "Admin" or "SuperAdmin"))
+        if (!CanPresent())
             return;
 
         RequireJoinedSession(sessionId);
@@ -318,4 +312,8 @@ public class ClassroomHub : Hub
 
         return group;
     }
+
+    /// <summary>Drawing and presenting are teaching actions; students and parents only watch.</summary>
+    private bool CanPresent() =>
+        Context.User.TryGetCaller(out var caller) && caller.CanManageContent;
 }

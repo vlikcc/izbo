@@ -55,7 +55,7 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(request, Client(), cancellationToken);
 
         if (result == null)
-            return Unauthorized(new ApiResponse<AuthResponse>(false, null, "E-posta veya parola hatalı"));
+            return Unauthorized(new ApiResponse<AuthResponse>(false, null, "E-posta/kullanıcı adı veya parola hatalı"));
 
         return Ok(new ApiResponse<AuthResponse>(true, result, "Giriş başarılı"));
     }
@@ -108,6 +108,7 @@ public class AuthController : ControllerBase
         {
             userId = caller.UserId,
             email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value,
+            username = User.FindFirst("username")?.Value,
             role = caller.Role.ToString(),
             firstName = User.FindFirst("firstName")?.Value,
             lastName = User.FindFirst("lastName")?.Value

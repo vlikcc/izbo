@@ -161,6 +161,7 @@ services:
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
       - Subscription__BaseUrl=http://subscriptionservice:80
+      - Services__UserService=http://userservice
       - Subscription__FailOpen=true
       - Jitsi__AppId=${JITSI_APP_ID:-}
       - Jitsi__AppSecret=${JITSI_APP_SECRET:-}
@@ -185,6 +186,7 @@ services:
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
       - Subscription__BaseUrl=http://subscriptionservice:80
+      - Services__UserService=http://userservice
       - Subscription__FailOpen=true
       - Services__ClassroomService=http://classroomservice
       - OTEL_SERVICE_NAME=homeworkservice
@@ -209,6 +211,7 @@ services:
       - JWT__Audience=EduPlatformUsers
       - Frontend__Url=http://localhost:3000
       - Subscription__BaseUrl=http://subscriptionservice:80
+      - Services__UserService=http://userservice
       - Subscription__FailOpen=true
       - Services__ClassroomService=http://classroomservice
       - OTEL_SERVICE_NAME=examservice

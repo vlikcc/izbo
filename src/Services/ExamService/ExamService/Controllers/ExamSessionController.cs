@@ -12,15 +12,33 @@ namespace ExamService.Controllers;
 public class ExamSessionController : ControllerBase
 {
     private readonly IExamSessionService _sessionService;
+    private readonly IGuardianAccessClient _guardianAccess;
     private readonly ILogger<ExamSessionController> _logger;
 
-    public ExamSessionController(IExamSessionService sessionService, ILogger<ExamSessionController> logger)
+    public ExamSessionController(
+        IExamSessionService sessionService,
+        IGuardianAccessClient guardianAccess,
+        ILogger<ExamSessionController> logger)
     {
         _sessionService = sessionService;
+        _guardianAccess = guardianAccess;
         _logger = logger;
     }
 
     private Caller Caller => User.GetCaller();
+
+    /// <summary>A student's exam attempts and scores, for the student, a linked parent, or an admin.</summary>
+    [HttpGet("student/{studentId}")]
+    public async Task<ActionResult<ApiResponse<List<ExamSessionDto>>>> GetStudentSessions(Guid studentId, CancellationToken cancellationToken)
+    {
+        if (!await _guardianAccess.CanViewStudentAsync(studentId, Caller, cancellationToken))
+        {
+            return NotFound(new ApiResponse<List<ExamSessionDto>>(false, null, "Student not found"));
+        }
+
+        var result = await _sessionService.GetStudentSessionsAsync(studentId, cancellationToken);
+        return Ok(new ApiResponse<List<ExamSessionDto>>(true, result));
+    }
 
     [HttpPost("{examId}/start")]
     [HttpPost("start/{examId}")]

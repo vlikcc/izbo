@@ -45,6 +45,11 @@ public sealed class AccountEmailService : IAccountEmailService
     public async Task RequestEmailVerificationAsync(User user, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(user);
+        if (user.Email is null)
+        {
+            return;
+        }
+
         var token = await IssueTokenAsync(user.Id, "verify", cancellationToken);
         var link = $"{FrontendBase()}/verify-email?token={Uri.EscapeDataString(token)}";
         await EnqueueEmailAsync(
@@ -82,7 +87,7 @@ public sealed class AccountEmailService : IAccountEmailService
     {
         var normalized = EmailNormalizer.Normalize(email);
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == normalized && u.IsActive, cancellationToken);
-        if (user is null)
+        if (user?.Email is null)
         {
             _logger.LogInformation("Password reset requested for an unknown address");
             return;
@@ -137,6 +142,7 @@ public sealed class AccountEmailService : IAccountEmailService
         user.IsActive = false;
         user.DeletedAt = DateTime.UtcNow;
         user.Email = $"deleted-{user.Id:N}@invalid.local";
+        user.Username = null;
         user.FirstName = "Silinmiş";
         user.LastName = "Kullanıcı";
         user.PhoneNumber = null;

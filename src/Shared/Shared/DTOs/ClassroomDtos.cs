@@ -10,7 +10,12 @@ public record ClassroomDto(
     string? CoverImageUrl, 
     int StudentCount,
     bool IsActive, 
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? InviteCode = null);
+
+/// <summary>A student joining a classroom with the code their teacher shared.</summary>
+public record JoinClassroomRequest(string Code);
+public record InviteCodeDto(string Code);
 
 public record CreateClassroomRequest(string Name, string Description, string? CoverImageUrl);
 public record UpdateClassroomRequest(string? Name, string? Description, string? CoverImageUrl);

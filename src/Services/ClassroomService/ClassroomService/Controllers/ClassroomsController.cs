@@ -14,15 +14,18 @@ public class ClassroomsController : ControllerBase
 {
     private readonly IClassroomManagementService _classroomService;
     private readonly ISessionService _sessionService;
+    private readonly IGuardianAccessClient _guardianAccess;
     private readonly ILogger<ClassroomsController> _logger;
 
     public ClassroomsController(
         IClassroomManagementService classroomService,
         ISessionService sessionService,
+        IGuardianAccessClient guardianAccess,
         ILogger<ClassroomsController> logger)
     {
         _classroomService = classroomService;
         _sessionService = sessionService;
+        _guardianAccess = guardianAccess;
         _logger = logger;
     }
 
@@ -109,6 +112,76 @@ public class ClassroomsController : ControllerBase
     {
         var result = await _classroomService.GetAccessibleClassroomIdsAsync(Caller);
         return Ok(new ApiResponse<List<Guid>>(true, result));
+    }
+
+    [HttpPost("join")]
+    [Authorize(Roles = UserRoles.Student)]
+    public async Task<ActionResult<ApiResponse<ClassroomDto>>> JoinByCode([FromBody] JoinClassroomRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var result = await _classroomService.JoinByCodeAsync(request.Code, Caller);
+
+        return result.Outcome switch
+        {
+            JoinClassroomOutcome.Joined => Ok(new ApiResponse<ClassroomDto>(true, result.Classroom, "Sınıfa katıldınız")),
+            JoinClassroomOutcome.AlreadyEnrolled => Ok(new ApiResponse<ClassroomDto>(true, result.Classroom, "Bu sınıfa zaten kayıtlısınız")),
+            JoinClassroomOutcome.Full => Conflict(new ApiResponse<ClassroomDto>(false, null, "Sınıf dolu. Öğretmeninize haber verin.")),
+            JoinClassroomOutcome.NotAllowed => StatusCode(StatusCodes.Status403Forbidden,
+                new ApiResponse<ClassroomDto>(false, null, "Bu sınıfa öğrenci olarak katılamazsınız")),
+            _ => NotFound(new ApiResponse<ClassroomDto>(false, null, "Bu koda ait bir sınıf bulunamadı"))
+        };
+    }
+
+    [HttpPost("{id}/invite-code/regenerate")]
+    [Authorize(Roles = UserRoles.ContentManagers)]
+    public async Task<ActionResult<ApiResponse<InviteCodeDto>>> RegenerateInviteCode(Guid id)
+    {
+        var code = await _classroomService.RegenerateInviteCodeAsync(id, Caller);
+        return code is null
+            ? NotFound(new ApiResponse<InviteCodeDto>(false, null, "Classroom not found"))
+            : Ok(new ApiResponse<InviteCodeDto>(true, new InviteCodeDto(code), "Yeni katılım kodu oluşturuldu"));
+    }
+
+    /// <summary>A student's classrooms, for the student themself, a linked parent, or an admin.</summary>
+    [HttpGet("student/{studentId}")]
+    public async Task<ActionResult<ApiResponse<PagedResponse<ClassroomDto>>>> GetStudentClassrooms(
+        Guid studentId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        if (!await _guardianAccess.CanViewStudentAsync(studentId, Caller))
+        {
+            return NotFound(new ApiResponse<PagedResponse<ClassroomDto>>(false, null, "Student not found"));
+        }
+
+        var result = await _classroomService.GetStudentClassroomsAsync(studentId, new PagedRequest(page, pageSize));
+        return Ok(new ApiResponse<PagedResponse<ClassroomDto>>(true, result));
+    }
+
+    /// <summary>Ids of a student's classrooms; other services use it to scope a parent's view.</summary>
+    [HttpGet("student/{studentId}/ids")]
+    public async Task<ActionResult<ApiResponse<List<Guid>>>> GetStudentClassroomIds(Guid studentId)
+    {
+        if (!await _guardianAccess.CanViewStudentAsync(studentId, Caller))
+        {
+            return NotFound(new ApiResponse<List<Guid>>(false, null, "Student not found"));
+        }
+
+        var ids = await _classroomService.GetAccessibleClassroomIdsAsync(new Caller(studentId, Shared.Models.UserRole.Student));
+        return Ok(new ApiResponse<List<Guid>>(true, ids));
+    }
+
+    [HttpGet("student/{studentId}/sessions/upcoming")]
+    public async Task<ActionResult<ApiResponse<List<ClassSessionDto>>>> GetStudentUpcomingSessions(Guid studentId)
+    {
+        if (!await _guardianAccess.CanViewStudentAsync(studentId, Caller))
+        {
+            return NotFound(new ApiResponse<List<ClassSessionDto>>(false, null, "Student not found"));
+        }
+
+        // Read-only, and only after the guardianship check: the student's own view of their schedule.
+        var result = await _sessionService.GetUpcomingSessionsAsync(new Caller(studentId, Shared.Models.UserRole.Student));
+        return Ok(new ApiResponse<List<ClassSessionDto>>(true, result));
     }
 
     [HttpPut("{id}")]

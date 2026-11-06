@@ -166,6 +166,7 @@ services:
       Jitsi__AppId: ${JITSI_APP_ID:-}
       Jitsi__AppSecret: ${JITSI_APP_SECRET:-}
       Subscription__BaseUrl: http://subscriptionservice:80
+      Services__UserService: http://userservice
       Subscription__FailOpen: "true"
       OTEL_SERVICE_NAME: classroomservice
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
@@ -202,6 +203,7 @@ services:
       Frontend__Url: ${FRONTEND_URL}
       Services__ClassroomService: http://classroomservice
       Subscription__BaseUrl: http://subscriptionservice:80
+      Services__UserService: http://userservice
       Subscription__FailOpen: "true"
       OTEL_SERVICE_NAME: homeworkservice
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
@@ -241,6 +243,7 @@ services:
       Frontend__Url: ${FRONTEND_URL}
       Services__ClassroomService: http://classroomservice
       Subscription__BaseUrl: http://subscriptionservice:80
+      Services__UserService: http://userservice
       Subscription__FailOpen: "true"
       OTEL_SERVICE_NAME: examservice
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}

@@ -57,6 +57,17 @@ public interface IAuthService
     /// Updates the identity fields that are copied into JWTs and re-mirrored to UserService on login.
     /// </summary>
     Task<bool> UpdateAccountIdentityAsync(Guid userId, AccountIdentityRequest identity, CancellationToken cancellationToken = default);
+
+    /// <summary>Applies a role an administrator set in the directory, so new tokens carry it.</summary>
+    Task<bool> SetAccountRoleAsync(Guid userId, UserRole role, CancellationToken cancellationToken = default);
+
+    /// <summary>Replaces the password and ends every session the account holds.</summary>
+    Task<bool> SetAccountPasswordAsync(Guid userId, string password, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Opens a student account that signs in by user name. Returns null when the user name is taken.
+    /// </summary>
+    Task<User?> CreateChildAccountAsync(CreateChildAccountRequest request, CancellationToken cancellationToken = default);
 }
 
 public class AuthenticationService : IAuthService
@@ -127,6 +138,13 @@ public class AuthenticationService : IAuthService
             CreatedAt = DateTime.UtcNow
         };
 
+        // School fields belong to the directory, not to the account; they only travel with the first mirror.
+        if (user.Role == UserRole.Student)
+        {
+            user.GradeLevel = request.GradeLevel;
+            user.ExamTarget = StudentProfileRules.ParseExamTargetOrNull(request.ExamTarget);
+        }
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync(cancellationToken);
         await _accountEmail.RequestEmailVerificationAsync(user, cancellationToken);
@@ -144,8 +162,17 @@ public class AuthenticationService : IAuthService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var email = EmailNormalizer.Normalize(request.Email);
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        User? user;
+        if (!string.IsNullOrWhiteSpace(request.Username))
+        {
+            var username = UsernameRules.Normalize(request.Username);
+            user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+        }
+        else
+        {
+            var email = EmailNormalizer.Normalize(request.Email);
+            user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        }
 
         // Always verify against something: returning early for an unknown address turns response time
         // into an oracle for which addresses are registered.
@@ -163,7 +190,8 @@ public class AuthenticationService : IAuthService
             return null;
         }
 
-        if (_configuration.GetValue("Email:RequireVerification", false) && !user.EmailVerified)
+        // Accounts without an address have nothing to verify; a parent vouched for them.
+        if (_configuration.GetValue("Email:RequireVerification", false) && user.Email is not null && !user.EmailVerified)
         {
             _logger.LogWarning("Login rejected: user {UserId} has not verified e-mail", user.Id);
             return null;
@@ -311,6 +339,103 @@ public class AuthenticationService : IAuthService
         return true;
     }
 
+    public async Task<bool> SetAccountRoleAsync(Guid userId, UserRole role, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user is null)
+        {
+            _logger.LogWarning("Role change requested for unknown user {UserId}", userId);
+            return false;
+        }
+
+        if (user.Role == role)
+        {
+            return true;
+        }
+
+        user.Role = role;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Refreshing would keep minting tokens with the old role until the refresh token expired.
+        await RevokeAllTokensAsync(userId, RevocationReasons.RevokedByUser, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        await _audit.WriteAsync(new AuditRecord("RoleChanged", userId, "User", userId.ToString()), cancellationToken);
+        _logger.LogInformation("Account {UserId} role set to {Role}", userId, role);
+        return true;
+    }
+
+    public async Task<bool> SetAccountPasswordAsync(Guid userId, string password, CancellationToken cancellationToken = default)
+    {
+        if (PasswordPolicy.Validate(password) is not null)
+        {
+            return false;
+        }
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user is null)
+        {
+            _logger.LogWarning("Password change requested for unknown user {UserId}", userId);
+            return false;
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+        user.UpdatedAt = DateTime.UtcNow;
+        await RevokeAllTokensAsync(userId, RevocationReasons.RevokedByUser, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        await _audit.WriteAsync(new AuditRecord("PasswordSetByGuardian", userId, "User", userId.ToString()), cancellationToken);
+        return true;
+    }
+
+    public async Task<User?> CreateChildAccountAsync(
+        CreateChildAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var username = UsernameRules.Normalize(request.Username);
+        if (!UsernameRules.IsValid(username) || PasswordPolicy.Validate(request.Password) is not null)
+        {
+            throw new ArgumentException("The child account request did not pass validation.", nameof(request));
+        }
+
+        if (await _context.Users.AnyAsync(u => u.Username == username, cancellationToken))
+        {
+            return null;
+        }
+
+        var examTarget = StudentProfileRules.ParseExamTargetOrNull(request.ExamTarget);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = null,
+            Username = username,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Role = UserRole.Student,
+            GradeLevel = request.GradeLevel,
+            ExamTarget = examTarget,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Users.Add(user);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Lost a race for the same name against another request.
+            return null;
+        }
+
+        await _audit.WriteAsync(new AuditRecord("ChildAccountCreated", user.Id, "User", user.Id.ToString()), cancellationToken);
+        await MirrorProfileAsync(user, cancellationToken);
+        _logger.LogInformation("Child account {UserId} created", user.Id);
+        return user;
+    }
+
     /// <summary>
     /// Gives UserService a profile row carrying this account's id. Best-effort on purpose: the directory
     /// being down must not stop somebody registering or signing in, and the next login retries it.
@@ -324,7 +449,10 @@ public class AuthenticationService : IAuthService
             user.LastName,
             user.Role.ToString(),
             user.PhoneNumber,
-            user.IsActive);
+            user.IsActive,
+            user.Username,
+            user.GradeLevel,
+            user.ExamTarget?.ToString());
 
         if (!await _directory.EnsureProfileAsync(profile, cancellationToken))
         {
@@ -332,10 +460,12 @@ public class AuthenticationService : IAuthService
         }
     }
 
-    /// <summary>Registration may only ask for a teaching or learning role; elevation is an admin action.</summary>
+    /// <summary>
+    /// Registration may only ask for a learning, teaching or parent role; elevation is an admin action.
+    /// </summary>
     private static UserRole RequestedRole(string? requested) =>
         Enum.TryParse<UserRole>(requested, ignoreCase: true, out var role) &&
-        role is UserRole.Student or UserRole.Instructor
+        role is UserRole.Student or UserRole.Instructor or UserRole.Parent
             ? role
             : UserRole.Student;
 
@@ -362,7 +492,8 @@ public class AuthenticationService : IAuthService
             user.PhoneNumber,
             user.ProfileImageUrl,
             user.IsActive,
-            user.CreatedAt);
+            user.CreatedAt,
+            user.Username);
 
         return new AuthResponse(
             GenerateAccessToken(user, lifetime),
@@ -396,15 +527,24 @@ public class AuthenticationService : IAuthService
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role.ToString()),
-            new Claim("firstName", user.FirstName),
-            new Claim("lastName", user.LastName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(ClaimTypes.Role, user.Role.ToString()),
+            new("firstName", user.FirstName),
+            new("lastName", user.LastName),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (user.Email is not null)
+        {
+            claims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
+        }
+
+        if (user.Username is not null)
+        {
+            claims.Add(new Claim("username", user.Username));
+        }
 
         var token = new JwtSecurityToken(
             issuer: jwtSettings["Issuer"],

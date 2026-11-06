@@ -12,6 +12,7 @@ builder.Services.AddDbContext<HomeworkDbContext>(options =>
     options.UseEduPlatformNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
 builder.Services.AddClassroomAccessClient(builder.Configuration);
+builder.Services.AddGuardianAccessClient(builder.Configuration);
 builder.Services.AddEduPlatformAuditLogger();
 builder.Services.AddScoped<IHomeworkManagementService, HomeworkManagementService>();
 builder.Services.AddSubscriptionGuard(builder.Configuration);

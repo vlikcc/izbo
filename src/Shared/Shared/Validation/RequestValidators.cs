@@ -1,6 +1,7 @@
 using FluentValidation;
 using Shared.DTOs;
 using Shared.Security;
+using Shared.Text;
 
 namespace Shared.Validation;
 
@@ -21,15 +22,87 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
                     context.AddFailure(error);
                 }
             });
+        RuleFor(x => x.Role)
+            .Must(static r => r is null || SelfServiceRoles.Contains(r))
+            .WithMessage("Rol Student, Parent veya Instructor olmalıdır.");
+        RuleFor(x => x.GradeLevel)
+            .Must(StudentProfileRules.IsValidGrade)
+            .When(x => IsStudent(x.Role))
+            .WithMessage("Öğrenci kaydı için 1–12 arasında bir sınıf seçilmelidir.");
+        RuleFor(x => x.ExamTarget)
+            .Must(static t => StudentProfileRules.TryParseExamTarget(t, out _))
+            .WithMessage("Hedef sınav None, Lgs veya Yks olmalıdır.");
     }
+
+    private static readonly HashSet<string> SelfServiceRoles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Student", "Parent", "Instructor"
+    };
+
+    // A missing role registers a student, so it carries the same obligations.
+    private static bool IsStudent(string? role) =>
+        role is null || string.Equals(role, "Student", StringComparison.OrdinalIgnoreCase);
 }
 
 public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
 {
     public LoginRequestValidator()
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x)
+            .Must(static x => !string.IsNullOrWhiteSpace(x.Email) || !string.IsNullOrWhiteSpace(x.Username))
+            .WithMessage("E-posta veya kullanıcı adı gereklidir.");
+        RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email));
         RuleFor(x => x.Password).NotEmpty();
+    }
+}
+
+public sealed class CreateChildRequestValidator : AbstractValidator<CreateChildRequest>
+{
+    public CreateChildRequestValidator()
+    {
+        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Username)
+            .Must(UsernameRules.IsValid)
+            .WithMessage("Kullanıcı adı 4–32 karakter olmalı; yalnızca küçük harf, rakam, nokta ve alt çizgi içerebilir.");
+        RuleFor(x => x.Password)
+            .Custom((password, context) =>
+            {
+                var error = PasswordPolicy.Validate(password);
+                if (error is not null)
+                {
+                    context.AddFailure(error);
+                }
+            });
+        RuleFor(x => x.GradeLevel)
+            .InclusiveBetween(StudentProfileRules.MinGrade, StudentProfileRules.MaxGrade);
+        RuleFor(x => x.ExamTarget)
+            .Must(static t => StudentProfileRules.TryParseExamTarget(t, out _))
+            .WithMessage("Hedef sınav None, Lgs veya Yks olmalıdır.");
+    }
+}
+
+public sealed class LinkChildRequestValidator : AbstractValidator<LinkChildRequest>
+{
+    public LinkChildRequestValidator()
+    {
+        RuleFor(x => x.Code).NotEmpty().MaximumLength(32);
+    }
+}
+
+public sealed class ResetChildPasswordRequestValidator : AbstractValidator<ResetChildPasswordRequest>
+{
+    public ResetChildPasswordRequestValidator()
+    {
+        RuleFor(x => x.Password)
+            .Custom((password, context) =>
+            {
+                var error = PasswordPolicy.Validate(password);
+                if (error is not null)
+                {
+                    context.AddFailure(error);
+                }
+            });
     }
 }
 
@@ -48,6 +121,12 @@ public sealed class UpdateUserRequestValidator : AbstractValidator<UpdateUserReq
         RuleFor(x => x.FirstName).MaximumLength(100).When(x => x.FirstName is not null);
         RuleFor(x => x.LastName).MaximumLength(100).When(x => x.LastName is not null);
         RuleFor(x => x.PhoneNumber).MaximumLength(32).When(x => x.PhoneNumber is not null);
+        RuleFor(x => x.GradeLevel)
+            .InclusiveBetween(StudentProfileRules.MinGrade, StudentProfileRules.MaxGrade)
+            .When(x => x.GradeLevel.HasValue);
+        RuleFor(x => x.ExamTarget)
+            .Must(static t => StudentProfileRules.TryParseExamTarget(t, out _))
+            .WithMessage("Hedef sınav None, Lgs veya Yks olmalıdır.");
     }
 }
 

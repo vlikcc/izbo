@@ -3,6 +3,10 @@ import { Card, Button, Input, Modal } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { userService } from '../../services/user.service';
 import { toast } from '../../lib/toast';
+import { GuardianCodeCard } from '../../components/profile/GuardianCodeCard';
+import type { ExamTarget } from '../../types';
+import { EXAM_LABELS, GRADES, examTargetsForGrade, gradeLabel, isStudent, roleLabel } from '../../utils/roles';
+import '../parent/Parent.css';
 import './Profile.css';
 
 export const ProfilePage: React.FC = () => {
@@ -13,11 +17,16 @@ export const ProfilePage: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
+    const student = isStudent(user);
     const [editForm, setEditForm] = useState({
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
         phoneNumber: user?.phoneNumber || '',
+        gradeLevel: user?.gradeLevel ? String(user.gradeLevel) : '',
+        examTarget: (user?.examTarget ?? '') as ExamTarget | '',
     });
+    const editGrade = editForm.gradeLevel ? Number(editForm.gradeLevel) : undefined;
+    const editExamChoices = examTargetsForGrade(editGrade);
 
     const [passwordForm, setPasswordForm] = useState({
         currentPassword: '',
@@ -25,7 +34,7 @@ export const ProfilePage: React.FC = () => {
         confirmPassword: '',
     });
 
-    const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setEditForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
@@ -39,7 +48,18 @@ export const ProfilePage: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            const updated = await userService.updateProfile(editForm);
+            const updated = await userService.updateProfile({
+                firstName: editForm.firstName,
+                lastName: editForm.lastName,
+                phoneNumber: editForm.phoneNumber,
+                ...(student && {
+                    gradeLevel: editGrade,
+                    // "None" clears a target that no longer fits the grade.
+                    examTarget: editForm.examTarget && editExamChoices.includes(editForm.examTarget)
+                        ? editForm.examTarget
+                        : 'None',
+                }),
+            });
             applyUser({
                 ...(user ?? updated),
                 ...updated,
@@ -91,6 +111,8 @@ export const ProfilePage: React.FC = () => {
             firstName: user?.firstName || '',
             lastName: user?.lastName || '',
             phoneNumber: user?.phoneNumber || '',
+            gradeLevel: user?.gradeLevel ? String(user.gradeLevel) : '',
+            examTarget: (user?.examTarget ?? '') as ExamTarget | '',
         });
         setError('');
         setIsEditModalOpen(true);
@@ -137,17 +159,21 @@ export const ProfilePage: React.FC = () => {
                             <span className="profile-value">{user?.phoneNumber || '-'}</span>
                         </div>
                         <div className="profile-field">
-                            <label className="profile-label">E-posta</label>
-                            <span className="profile-value">{user?.email || '-'}</span>
+                            <label className="profile-label">{user?.email ? 'E-posta' : 'Kullanıcı adı'}</label>
+                            <span className="profile-value">{user?.email || user?.username || '-'}</span>
                         </div>
+                        {student && (
+                            <div className="profile-field">
+                                <label className="profile-label">Sınıf</label>
+                                <span className="profile-value">
+                                    {gradeLabel(user?.gradeLevel) || '-'}
+                                    {user?.examTarget && user.examTarget !== 'None' ? ` · ${EXAM_LABELS[user.examTarget]} hazırlık` : ''}
+                                </span>
+                            </div>
+                        )}
                         <div className="profile-field">
                             <label className="profile-label">Rol</label>
-                            <span className="profile-value profile-role">
-                                {user?.role === 'Student' && '📚 Öğrenci'}
-                                {user?.role === 'Instructor' && '👨‍🏫 Eğitmen'}
-                                {user?.role === 'Admin' && '🔧 Admin'}
-                                {user?.role === 'SuperAdmin' && '🛡️ Süper Admin'}
-                            </span>
+                            <span className="profile-value profile-role">{roleLabel(user?.role)}</span>
                         </div>
                     </div>
 
@@ -188,6 +214,8 @@ export const ProfilePage: React.FC = () => {
                     </div>
                 </Card>
             </div>
+
+            {student && <GuardianCodeCard />}
 
             <Card variant="default" padding="lg" className="profile-card">
                 <h3 className="profile-section-title">Gizlilik</h3>
@@ -263,6 +291,25 @@ export const ProfilePage: React.FC = () => {
                         onChange={handleEditChange}
                         placeholder="+90 5XX XXX XX XX"
                     />
+                    {student && (
+                        <div className="form-row">
+                            <div className="input-wrapper">
+                                <label className="input-label" htmlFor="profile-grade">Sınıf</label>
+                                <select id="profile-grade" name="gradeLevel" className="form-select"
+                                    value={editForm.gradeLevel} onChange={handleEditChange}>
+                                    {GRADES.map(g => <option key={g} value={g}>{g}. sınıf</option>)}
+                                </select>
+                            </div>
+                            <div className="input-wrapper">
+                                <label className="input-label" htmlFor="profile-exam">Hedef sınav</label>
+                                <select id="profile-exam" name="examTarget" className="form-select"
+                                    value={editForm.examTarget} onChange={handleEditChange} disabled={editExamChoices.length === 0}>
+                                    <option value="">Yok</option>
+                                    {editExamChoices.map(t => <option key={t} value={t}>{EXAM_LABELS[t]}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="modal-actions">
                         <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>

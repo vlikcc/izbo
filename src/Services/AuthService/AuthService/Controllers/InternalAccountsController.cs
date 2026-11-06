@@ -2,6 +2,7 @@ using AuthService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOs;
 using Shared.Internal;
+using Shared.Models;
 
 namespace AuthService.Controllers;
 
@@ -56,5 +57,66 @@ public class InternalAccountsController : ControllerBase
         }
 
         return Ok(new ApiResponse<bool>(true, true, "Account identity updated"));
+    }
+
+    [HttpPut("accounts/{id}/role")]
+    public async Task<ActionResult<ApiResponse<bool>>> SetAccountRole(
+        Guid id,
+        [FromBody] AccountRoleRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var role) || !Enum.IsDefined(role))
+        {
+            return BadRequest(new ApiResponse<bool>(false, false, "Unknown role"));
+        }
+
+        var updated = await _authService.SetAccountRoleAsync(id, role, cancellationToken);
+
+        return updated
+            ? Ok(new ApiResponse<bool>(true, true, "Account role updated"))
+            : NotFound(new ApiResponse<bool>(false, false, "Account not found"));
+    }
+
+    [HttpPost("accounts/{id}/password")]
+    public async Task<ActionResult<ApiResponse<bool>>> SetAccountPassword(
+        Guid id,
+        [FromBody] AccountPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var updated = await _authService.SetAccountPasswordAsync(id, request.Password, cancellationToken);
+
+        return updated
+            ? Ok(new ApiResponse<bool>(true, true, "Password updated"))
+            : NotFound(new ApiResponse<bool>(false, false, "Account not found or password rejected"));
+    }
+
+    /// <summary>Opens a user-name student account on behalf of a parent. 409 when the name is taken.</summary>
+    [HttpPost("accounts")]
+    public async Task<ActionResult<CreatedAccountDto>> CreateChildAccount(
+        [FromBody] CreateChildAccountRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        User? user;
+        try
+        {
+            user = await _authService.CreateChildAccountAsync(request, cancellationToken);
+        }
+        catch (ArgumentException)
+        {
+            return BadRequest();
+        }
+
+        if (user is null)
+        {
+            return Conflict();
+        }
+
+        return Ok(new CreatedAccountDto(user.Id, user.Username!));
     }
 }

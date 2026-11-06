@@ -1,12 +1,21 @@
 // Auth Types
+export type UserRole = 'Student' | 'Instructor' | 'Admin' | 'SuperAdmin' | 'Parent';
+
+export type ExamTarget = 'None' | 'Lgs' | 'Yks';
+
 export interface User {
     id: string;
-    email: string;
+    /** Null for child accounts a parent opened; those sign in with `username`. */
+    email: string | null;
+    username?: string | null;
     firstName: string;
     lastName: string;
-    role: 'Student' | 'Instructor' | 'Admin' | 'SuperAdmin';
+    role: UserRole;
     phoneNumber?: string;
     profileImageUrl?: string;
+    /** School grade 1–12, students only. */
+    gradeLevel?: number | null;
+    examTarget?: ExamTarget | null;
     isActive: boolean;
     createdAt: string;
 }
@@ -18,8 +27,10 @@ export interface AuthResponse {
     expiresAt: string;
 }
 
+/** Exactly one of `email` or `username` is sent. */
 export interface LoginRequest {
-    email: string;
+    email?: string;
+    username?: string;
     password: string;
 }
 
@@ -29,7 +40,44 @@ export interface RegisterRequest {
     firstName: string;
     lastName: string;
     phoneNumber?: string;
-    role?: string;
+    role?: 'Student' | 'Parent' | 'Instructor';
+    gradeLevel?: number;
+    examTarget?: ExamTarget;
+}
+
+// Guardian (veli) types
+export interface Child {
+    id: string;
+    firstName: string;
+    lastName: string;
+    username?: string | null;
+    email?: string | null;
+    gradeLevel?: number | null;
+    examTarget?: ExamTarget | null;
+    profileImageUrl?: string | null;
+    linkedAt: string;
+}
+
+export interface CreateChildRequest {
+    firstName: string;
+    lastName: string;
+    username: string;
+    password: string;
+    gradeLevel: number;
+    examTarget?: ExamTarget;
+}
+
+export interface GuardianCode {
+    code: string;
+    expiresAt: string;
+}
+
+export interface PublicUser {
+    id: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    profileImageUrl?: string | null;
 }
 
 // Classroom Types
@@ -43,6 +91,8 @@ export interface Classroom {
     studentCount: number;
     isActive: boolean;
     createdAt: string;
+    /** Only present for the owning teacher and admins. */
+    inviteCode?: string | null;
 }
 
 export interface ClassSession {
