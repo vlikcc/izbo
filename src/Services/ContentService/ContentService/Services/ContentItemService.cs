@@ -40,6 +40,12 @@ public interface IContentItemService
 
     Task<ContentResult<ContentProgressDto>> SaveProgressAsync(Guid id, UpdateProgressRequest request, Caller caller, CancellationToken cancellationToken = default);
     Task<List<ContinueWatchingDto>> GetContinueAsync(Caller caller, int take = 5, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// What a student studied since a point in time. The caller must already have checked that the asker may
+    /// follow this student (the student, a linked parent, or an administrator).
+    /// </summary>
+    Task<StudentContentActivityDto> GetStudentActivityAsync(Guid studentId, DateTime since, int take = 5, CancellationToken cancellationToken = default);
 }
 
 public class ContentItemService : IContentItemService
@@ -619,6 +625,46 @@ public class ContentItemService : IContentItemService
                 r.Progress.PositionSeconds,
                 r.Progress.UpdatedAt))
             .ToList();
+    }
+
+    public async Task<StudentContentActivityDto> GetStudentActivityAsync(
+        Guid studentId,
+        DateTime since,
+        int take = 5,
+        CancellationToken cancellationToken = default)
+    {
+        var sinceUtc = DateTime.SpecifyKind(since, DateTimeKind.Utc);
+        var recentProgress = _db.Progress.AsNoTracking()
+            .Where(p => p.UserId == studentId && p.UpdatedAt >= sinceUtc)
+            .Join(_db.ContentItems.ListedForEveryone(), p => p.ContentItemId, i => i.Id, (p, i) => new { Progress = p, Item = i });
+
+        var studied = await recentProgress.CountAsync(cancellationToken);
+        var completed = await recentProgress.CountAsync(x => x.Progress.Completed, cancellationToken);
+
+        var rows = await recentProgress
+            .OrderByDescending(x => x.Progress.UpdatedAt)
+            .Take(Math.Clamp(take, 1, 20))
+            .Select(x => new
+            {
+                x.Progress,
+                x.Item,
+                SubjectId = x.Item.Topic!.Unit!.SubjectId,
+                SubjectName = x.Item.Topic.Unit.Subject!.Name,
+                TopicName = x.Item.Topic.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        var recent = rows
+            .Select(r => new ContinueWatchingDto(
+                r.Item.ToSummary(r.Progress),
+                r.SubjectId,
+                r.SubjectName,
+                r.TopicName,
+                r.Progress.PositionSeconds,
+                r.Progress.UpdatedAt))
+            .ToList();
+
+        return new StudentContentActivityDto(studentId, sinceUtc, studied, completed, recent);
     }
 
     // ---- Helpers ----

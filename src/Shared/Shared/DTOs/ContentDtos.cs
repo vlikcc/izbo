@@ -136,6 +136,14 @@ public record ContinueWatchingDto(
     int PositionSeconds,
     DateTime UpdatedAt);
 
+/// <summary>A student's recent study, as their parent sees it.</summary>
+public record StudentContentActivityDto(
+    Guid StudentId,
+    DateTime Since,
+    int ItemsStudied,
+    int ItemsCompleted,
+    List<ContinueWatchingDto> Recent);
+
 // ---- Public (unauthenticated) ----
 
 public record PublicSubjectStatsDto(

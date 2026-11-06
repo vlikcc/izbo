@@ -6,6 +6,7 @@ using ContentService.Services.Storage;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Minio;
 using Shared.Audit;
+using Shared.Authorization;
 using Shared.Extensions;
 using Shared.Subscription;
 
@@ -51,6 +52,7 @@ builder.Services.AddScoped<IContentItemService, ContentItemService>();
 builder.Services.AddScoped<TranscodeJobStore>();
 builder.Services.AddHostedService<VideoTranscodeWorker>();
 builder.Services.AddSubscriptionGuard(builder.Configuration);
+builder.Services.AddGuardianAccessClient(builder.Configuration);
 
 var app = builder.Build();
 app.UseEduPlatformPipeline(configure: pipeline => pipeline.UseSubscriptionQuotaExceptions());
