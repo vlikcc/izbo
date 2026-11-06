@@ -5,6 +5,8 @@ using Shared.Subscription;
 using SubscriptionService.Configuration;
 using SubscriptionService.Data;
 using SubscriptionService.Services;
+using SubscriptionService.Services.Learner;
+using Shared.Authorization;
 using SubscriptionService.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +36,8 @@ builder.Services.AddAuthorization();
 
 // Options
 builder.Services.Configure<TrialOptions>(builder.Configuration.GetSection(TrialOptions.SectionName));
+builder.Services.Configure<LearnerOptions>(builder.Configuration.GetSection(LearnerOptions.SectionName));
+builder.Services.Configure<BankTransferOptions>(builder.Configuration.GetSection(BankTransferOptions.SectionName));
 
 // Services
 builder.Services.AddScoped<ISubscriberResolver, SubscriberResolver>();
@@ -42,6 +46,12 @@ builder.Services.AddScoped<SubscriptionManagementService>();
 builder.Services.AddScoped<ISubscriptionManagementService>(sp => sp.GetRequiredService<SubscriptionManagementService>());
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddHostedService<SubscriptionLifecycleWorker>();
+
+// Student packages
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ILearnerPaymentProvider, BankTransferPaymentProvider>();
+builder.Services.AddScoped<ILearnerPackageService, LearnerPackageService>();
+builder.Services.AddGuardianAccessClient(builder.Configuration);
 
 // CORS
 builder.Services.AddCorsPolicy("AllowFrontend", builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");

@@ -10,6 +10,7 @@ import assessmentService from '../../services/assessment.service';
 import type { AttemptSummary, Mastery } from '../../types/assessment';
 import { Link } from 'react-router-dom';
 import { formatNet } from '../../utils/questions';
+import { ChildPackageStatus } from './ChildPackageStatus';
 import './Parent.css';
 
 interface Summary {
@@ -76,6 +77,8 @@ export const ChildSummaryCard: React.FC<{ child: Child }> = ({ child }) => {
                     </span>
                 </div>
             </div>
+
+            <ChildPackageStatus childId={child.id} />
 
             {!summary ? (
                 <p className="child-muted">Yükleniyor...</p>

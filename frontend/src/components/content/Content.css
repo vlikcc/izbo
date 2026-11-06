@@ -372,3 +372,20 @@
     justify-content: space-between;
     gap: var(--space-3);
 }
+
+.item-lock {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.practice-usage {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+}
+
+.practice-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+}

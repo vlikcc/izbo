@@ -440,6 +440,12 @@ services:
       JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
       JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
       Frontend__Url: ${FRONTEND_URL}
+      # Guardianship checks for parents buying packages for their children.
+      Services__UserService: http://userservice
+      # Bank transfer details shown on student-package orders; empty IBAN = "contact us".
+      Payment__Bank__BankName: ${PAYMENT_BANK_NAME:-}
+      Payment__Bank__AccountHolder: ${PAYMENT_BANK_ACCOUNT_HOLDER:-}
+      Payment__Bank__Iban: ${PAYMENT_BANK_IBAN:-}
       OTEL_SERVICE_NAME: subscriptionservice
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:

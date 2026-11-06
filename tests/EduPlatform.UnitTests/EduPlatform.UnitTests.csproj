@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\src\Services\FileService\FileService\FileService.csproj" />
     <ProjectReference Include="..\..\src\Services\ContentService\ContentService\ContentService.csproj" />
     <ProjectReference Include="..\..\src\Services\UserService\UserService\UserService.csproj" />
+    <ProjectReference Include="..\..\src\Services\SubscriptionService\SubscriptionService\SubscriptionService.csproj" />
   </ItemGroup>
 
 </Project>

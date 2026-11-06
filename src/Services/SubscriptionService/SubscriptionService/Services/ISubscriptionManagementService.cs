@@ -17,6 +17,16 @@ public class PlanNotFoundException : Exception
     public PlanNotFoundException(string code) : base($"Plan bulunamadı: {code}") { }
 }
 
+/// <summary>Outcome of an administrator acting on a teacher order.</summary>
+public enum OrderDecision
+{
+    Done,
+    NotFound,
+
+    /// <summary>The order was already paid, rejected or cancelled; nothing changed.</summary>
+    NotPending
+}
+
 public interface ISubscriptionManagementService
 {
     Task<List<PlanDto>> GetPlansAsync();
@@ -31,7 +41,8 @@ public interface ISubscriptionManagementService
     Task<List<AdminSubscriptionDto>> AdminListSubscriptionsAsync();
     Task<AdminSubscriptionDto> AdminAssignPlanAsync(SubscriberType type, Guid subscriberId, AdminAssignPlanRequest request);
     Task<List<AdminOrderDto>> AdminListOrdersAsync();
-    Task<bool> AdminMarkOrderPaidAsync(Guid orderId);
+    Task<OrderDecision> AdminMarkOrderPaidAsync(Guid orderId);
+    Task<OrderDecision> AdminRejectOrderAsync(Guid orderId);
 }
 
 public class SubscriptionManagementService : ISubscriptionManagementService
@@ -279,28 +290,52 @@ public class SubscriptionManagementService : ISubscriptionManagementService
             o.Id, o.SubscriptionId, planCodes.GetValueOrDefault(o.PlanId, "?"), o.Cycle, o.Amount, o.Currency, o.Status, o.CreatedAt)).ToList();
     }
 
-    public async Task<bool> AdminMarkOrderPaidAsync(Guid orderId)
+    public async Task<OrderDecision> AdminMarkOrderPaidAsync(Guid orderId)
     {
-        var order = await _context.SubscriptionOrders.FindAsync(orderId);
-        if (order == null) return false;
+        await using var transaction = await _context.Database.BeginTransactionAsync();
 
+        // Only a pending order can be paid, and only once: a second click must not restart the period.
+        var now = DateTime.UtcNow;
+        var changed = await _context.SubscriptionOrders
+            .Where(o => o.Id == orderId && o.Status == OrderStatus.Pending)
+            .ExecuteUpdateAsync(set => set
+                .SetProperty(o => o.Status, OrderStatus.Paid)
+                .SetProperty(o => o.PaidAt, now));
+        if (changed == 0)
+        {
+            return await _context.SubscriptionOrders.AnyAsync(o => o.Id == orderId) ? OrderDecision.NotPending : OrderDecision.NotFound;
+        }
+
+        var order = await _context.SubscriptionOrders.AsNoTracking().FirstAsync(o => o.Id == orderId);
         var sub = await _context.Subscriptions.FindAsync(order.SubscriptionId);
-        if (sub == null) return false;
-
-        order.Status = OrderStatus.Paid;
-        order.PaidAt = DateTime.UtcNow;
+        if (sub == null) return OrderDecision.NotFound;
 
         sub.PlanId = order.PlanId;
+        sub.Plan = null;
         sub.Status = SubscriptionStatus.Active;
         sub.CancelAtPeriodEnd = false;
-        sub.CurrentPeriodStart = DateTime.UtcNow;
-        sub.CurrentPeriodEnd = order.Cycle == BillingCycle.Yearly ? DateTime.UtcNow.AddYears(1) : DateTime.UtcNow.AddMonths(1);
-        sub.UpdatedAt = DateTime.UtcNow;
+        sub.CurrentPeriodStart = now;
+        sub.CurrentPeriodEnd = order.Cycle == BillingCycle.Yearly ? now.AddYears(1) : now.AddMonths(1);
+        sub.UpdatedAt = now;
 
         LogEvent(sub.SubscriberType, sub.SubscriberId, "OrderMarkedPaid", new { OrderId = order.Id });
 
         await _context.SaveChangesAsync();
-        return true;
+        await transaction.CommitAsync();
+        return OrderDecision.Done;
+    }
+
+    public async Task<OrderDecision> AdminRejectOrderAsync(Guid orderId)
+    {
+        var changed = await _context.SubscriptionOrders
+            .Where(o => o.Id == orderId && o.Status == OrderStatus.Pending)
+            .ExecuteUpdateAsync(set => set.SetProperty(o => o.Status, OrderStatus.Canceled));
+        if (changed == 0)
+        {
+            return await _context.SubscriptionOrders.AnyAsync(o => o.Id == orderId) ? OrderDecision.NotPending : OrderDecision.NotFound;
+        }
+
+        return OrderDecision.Done;
     }
 
     // ---- Internals ----
@@ -334,6 +369,7 @@ public class SubscriptionManagementService : ISubscriptionManagementService
         }
 
         await FinalizeCancellationIfNeededAsync(sub);
+        await EndUnpaidPeriodIfNeededAsync(sub);
         RollPeriodForward(sub);
         await ExpireTrialIfNeededAsync(sub);
 
@@ -363,6 +399,36 @@ public class SubscriptionManagementService : ISubscriptionManagementService
         {
             sub.Status = SubscriptionStatus.Canceled;
             LogEvent(sub.SubscriberType, sub.SubscriberId, "SubscriptionCanceled", null);
+        }
+
+        sub.UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// A paid plan lasts the period that was paid for. When it ends without a new payment the user drops
+    /// to the free plan (an organization's subscription expires) instead of RollPeriodForward quietly
+    /// granting another month for nothing. Trials end through ExpireTrialIfNeededAsync.
+    /// </summary>
+    private async Task EndUnpaidPeriodIfNeededAsync(Subscription sub)
+    {
+        if (sub.Status != SubscriptionStatus.Active || sub.CurrentPeriodEnd > DateTime.UtcNow)
+            return;
+
+        var plan = sub.Plan ?? await _context.Plans.FirstAsync(p => p.Id == sub.PlanId);
+        if (plan.Code == "free")
+            return;
+
+        if (sub.SubscriberType == SubscriberType.User)
+        {
+            var freePlan = await GetPlanByCodeAsync("free") ?? throw new PlanNotFoundException("free");
+            sub.PlanId = freePlan.Id;
+            sub.Plan = freePlan;
+            LogEvent(sub.SubscriberType, sub.SubscriberId, "PaidPeriodEndedDowngraded", new { PlanCode = plan.Code });
+        }
+        else
+        {
+            sub.Status = SubscriptionStatus.Expired;
+            LogEvent(sub.SubscriberType, sub.SubscriberId, "PaidPeriodEnded", new { PlanCode = plan.Code });
         }
 
         sub.UpdatedAt = DateTime.UtcNow;

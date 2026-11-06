@@ -75,6 +75,43 @@
             }
         },
         {
+            "UpstreamPathTemplate": "/api/learner/packages",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/learner/packages",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "subscriptionservice",
+                    "Port": 80
+                }
+            ],
+            "Priority": 2
+        },
+        {
+            "UpstreamPathTemplate": "/api/learner/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/learner/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "subscriptionservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
             "UpstreamPathTemplate": "/api/organizations/{everything}",
             "UpstreamHttpMethod": [
                 "GET",

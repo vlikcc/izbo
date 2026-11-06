@@ -205,7 +205,7 @@ public class ContentItemsController : ControllerBase
             return NotFound();
         }
 
-        var item = await _items.FindViewableAsync(id, Caller, cancellationToken);
+        var item = await _items.FindPlayableAsync(id, Caller, cancellationToken);
         if (item is null || !item.IsVideo || item.ProcessingStatus != ContentProcessingStatus.Ready || item.HlsPrefix is null)
         {
             return NotFound();
@@ -230,7 +230,7 @@ public class ContentItemsController : ControllerBase
     [HttpGet("items/{id:guid}/file")]
     public async Task<IActionResult> File(Guid id, CancellationToken cancellationToken)
     {
-        var item = await _items.FindViewableAsync(id, Caller, cancellationToken);
+        var item = await _items.FindPlayableAsync(id, Caller, cancellationToken);
         if (item is null || !item.IsDocument || item.ProcessingStatus != ContentProcessingStatus.Ready || item.StorageKey is null)
         {
             return NotFound();

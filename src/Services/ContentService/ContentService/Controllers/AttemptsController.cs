@@ -31,6 +31,10 @@ public class AttemptsController : ControllerBase
     public async Task<ActionResult<ApiResponse<AttemptDto>>> StartPractice([FromBody] StartPracticeRequest request, CancellationToken cancellationToken) =>
         (await _attempts.StartPracticeAsync(request, Caller, cancellationToken)).ToActionResult(this);
 
+    [HttpGet("practice/usage")]
+    public async Task<ActionResult<ApiResponse<PracticeUsageDto>>> PracticeUsage(CancellationToken cancellationToken) =>
+        Ok(new ApiResponse<PracticeUsageDto>(true, await _attempts.GetPracticeUsageAsync(Caller, cancellationToken)));
+
     [HttpPost("assessments/{id:guid}/start")]
     public async Task<ActionResult<ApiResponse<AttemptDto>>> StartAssessment(Guid id, CancellationToken cancellationToken) =>
         (await _attempts.StartAssessmentAsync(id, Caller, cancellationToken)).ToActionResult(this);
