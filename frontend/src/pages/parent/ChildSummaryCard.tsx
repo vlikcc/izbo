@@ -4,9 +4,12 @@ import guardianService, { type StudentHomework } from '../../services/guardian.s
 import type { Child, Classroom, ClassSession, ExamSession } from '../../types';
 import { EXAM_LABELS, gradeLabel } from '../../utils/roles';
 import { missedHomework, pendingHomework } from '../../utils/homework';
+import contentService from '../../services/content.service';
+import type { StudentContentActivity } from '../../types/content';
 import './Parent.css';
 
 interface Summary {
+    activity: StudentContentActivity | null;
     classrooms: Classroom[];
     sessions: ClassSession[];
     homework: StudentHomework[];
@@ -36,8 +39,9 @@ export const ChildSummaryCard: React.FC<{ child: Child }> = ({ child }) => {
             settle(guardianService.getChildUpcomingSessions(child.id), [] as ClassSession[]),
             settle(guardianService.getChildHomework(child.id), [] as StudentHomework[]),
             settle(guardianService.getChildExamSessions(child.id), [] as ExamSession[]),
-        ]).then(([classrooms, sessions, homework, exams]) => {
-            if (!cancelled) setSummary({ classrooms, sessions, homework, exams });
+            settle(contentService.getStudentActivity(child.id, 7), null as StudentContentActivity | null),
+        ]).then(([classrooms, sessions, homework, exams, activity]) => {
+            if (!cancelled) setSummary({ classrooms, sessions, homework, exams, activity });
         });
 
         return () => {
@@ -76,6 +80,27 @@ export const ChildSummaryCard: React.FC<{ child: Child }> = ({ child }) => {
                         <div className={`child-stat${missed.length ? ' child-stat-alert' : ''}`}>
                             <strong>{missed.length}</strong><span>Kaçırılan ödev</span>
                         </div>
+                    </div>
+
+                    <div className="child-section">
+                        <h4>Bu hafta çalıştıkları</h4>
+                        {!summary.activity || summary.activity.itemsStudied === 0 ? (
+                            <p className="child-muted">Bu hafta konu anlatımı izlemedi</p>
+                        ) : (
+                            <>
+                                <p className="child-muted">
+                                    {summary.activity.itemsStudied} içerik çalıştı, {summary.activity.itemsCompleted} tanesini bitirdi
+                                </p>
+                                <ul className="child-list">
+                                    {summary.activity.recent.slice(0, 3).map(r => (
+                                        <li key={r.item.id}>
+                                            <span>{r.item.title}</span>
+                                            <span className="child-muted">{r.item.progress?.completed ? '✓ bitti' : r.subjectName}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
                     </div>
 
                     <div className="child-section">

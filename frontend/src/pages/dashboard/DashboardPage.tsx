@@ -6,6 +6,10 @@ import { classroomService } from '../../services/classroom.service';
 import type { Classroom, ClassSession } from '../../types';
 import { isParent, isStudent } from '../../utils/roles';
 import { ParentDashboard } from '../parent/ParentDashboard';
+import { ContinueWatchingList } from '../../components/content/ContinueWatchingList';
+import contentService from '../../services/content.service';
+import type { ContinueWatching } from '../../types/content';
+import { Link } from 'react-router-dom';
 import './Dashboard.css';
 
 const getGreeting = () => {
@@ -41,6 +45,12 @@ const LearnerDashboard: React.FC = () => {
     const { user } = useAuthStore();
     const [classrooms, setClassrooms] = useState<Classroom[]>([]);
     const [upcomingSessions, setUpcomingSessions] = useState<ClassSession[]>([]);
+    const [continueItems, setContinueItems] = useState<ContinueWatching[]>([]);
+    const student = isStudent(user);
+
+    useEffect(() => {
+        if (student) contentService.getContinue().then(setContinueItems).catch(() => setContinueItems([]));
+    }, [student]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -91,6 +101,19 @@ const LearnerDashboard: React.FC = () => {
                     📚
                 </div>
             </div>
+
+            {student && (
+                <Card variant="default" padding="md" className="dashboard-section" style={{ marginBottom: 24 }}>
+                    <div className="dashboard-section-header">
+                        <h3 className="dashboard-section-title">▶️ Kaldığın yerden devam et</h3>
+                        <Link to="/app/dersler">Derslerim →</Link>
+                    </div>
+                    <ContinueWatchingList
+                        items={continueItems}
+                        emptyText="Derslerim'den bir konu seçip izlemeye başla; kaldığın yer burada görünür."
+                    />
+                </Card>
+            )}
 
             {/* Stats Grid */}
             <div className="dashboard-stats">

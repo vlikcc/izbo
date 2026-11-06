@@ -27,6 +27,7 @@ export function buildNavItems(user: Pick<User, 'role'> | null | undefined, t: Tr
         ];
     }
 
+    const lessons = { path: '/app/dersler', icon: '🎓', label: 'Derslerim' };
     const learning = [
         { path: '/app/classrooms', icon: '📚', label: t('nav.classrooms') },
         { path: '/app/exams', icon: '📝', label: t('nav.exams') },
@@ -36,17 +37,21 @@ export function buildNavItems(user: Pick<User, 'role'> | null | undefined, t: Tr
     ];
 
     if (isStudent(user)) {
-        return [home, ...learning, profile];
+        return [home, lessons, ...learning, profile];
     }
 
     return [
         home,
+        lessons,
         ...learning,
+        ...(isStaff(user) ? [{ path: '/app/icerik', icon: '🎬', label: 'İçeriklerim' }] : []),
         billing,
         ...(isStaff(user) ? [{ path: '/app/gradebook', icon: '📊', label: t('nav.gradebook') }] : []),
         ...(isAdmin(user)
             ? [
                 { path: '/app/admin', icon: '🛡️', label: t('nav.admin') },
+                { path: '/app/admin/mufredat', icon: '🗂️', label: 'Müfredat' },
+                { path: '/app/admin/icerik-onay', icon: '✅', label: 'İçerik onayı' },
                 { path: '/app/admin/subscriptions', icon: '⚙️', label: 'Abonelikler' },
             ]
             : []),
