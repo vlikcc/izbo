@@ -9,14 +9,41 @@ namespace Shared.Internal;
 /// <summary>Profile fields UserService needs to mirror an AuthService account.</summary>
 public record AccountProfileSync(
     Guid Id,
-    string Email,
+    string? Email,
     string FirstName,
     string LastName,
     string Role,
     string? PhoneNumber,
-    bool IsActive);
+    bool IsActive,
+    string? Username = null,
+    int? GradeLevel = null,
+    string? ExamTarget = null);
 
 public record AccountActiveRequest(bool IsActive);
+
+public record AccountRoleRequest(string Role);
+
+public record AccountPasswordRequest(string Password);
+
+/// <summary>A student account opened by a parent. It has no e-mail address and signs in by user name.</summary>
+public record CreateChildAccountRequest(
+    string FirstName,
+    string LastName,
+    string Username,
+    string Password,
+    int GradeLevel,
+    string? ExamTarget);
+
+public record CreatedAccountDto(Guid Id, string Username);
+
+public enum CreateChildAccountStatus
+{
+    Created,
+    UsernameTaken,
+    Failed
+}
+
+public sealed record CreateChildAccountResult(CreateChildAccountStatus Status, Guid? AccountId = null);
 
 /// <summary>
 /// Identity fields AuthService owns and re-mirrors into UserService on login. A profile edit that
@@ -48,6 +75,18 @@ public interface IAccountStateClient
     /// AuthService could not be reached; callers should still keep the directory write.
     /// </summary>
     Task<bool> UpdateIdentityAsync(Guid userId, AccountIdentityRequest identity, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Applies an admin role change to the account that issues tokens. Without it the directory shows the new
+    /// role while every token keeps carrying the old one. A false result is a failed operation.
+    /// </summary>
+    Task<bool> SetRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default);
+
+    /// <summary>Sets a new password (a parent resetting a child account). A false result is a failed operation.</summary>
+    Task<bool> SetPasswordAsync(Guid userId, string password, CancellationToken cancellationToken = default);
+
+    /// <summary>Opens a user-name account for a child on AuthService.</summary>
+    Task<CreateChildAccountResult> CreateChildAccountAsync(CreateChildAccountRequest request, CancellationToken cancellationToken = default);
 }
 
 internal sealed class AccountDirectoryClient : IAccountDirectoryClient
@@ -161,6 +200,85 @@ internal sealed class AccountStateClient : IAccountStateClient
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             _logger.LogError(ex, "Applying identity for {UserId} on AuthService failed", userId);
+            return false;
+        }
+    }
+
+    public Task<bool> SetRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default) =>
+        SendAsync(
+            client => client.PutAsJsonAsync($"api/internal/accounts/{userId}/role", new AccountRoleRequest(role), cancellationToken),
+            "role", userId);
+
+    public Task<bool> SetPasswordAsync(Guid userId, string password, CancellationToken cancellationToken = default) =>
+        SendAsync(
+            client => client.PostAsJsonAsync($"api/internal/accounts/{userId}/password", new AccountPasswordRequest(password), cancellationToken),
+            "password", userId);
+
+    public async Task<CreateChildAccountResult> CreateChildAccountAsync(
+        CreateChildAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (_http.BaseAddress is null)
+        {
+            _logger.LogError("AuthService base address is not configured; child account not created");
+            return new CreateChildAccountResult(CreateChildAccountStatus.Failed);
+        }
+
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/internal/accounts", request, cancellationToken);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                return new CreateChildAccountResult(CreateChildAccountStatus.UsernameTaken);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Creating a child account on AuthService failed with {StatusCode}", response.StatusCode);
+                return new CreateChildAccountResult(CreateChildAccountStatus.Failed);
+            }
+
+            var created = await response.Content.ReadFromJsonAsync<CreatedAccountDto>(cancellationToken);
+            return created is null
+                ? new CreateChildAccountResult(CreateChildAccountStatus.Failed)
+                : new CreateChildAccountResult(CreateChildAccountStatus.Created, created.Id);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            _logger.LogError(ex, "Creating a child account on AuthService failed");
+            return new CreateChildAccountResult(CreateChildAccountStatus.Failed);
+        }
+    }
+
+    private async Task<bool> SendAsync(
+        Func<HttpClient, Task<HttpResponseMessage>> send,
+        string what,
+        Guid userId)
+    {
+        if (_http.BaseAddress is null)
+        {
+            _logger.LogError("AuthService base address is not configured; {What} for {UserId} not applied", what, userId);
+            return false;
+        }
+
+        try
+        {
+            using var response = await send(_http);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+
+            _logger.LogError(
+                "Applying {What} for {UserId} on AuthService failed with {StatusCode}", what, userId, response.StatusCode);
+            return false;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogError(ex, "Applying {What} for {UserId} on AuthService failed", what, userId);
             return false;
         }
     }

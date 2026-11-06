@@ -33,4 +33,31 @@ public static class AuthorizationServiceExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Registers the client that checks whether a parent may follow a student. Reads the base address from
+    /// <c>Services:UserService</c>.
+    /// </summary>
+    public static IServiceCollection AddGuardianAccessClient(this IServiceCollection services, IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var baseAddress = configuration["Services:UserService"];
+        if (string.IsNullOrWhiteSpace(baseAddress))
+        {
+            throw new InvalidOperationException(
+                "Services:UserService must be configured; guardian authorization depends on it.");
+        }
+
+        services.AddHttpContextAccessor();
+        services.AddMemoryCache();
+
+        services.AddHttpClient<IGuardianAccessClient, GuardianAccessClient>(GuardianAccessClient.HttpClientName, client =>
+        {
+            client.BaseAddress = new Uri(baseAddress.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
+
+        return services;
+    }
 }

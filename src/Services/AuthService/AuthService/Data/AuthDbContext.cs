@@ -32,12 +32,19 @@ public class AuthDbContext : DbContext, IAuditDbContext
         {
             entity.ToTable("users");
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Email).IsUnique();
-            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            // Child accounts have no address and sign in by user name instead; both keys are unique when set.
+            entity.HasIndex(e => e.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.HasIndex(e => e.Username).IsUnique().HasFilter("\"Username\" IS NOT NULL");
+            entity.Property(e => e.Username).HasMaxLength(32);
             entity.Property(e => e.PasswordHash).IsRequired();
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Role).HasConversion<string>();
+
+            // School profile lives in UserService; the account only carries it to the first mirror.
+            entity.Ignore(e => e.GradeLevel);
+            entity.Ignore(e => e.ExamTarget);
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>

@@ -95,7 +95,8 @@ public class UserManagementService : IUserManagementService
             .Take(request.PageSize)
             .Select(u => new UserDto(
                 u.Id, u.Email, u.FirstName, u.LastName, u.Role.ToString(),
-                u.PhoneNumber, u.ProfileImageUrl, u.IsActive, u.CreatedAt))
+                u.PhoneNumber, u.ProfileImageUrl, u.IsActive, u.CreatedAt,
+                u.Username, u.GradeLevel, u.ExamTarget.HasValue ? u.ExamTarget.Value.ToString() : null))
             .ToListAsync(cancellationToken);
 
         return new PagedResponse<UserDto>(
@@ -118,6 +119,14 @@ public class UserManagementService : IUserManagementService
         if (!string.IsNullOrEmpty(request.LastName)) user.LastName = request.LastName;
         if (!string.IsNullOrEmpty(request.PhoneNumber)) user.PhoneNumber = request.PhoneNumber;
         if (!string.IsNullOrEmpty(request.ProfileImageUrl)) user.ProfileImageUrl = request.ProfileImageUrl;
+
+        // School fields only mean something on student accounts.
+        if (user.Role == UserRole.Student)
+        {
+            if (request.GradeLevel.HasValue) user.GradeLevel = request.GradeLevel;
+            if (request.ExamTarget is not null) user.ExamTarget = StudentProfileRules.ParseExamTargetOrNull(request.ExamTarget);
+        }
+
         user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -139,7 +148,7 @@ public class UserManagementService : IUserManagementService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(caller);
 
-        if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var newRole))
+        if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var newRole) || !Enum.IsDefined(newRole))
         {
             return false;
         }
@@ -160,6 +169,14 @@ public class UserManagementService : IUserManagementService
         {
             _logger.LogWarning(
                 "User {UserId} attempted to change the role of SuperAdmin {TargetUserId}", caller.UserId, id);
+            return false;
+        }
+
+        // Tokens are issued from AuthService's copy, so it goes first; a role that only changed here would be
+        // cosmetic, exactly like the activation toggle used to be.
+        if (!await _accountState.SetRoleAsync(id, newRole.ToString(), cancellationToken))
+        {
+            _logger.LogError("Role change for {TargetUserId} could not be applied to AuthService", id);
             return false;
         }
 
@@ -230,13 +247,15 @@ public class UserManagementService : IUserManagementService
 
         var term = query.Trim();
         var email = EmailNormalizer.Normalize(term);
+        var username = UsernameRules.Normalize(term);
 
         return await _context.Users
             .AsNoTracking()
             .Where(u => u.IsActive && u.DeletedAt == null &&
                 (EF.Functions.ILike(u.FirstName, $"%{term}%") ||
                  EF.Functions.ILike(u.LastName, $"%{term}%") ||
-                 u.Email == email))
+                 u.Email == email ||
+                 u.Username == username))
             .OrderBy(u => u.LastName)
             .ThenBy(u => u.FirstName)
             .Take(Math.Clamp(limit, 1, 50))
@@ -271,6 +290,7 @@ public class UserManagementService : IUserManagementService
         user.IsActive = false;
         user.DeletedAt = DateTime.UtcNow;
         user.Email = $"deleted-{user.Id:N}@invalid.local";
+        user.Username = null;
         user.FirstName = "Silinmiş";
         user.LastName = "Kullanıcı";
         user.PhoneNumber = null;
@@ -287,11 +307,13 @@ public class UserManagementService : IUserManagementService
         var role = Enum.TryParse<UserRole>(profile.Role, ignoreCase: true, out var parsed)
             ? parsed
             : UserRole.Student;
-        var email = EmailNormalizer.Normalize(profile.Email);
+        var email = string.IsNullOrWhiteSpace(profile.Email) ? null : EmailNormalizer.Normalize(profile.Email);
+        var username = string.IsNullOrWhiteSpace(profile.Username) ? null : UsernameRules.Normalize(profile.Username);
+        var examTarget = StudentProfileRules.ParseExamTargetOrNull(profile.ExamTarget);
 
         var existing = await _context.Users.FirstOrDefaultAsync(u => u.Id == profile.Id, cancellationToken);
 
-        if (existing is null)
+        if (existing is null && email is not null)
         {
             // An account may already have a profile under a different id — from before ids were shared,
             // or from a seed. Adopt that row rather than inserting a duplicate the unique e-mail index
@@ -305,6 +327,9 @@ public class UserManagementService : IUserManagementService
             {
                 Id = profile.Id,
                 Email = email,
+                Username = username,
+                GradeLevel = role == UserRole.Student ? profile.GradeLevel : null,
+                ExamTarget = role == UserRole.Student ? examTarget : null,
                 // Authentication lives in AuthService; this directory never verifies a password.
                 PasswordHash = string.Empty,
                 FirstName = profile.FirstName,
@@ -329,9 +354,14 @@ public class UserManagementService : IUserManagementService
         // Role and active state are administered in this service, so a routine re-sync must not overwrite
         // them — only the identity fields AuthService owns are refreshed.
         existing.Email = email;
+        existing.Username = username ?? existing.Username;
         existing.FirstName = profile.FirstName;
         existing.LastName = profile.LastName;
         existing.PhoneNumber = profile.PhoneNumber ?? existing.PhoneNumber;
+
+        // Logins re-mirror without school fields (AuthService does not keep them); never blank them out.
+        existing.GradeLevel = profile.GradeLevel ?? existing.GradeLevel;
+        existing.ExamTarget = examTarget ?? existing.ExamTarget;
         existing.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
         return true;
@@ -349,6 +379,9 @@ public class UserManagementService : IUserManagementService
         u.PhoneNumber,
         u.ProfileImageUrl,
         u.IsActive,
-        u.CreatedAt
+        u.CreatedAt,
+        u.Username,
+        u.GradeLevel,
+        u.ExamTarget?.ToString()
     );
 }
