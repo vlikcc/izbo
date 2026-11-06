@@ -61,6 +61,11 @@ JITSI_APP_ID=
 JITSI_APP_SECRET=
 VITE_JITSI_DOMAIN=meet.jit.si
 
+# Öğrenci paketleri — havale/EFT bilgileri. Boş IBAN'da siparişte "bizimle iletişime geçin" yazar.
+PAYMENT_BANK_NAME=
+PAYMENT_BANK_ACCOUNT_HOLDER=
+PAYMENT_BANK_IBAN=
+
 # SMTP (boş SMTP_HOST = e-posta gönderilmez)
 SMTP_HOST=
 SMTP_PORT=587

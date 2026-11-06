@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOs;
 using SubscriptionService.Services;
+using SubscriptionService.Services.Learner;
 using System.Security.Claims;
 
 namespace SubscriptionService.Controllers;
@@ -16,10 +17,12 @@ namespace SubscriptionService.Controllers;
 public class InternalController : ControllerBase
 {
     private readonly ISubscriptionManagementService _subscriptionService;
+    private readonly ILearnerPackageService _learnerPackages;
 
-    public InternalController(ISubscriptionManagementService subscriptionService)
+    public InternalController(ISubscriptionManagementService subscriptionService, ILearnerPackageService learnerPackages)
     {
         _subscriptionService = subscriptionService;
+        _learnerPackages = learnerPackages;
     }
 
     private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -44,4 +47,9 @@ public class InternalController : ControllerBase
         await _subscriptionService.ReleaseUsageAsync(UserId, request);
         return Ok(new ApiResponse<bool>(true, true));
     }
+
+    /// <summary>The calling student's package, for services that gate premium content and test limits.</summary>
+    [HttpGet("learner-access")]
+    public async Task<ActionResult<ApiResponse<LearnerAccessDto>>> LearnerAccess(CancellationToken cancellationToken) =>
+        Ok(new ApiResponse<LearnerAccessDto>(true, await _learnerPackages.GetAccessAsync(UserId, cancellationToken)));
 }

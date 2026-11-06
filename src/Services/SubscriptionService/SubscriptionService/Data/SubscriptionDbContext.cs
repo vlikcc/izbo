@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Shared.Models;
 
@@ -17,6 +19,10 @@ public class SubscriptionDbContext : DbContext
     public DbSet<UsageCounter> UsageCounters { get; set; }
     public DbSet<SubscriptionOrder> SubscriptionOrders { get; set; }
     public DbSet<SubscriptionEvent> SubscriptionEvents { get; set; }
+    public DbSet<LearnerPackage> LearnerPackages { get; set; }
+    public DbSet<LearnerPackagePrice> LearnerPackagePrices { get; set; }
+    public DbSet<LearnerPass> LearnerPasses { get; set; }
+    public DbSet<LearnerOrder> LearnerOrders { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -131,6 +137,77 @@ public class SubscriptionDbContext : DbContext
             entity.Property(e => e.SubscriberType).HasConversion<string>();
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
             entity.HasIndex(e => new { e.SubscriberType, e.SubscriberId });
+        });
+
+        // ---- Student packages ----
+
+        modelBuilder.Entity<LearnerPackage>(entity =>
+        {
+            entity.ToTable("learner_packages");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.Features)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>(),
+                    new ValueComparer<List<string>>(
+                        (a, b) => a!.SequenceEqual(b!),
+                        v => v.Aggregate(0, (hash, f) => HashCode.Combine(hash, f.GetHashCode(StringComparison.Ordinal))),
+                        v => v.ToList()));
+            entity.HasIndex(e => e.Code).IsUnique();
+        });
+
+        modelBuilder.Entity<LearnerPackagePrice>(entity =>
+        {
+            entity.ToTable("learner_package_prices");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Term).HasConversion<string>().HasMaxLength(16);
+            entity.Property(e => e.Price).HasColumnType("numeric(10,2)");
+            entity.Property(e => e.Currency).HasMaxLength(10);
+            entity.HasOne(e => e.Package)
+                .WithMany(p => p.Prices)
+                .HasForeignKey(e => e.PackageId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.PackageId, e.Term }).IsUnique();
+        });
+
+        modelBuilder.Entity<LearnerPass>(entity =>
+        {
+            entity.ToTable("learner_passes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Source).HasConversion<string>().HasMaxLength(16);
+            entity.HasOne(e => e.Package)
+                .WithMany()
+                .HasForeignKey(e => e.PackageId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => new { e.StudentId, e.EndsAt });
+            entity.HasIndex(e => e.OrderId).IsUnique().HasFilter("\"OrderId\" IS NOT NULL");
+        });
+
+        modelBuilder.Entity<LearnerOrder>(entity =>
+        {
+            entity.ToTable("learner_orders");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reference).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.Term).HasConversion<string>().HasMaxLength(16);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(24);
+            entity.Property(e => e.Amount).HasColumnType("numeric(10,2)");
+            entity.Property(e => e.Currency).HasMaxLength(10);
+            entity.Property(e => e.Provider).HasMaxLength(32);
+            entity.Property(e => e.ProviderReference).HasMaxLength(200);
+            entity.Property(e => e.PayerNote).HasMaxLength(500);
+            entity.Property(e => e.RejectReason).HasMaxLength(500);
+            entity.HasOne(e => e.Package)
+                .WithMany()
+                .HasForeignKey(e => e.PackageId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.Reference).IsUnique();
+            entity.HasIndex(e => new { e.PayerId, e.CreatedAt });
+            entity.HasIndex(e => e.StudentId);
+            entity.HasIndex(e => e.Status);
         });
     }
 }
