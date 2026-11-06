@@ -121,6 +121,14 @@ export const ExamTakePage: React.FC = () => {
                 <Card variant="default" padding="lg">
                     <p><strong>{question.points} puan</strong></p>
                     <h2>{question.content}</h2>
+                    {question.imageUrl && (
+                        <img
+                            className="exam-question-image"
+                            src={question.imageUrl}
+                            alt={`Soru ${index + 1} görseli`}
+                            loading="lazy"
+                        />
+                    )}
                     {question.type === 'MultipleChoice' && (question.options ?? []).map((option) => (
                         <label key={option} style={{ display: 'block', margin: '8px 0' }}>
                             <input

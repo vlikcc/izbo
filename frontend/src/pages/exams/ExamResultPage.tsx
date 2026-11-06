@@ -66,7 +66,7 @@ export const ExamResultPage: React.FC = () => {
                     Puan: <strong>{result.totalScore} / {result.maxScore}</strong>
                     {' '}({result.percentage.toFixed(0)}%)
                 </p>
-                <p>{result.isPassed ? 'Geçti' : 'Kaldi'}</p>
+                <p>{result.isPassed ? 'Geçti' : 'Kaldı'}</p>
                 <p>Teslim: {new Date(result.submittedAt).toLocaleString('tr-TR')}</p>
             </Card>
 

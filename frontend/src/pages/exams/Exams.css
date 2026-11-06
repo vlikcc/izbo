@@ -134,3 +134,12 @@
         flex-direction: column;
     }
 }
+.exam-question-image {
+    display: block;
+    max-width: 100%;
+    max-height: 420px;
+    height: auto;
+    margin: 12px 0;
+    border-radius: 8px;
+    object-fit: contain;
+}

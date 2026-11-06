@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../ui';
 import type { Question, QuestionType, CreateQuestionRequest } from '../../types';
+import { compactChoices } from '../../utils/choiceKey';
 import './QuestionEditor.css';
 
 interface QuestionEditorProps {
@@ -87,12 +88,19 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({
             return;
         }
 
+        // Boş şıklar atılırken harf anahtarı aynı şıkkı göstermeye devam etmeli.
+        const choices = type === 'MultipleChoice' ? compactChoices(options, correctAnswer) : null;
+        if (choices && !choices.correctAnswer) {
+            alert('Doğru cevap olarak işaretlenen şık boş olamaz.');
+            return;
+        }
+
         const questionData: CreateQuestionRequest = {
             orderIndex,
             type,
             content: content.trim(),
-            options: type !== 'FillInBlank' ? options.filter(o => o.trim()) : undefined,
-            correctAnswer: correctAnswer || undefined,
+            options: choices ? choices.options : type !== 'FillInBlank' ? options.filter(o => o.trim()) : undefined,
+            correctAnswer: (choices ? choices.correctAnswer : correctAnswer) || undefined,
             points,
             explanation: explanation.trim() || undefined,
         };
