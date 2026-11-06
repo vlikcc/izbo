@@ -42,5 +42,24 @@ public class QuotaExceptionMiddleware
 
             await context.Response.WriteAsync(JsonSerializer.Serialize(body));
         }
+        catch (PackageRequiredException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
+            context.Response.ContentType = "application/json";
+
+            var body = new
+            {
+                success = false,
+                data = (object?)null,
+                message = ex.Message,
+                errors = new[] { "PACKAGE_REQUIRED" },
+                errorCode = "PACKAGE_REQUIRED",
+                requiredTier = ex.RequiredTier,
+                reason = ex.Reason,
+                upgradeUrl = "/app/paketler"
+            };
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(body));
+        }
     }
 }

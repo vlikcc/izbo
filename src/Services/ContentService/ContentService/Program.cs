@@ -48,7 +48,8 @@ builder.Services.AddHealthChecks()
     .AddCheck<MinioHealthCheck>("minio", failureStatus: HealthStatus.Degraded);
 
 builder.Services.AddEduPlatformAuditLogger();
-builder.Services.AddSingleton<IContentAccessPolicy, AllowAllContentAccessPolicy>();
+builder.Services.AddLearnerAccessClient(builder.Configuration);
+builder.Services.AddScoped<IContentAccessPolicy, PackageContentAccessPolicy>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddScoped<IContentItemService, ContentItemService>();
 builder.Services.AddScoped<IQuestionBankService, QuestionBankService>();

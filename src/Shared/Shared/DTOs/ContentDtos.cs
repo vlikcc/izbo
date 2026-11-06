@@ -74,7 +74,8 @@ public record ContentItemSummaryDto(
     ContentProcessingStatus ProcessingStatus,
     bool HasThumbnail,
     int Order,
-    ContentProgressDto? Progress);
+    ContentProgressDto? Progress,
+    bool Locked = false);
 
 public record ContentItemDto(
     Guid Id,
@@ -101,7 +102,8 @@ public record ContentItemDto(
     DateTime UpdatedAt,
     DateTime? SubmittedAt,
     DateTime? PublishedAt,
-    ContentProgressDto? Progress);
+    ContentProgressDto? Progress,
+    bool Locked = false);
 
 public record CreateContentItemRequest(
     Guid TopicId,
@@ -170,3 +172,6 @@ public record PublicLevelDto(
     int TotalItems,
     int TotalVideoMinutes,
     List<PublicSampleItemDto> FreeSamples);
+
+/// <summary>Topic/unit tests started today and the daily allowance (-1 when unlimited).</summary>
+public record PracticeUsageDto(int UsedToday, int DailyLimit);
