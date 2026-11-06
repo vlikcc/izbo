@@ -111,6 +111,9 @@ jobs:
           - name: Subscription
             project: src/Services/SubscriptionService/SubscriptionService
             database: eduplatform_subscription
+          - name: Content
+            project: src/Services/ContentService/ContentService
+            database: eduplatform_content
     services:
       postgres:
         image: postgres:16-alpine
@@ -173,6 +176,9 @@ jobs:
             context: .
           - name: subscriptionservice
             file: src/Services/SubscriptionService/SubscriptionService/Dockerfile
+            context: .
+          - name: contentservice
+            file: src/Services/ContentService/ContentService/Dockerfile
             context: .
           - name: frontend
             file: frontend/Dockerfile

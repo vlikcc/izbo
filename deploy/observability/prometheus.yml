@@ -15,3 +15,5 @@ scrape_configs:
           - livesessionservice:80
           - notificationservice:80
           - fileservice:80
+          - subscriptionservice:80
+          - contentservice:80

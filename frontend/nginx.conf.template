@@ -3,6 +3,8 @@
 #
 #   CSP_CONNECT_SRC  origins the app may call, e.g. "https://api.example.com wss://api.example.com"
 #   CSP_FRAME_SRC    origins the app may embed, e.g. "https://meet.jit.si"
+#   CSP_MEDIA_SRC    origins <video>/<audio> may load from, e.g. "https://api.example.com" — hls.js plays
+#                    through blob: URLs, but native HLS (Safari) fetches playlists from the API directly
 
 server {
     listen 80;
@@ -54,5 +56,5 @@ server {
     # injected <script> or a string passed to eval cannot run. Inline styles are still allowed as
     # attributes (React style props) but not as <style> blocks; style-src is the fallback for browsers
     # that do not implement the -elem/-attr split.
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' ${CSP_CONNECT_SRC}; frame-src 'self' ${CSP_FRAME_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: ${CSP_MEDIA_SRC}; worker-src 'self' blob:; connect-src 'self' ${CSP_CONNECT_SRC}; frame-src 'self' ${CSP_FRAME_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" always;
 }

@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_MULTIPLE_DATABASES: eduplatform_auth,eduplatform_user,eduplatform_classroom,eduplatform_homework,eduplatform_exam,eduplatform_notification,eduplatform_file,eduplatform_subscription
+      POSTGRES_MULTIPLE_DATABASES: eduplatform_auth,eduplatform_user,eduplatform_classroom,eduplatform_homework,eduplatform_exam,eduplatform_notification,eduplatform_file,eduplatform_subscription,eduplatform_content
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
@@ -86,6 +86,7 @@ services:
       - notificationservice
       - fileservice
       - subscriptionservice
+      - contentservice
 
   # Microservices
   authservice:
@@ -289,6 +290,41 @@ services:
         condition: service_started
       subscriptionservice:
         condition: service_started
+
+  contentservice:
+    build:
+      context: .
+      dockerfile: src/Services/ContentService/ContentService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=eduplatform_content;Username=postgres;Password=postgres
+      - JWT__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - JWT__Issuer=EduPlatform
+      - JWT__Audience=EduPlatformUsers
+      - Frontend__Url=http://localhost:3000
+      - MinIO__Endpoint=minio:9000
+      - MinIO__AccessKey=minioadmin
+      - MinIO__SecretKey=minioadmin
+      - MinIO__BucketName=eduplatform-content
+      - Content__MaxUploadMb=${CONTENT_MAX_UPLOAD_MB:-2048}
+      - Subscription__BaseUrl=http://subscriptionservice:80
+      - Subscription__FailOpen=true
+      - OTEL_SERVICE_NAME=contentservice
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      subscriptionservice:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   subscriptionservice:
     build:

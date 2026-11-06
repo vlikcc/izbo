@@ -11,6 +11,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     CREATE DATABASE eduplatform_notification;
     CREATE DATABASE eduplatform_file;
     CREATE DATABASE eduplatform_subscription;
+    CREATE DATABASE eduplatform_content;
     
     GRANT ALL PRIVILEGES ON DATABASE eduplatform_auth TO $POSTGRES_USER;
     GRANT ALL PRIVILEGES ON DATABASE eduplatform_user TO $POSTGRES_USER;
@@ -20,4 +21,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     GRANT ALL PRIVILEGES ON DATABASE eduplatform_notification TO $POSTGRES_USER;
     GRANT ALL PRIVILEGES ON DATABASE eduplatform_file TO $POSTGRES_USER;
     GRANT ALL PRIVILEGES ON DATABASE eduplatform_subscription TO $POSTGRES_USER;
+    GRANT ALL PRIVILEGES ON DATABASE eduplatform_content TO $POSTGRES_USER;
 EOSQL

@@ -30,7 +30,8 @@ COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 # Defaults keep a plain `docker run` working; deployments override them with their real origins.
 ENV CSP_CONNECT_SRC="https: wss:" \
-    CSP_FRAME_SRC="https:"
+    CSP_FRAME_SRC="https:" \
+    CSP_MEDIA_SRC="https:"
 
 EXPOSE 80
 
