@@ -1,0 +1,197 @@
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Shared.Models;
+
+namespace ContentService.Data;
+
+public class ContentDbContext : DbContext
+{
+    public ContentDbContext(DbContextOptions<ContentDbContext> options) : base(options) { }
+
+    public DbSet<Level> Levels { get; set; }
+    public DbSet<Subject> Subjects { get; set; }
+    public DbSet<CurriculumUnit> Units { get; set; }
+    public DbSet<Topic> Topics { get; set; }
+    public DbSet<LearningOutcome> LearningOutcomes { get; set; }
+    public DbSet<ContentItem> ContentItems { get; set; }
+    public DbSet<ContentItemOutcome> ContentItemOutcomes { get; set; }
+    public DbSet<ContentProgress> Progress { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ConfigureWarnings(warnings =>
+            warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Level>(entity =>
+        {
+            entity.ToTable("levels");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(32);
+            entity.HasIndex(e => e.Slug).IsUnique();
+            entity.HasData(CurriculumSeed.Levels);
+        });
+
+        modelBuilder.Entity<Subject>(entity =>
+        {
+            entity.ToTable("subjects");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Color).IsRequired().HasMaxLength(16);
+            entity.HasOne(e => e.Level)
+                .WithMany(l => l.Subjects)
+                .HasForeignKey(e => e.LevelId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.LevelId, e.Slug }).IsUnique();
+            entity.HasData(CurriculumSeed.Subjects);
+        });
+
+        modelBuilder.Entity<CurriculumUnit>(entity =>
+        {
+            entity.ToTable("units");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.HasOne(e => e.Subject)
+                .WithMany(s => s.Units)
+                .HasForeignKey(e => e.SubjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.SubjectId, e.Order });
+        });
+
+        modelBuilder.Entity<Topic>(entity =>
+        {
+            entity.ToTable("topics");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.HasOne(e => e.Unit)
+                .WithMany(u => u.Topics)
+                .HasForeignKey(e => e.UnitId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.UnitId, e.Slug }).IsUnique();
+        });
+
+        modelBuilder.Entity<LearningOutcome>(entity =>
+        {
+            entity.ToTable("learning_outcomes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(2000);
+            entity.HasOne(e => e.Topic)
+                .WithMany(t => t.Outcomes)
+                .HasForeignKey(e => e.TopicId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.TopicId, e.Code }).IsUnique();
+        });
+
+        modelBuilder.Entity<ContentItem>(entity =>
+        {
+            entity.ToTable("content_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(4000);
+            entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.AccessTier).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.OwnerKind).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.ProcessingStatus).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.ReviewNote).HasMaxLength(2000);
+            entity.Property(e => e.ProcessingError).HasMaxLength(2000);
+            entity.Property(e => e.StorageKey).HasMaxLength(512);
+            entity.Property(e => e.OriginalFileName).HasMaxLength(255);
+            entity.Property(e => e.FileContentType).HasMaxLength(128);
+            entity.Property(e => e.HlsPrefix).HasMaxLength(512);
+            entity.Property(e => e.ThumbnailKey).HasMaxLength(512);
+            entity.Property(e => e.EmbedUrl).HasMaxLength(2048);
+            entity.Ignore(e => e.IsVideo);
+            entity.Ignore(e => e.IsDocument);
+
+            // Content outlives curriculum edits: a topic cannot be deleted while items still hang off it.
+            entity.HasOne(e => e.Topic)
+                .WithMany(t => t.Items)
+                .HasForeignKey(e => e.TopicId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.TopicId, e.Status });
+            entity.HasIndex(e => e.OwnerId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ProcessingStatus);
+        });
+
+        modelBuilder.Entity<ContentItemOutcome>(entity =>
+        {
+            entity.ToTable("content_item_outcomes");
+            entity.HasKey(e => new { e.ContentItemId, e.LearningOutcomeId });
+            entity.HasOne(e => e.ContentItem)
+                .WithMany(i => i.Outcomes)
+                .HasForeignKey(e => e.ContentItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.LearningOutcome)
+                .WithMany()
+                .HasForeignKey(e => e.LearningOutcomeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.LearningOutcomeId);
+        });
+
+        modelBuilder.Entity<ContentProgress>(entity =>
+        {
+            entity.ToTable("content_progress");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.ContentItem)
+                .WithMany()
+                .HasForeignKey(e => e.ContentItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.UserId, e.ContentItemId }).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.UpdatedAt });
+        });
+
+        ApplySnakeCaseColumnNames(modelBuilder);
+    }
+
+    /// <summary>
+    /// Columns are snake_case so the raw SQL in the transcode queue and progress upsert reads like the
+    /// rest of the schema. Applied after configuration so every property, including keys, is covered.
+    /// </summary>
+    private static void ApplySnakeCaseColumnNames(ModelBuilder modelBuilder)
+    {
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entity.GetProperties())
+            {
+                property.SetColumnName(ToSnakeCase(property.Name));
+            }
+        }
+    }
+
+    internal static string ToSnakeCase(string name)
+    {
+        var builder = new StringBuilder(name.Length + 8);
+        for (var i = 0; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (char.IsUpper(c))
+            {
+                if (i > 0 && (char.IsLower(name[i - 1]) || (i + 1 < name.Length && char.IsLower(name[i + 1]) && char.IsUpper(name[i - 1]))))
+                {
+                    builder.Append('_');
+                }
+
+                builder.Append(char.ToLowerInvariant(c));
+            }
+            else
+            {
+                builder.Append(c);
+            }
+        }
+
+        return builder.ToString();
+    }
+}

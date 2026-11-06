@@ -388,6 +388,50 @@ services:
         limits:
           memory: 512M
 
+  contentservice:
+    build:
+      context: .
+      dockerfile: src/Services/ContentService/ContentService/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=eduplatform_content;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JWT__Secret: ${JWT_SECRET}
+      JWT__Issuer: ${JWT_ISSUER:-EduPlatform}
+      JWT__Audience: ${JWT_AUDIENCE:-EduPlatformUsers}
+      Frontend__Url: ${FRONTEND_URL}
+      MinIO__Endpoint: minio:9000
+      MinIO__AccessKey: ${MINIO_ROOT_USER}
+      MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
+      MinIO__BucketName: ${MINIO_CONTENT_BUCKET:-eduplatform-content}
+      MinIO__UseSsl: "false"
+      Content__MaxUploadMb: ${CONTENT_MAX_UPLOAD_MB:-2048}
+      Subscription__BaseUrl: http://subscriptionservice:80
+      Subscription__FailOpen: "true"
+      OTEL_SERVICE_NAME: contentservice
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      subscriptionservice:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          # ffmpeg transcoding a 720p rung needs headroom well beyond the API's own footprint.
+          memory: 2G
+
   subscriptionservice:
     build:
       context: .
@@ -453,6 +497,8 @@ services:
         condition: service_healthy
       subscriptionservice:
         condition: service_healthy
+      contentservice:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 30s
@@ -509,6 +555,7 @@ services:
       # nginx substitutes these into Content-Security-Policy at container start.
       CSP_CONNECT_SRC: ${CSP_CONNECT_SRC:-https://${API_DOMAIN} wss://${API_DOMAIN}}
       CSP_FRAME_SRC: ${CSP_FRAME_SRC:-https://${VITE_JITSI_DOMAIN:-meet.jit.si}}
+      CSP_MEDIA_SRC: ${CSP_MEDIA_SRC:-https://${API_DOMAIN}}
     depends_on:
       apigateway:
         condition: service_healthy

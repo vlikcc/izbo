@@ -469,6 +469,122 @@
             }
         },
         {
+            "UpstreamPathTemplate": "/api/content/public/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/content/public/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "contentservice",
+                    "Port": 80
+                }
+            ],
+            "Priority": 2
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/content/public/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/content/public/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "contentservice",
+                    "Port": 80
+                }
+            ],
+            "Priority": 2
+        },
+        {
+            "UpstreamPathTemplate": "/api/content/items/{id}/upload",
+            "UpstreamHttpMethod": [
+                "POST",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/content/items/{id}/upload",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "contentservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            },
+            "Priority": 2,
+            "Timeout": 3600
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/content/items/{id}/upload",
+            "UpstreamHttpMethod": [
+                "POST",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/content/items/{id}/upload",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "contentservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            },
+            "Priority": 2,
+            "Timeout": 3600
+        },
+        {
+            "UpstreamPathTemplate": "/api/content/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/content/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "contentservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
+            "UpstreamPathTemplate": "/api/v1/content/{everything}",
+            "UpstreamHttpMethod": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            ],
+            "DownstreamPathTemplate": "/api/content/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "contentservice",
+                    "Port": 80
+                }
+            ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        },
+        {
             "UpstreamPathTemplate": "/hubs/classroom/{everything}",
             "UpstreamHttpMethod": [
                 "GET",

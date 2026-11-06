@@ -5,8 +5,32 @@
 ## Mimari
 
 - **API Gateway** — JWT doğrulama, rate limiting, Ocelot yönlendirme
-- **Servisler** — Auth, User, Classroom, Homework, Exam, Live Session, Notification, File, Subscription
-- **Altyapı** — PostgreSQL (servis başına DB), Redis (Exam cache/SignalR), MinIO (dosyalar)
+- **Servisler** — Auth, User, Classroom, Homework, Exam, Live Session, Notification, File, Subscription, Content
+- **Altyapı** — PostgreSQL (servis başına DB), Redis (Exam cache/SignalR), MinIO (dosyalar, içerik videoları), ffmpeg (HLS)
+
+### İçerik kataloğu (ContentService)
+
+**ContentService** müfredata bağlı içerik kataloğudur: Seviye (1–12. sınıf, LGS, YKS TYT/AYT/YDT) → Ders →
+Ünite → Konu → Kazanım, ve konulara bağlı içerikler (video, soru çözüm videosu, PDF, çalışma kağıdı,
+e-kitap, gömülü içerik). Seviyeler ve MEB ders listeleri migration ile gelir; ünite/konu/kazanım
+yöneticinin `POST /api/content/curriculum/import` ile yüklediği XLSX/CSV'den gelir (sütunlar: Seviye, Ders,
+Ünite, Konu, Kazanım Kodu, Açıklama; aynı dosyayı tekrar yüklemek bir şey değiştirmez).
+
+- Öğretmen kendi içeriğini oluşturur, yükler ve onaya gönderir (`items/{id}/submit`); yönetici
+  `review-queue` üzerinden onaylar/reddeder. Yöneticinin içeriği doğrudan yayınlanabilir. Taslak ve
+  incelemedeki içerik yalnızca sahibine ve yöneticiye görünür.
+- Videolar `eduplatform-content` bucket'ına akışla yüklenir (`Content__MaxUploadMb`, varsayılan 2048) ve
+  servis içindeki `VideoTranscodeWorker` ffmpeg ile 360p/720p HLS (6 sn segment) + küçük resim üretir.
+  Oynatma `items/{id}/hls/{dosya}`, PDF `items/{id}/file` (Range destekli) üzerinden, yetki kontrollüdür.
+- `/api/content/public/*` gateway'de **kimliksiz** geçer (public seviye sayfaları için yalnızca
+  yayımlanmış içeriğin sayıları, adları ve küçük resimleri).
+- Premium içerik bu fazda yalnızca işaretlenir; `IContentAccessPolicy` henüz herkese izin verir.
+
+Büyük yüklemeler için zincirdeki her halkanın gövde sınırı/zaman aşımı yeterli olmalı: gateway yalnızca
+yükleme rotası için Kestrel sınırını kaldırır (`ContentUpload__MaxRequestBodyMb`) ve Ocelot rotasına 1 saat
+`Timeout` verir; Caddy'nin varsayılan gövde sınırı yoktur. Dokploy'da Traefik'in entrypoint
+`respondingTimeouts.readTimeout` değeri (v3'te varsayılan 60 sn) büyük yüklemeleri keser — Traefik statik
+yapılandırmasında artırın (ör. `3600s`).
 
 ### Abonelik / kota katmanı
 
@@ -128,6 +152,12 @@ servisler de başlamaz. Yükseltmeden önce bir kez elle oluşturun:
 docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -c "CREATE DATABASE eduplatform_subscription;"
 ```
 
+ContentService ile gelen `eduplatform_content` veritabanı için de aynısı geçerlidir:
+
+```bash
+docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -c "CREATE DATABASE eduplatform_content;"
+```
+
 Tablolar servis ilk açılışta EF migration’larıyla kurulur. Temiz kurulumlarda bu adım gerekmez.
 
 ### Ortam değişkenleri
@@ -142,6 +172,9 @@ Tablolar servis ilk açılışta EF migration’larıyla kurulur. Temiz kuruluml
 | `VITE_API_URL` | Frontend build-time API URL |
 | `APP_DOMAIN` / `API_DOMAIN` | Caddy TLS hostları |
 | `ACME_EMAIL` | Let’s Encrypt e-posta |
+| `CONTENT_MAX_UPLOAD_MB` | İçerik yükleme üst sınırı (MB, varsayılan 2048) |
+| `MINIO_CONTENT_BUCKET` | İçerik bucket'ı (varsayılan `eduplatform-content`) |
+| `CSP_MEDIA_SRC` | Frontend CSP `media-src` ek kaynakları (varsayılan `https://${API_DOMAIN}`) |
 
 Gizliler repoda tutulmaz; yalnızca `.env` veya secret manager kullanın.
 
@@ -189,6 +222,8 @@ dotnet ef migrations add <Name> --project src/Services/<Service>/<Service>.cspro
 > docker compose exec postgres psql -U postgres -c "CREATE DATABASE eduplatform_subscription;"
 > docker compose up -d --build subscriptionservice
 > ```
+> ContentService için aynısı: `CREATE DATABASE eduplatform_content;` ardından
+> `docker compose up -d --build contentservice`.
 
 ## Güvenlik notları
 

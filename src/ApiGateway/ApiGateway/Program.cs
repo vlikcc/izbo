@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
@@ -6,6 +7,7 @@ using Serilog;
 using Shared.Errors;
 using Shared.Extensions;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -101,6 +103,7 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/openapi/live/v1/swagger.json", "Live");
         options.SwaggerEndpoint("/openapi/notifications/v1/swagger.json", "Notifications");
         options.SwaggerEndpoint("/openapi/files/v1/swagger.json", "Files");
+        options.SwaggerEndpoint("/openapi/content/v1/swagger.json", "Content");
     });
 }
 
@@ -108,6 +111,23 @@ app.UseWebSockets();
 app.UseRouting();
 app.MapEduPlatformHealthChecks();
 app.MapEduPlatformMetrics();
+
+// Kestrel caps request bodies at 30 MB. Lesson videos are far larger, so the cap is lifted for the content
+// upload route alone (Ocelot streams the body through; ContentService enforces Content:MaxUploadMb itself).
+var contentUploadLimitBytes = (builder.Configuration.GetValue<long?>("ContentUpload:MaxRequestBodyMb") ?? 2048 + 16) * 1024 * 1024;
+app.Use((context, next) =>
+{
+    if (GatewayRoutes.IsContentUpload(context.Request.Path))
+    {
+        var sizeFeature = context.Features.Get<IHttpMaxRequestBodySizeFeature>();
+        if (sizeFeature is { IsReadOnly: false })
+        {
+            sizeFeature.MaxRequestBodySize = contentUploadLimitBytes;
+        }
+    }
+
+    return next(context);
+});
 
 app.UseWhen(
     ctx => !ctx.Request.Path.StartsWithSegments("/health")
@@ -117,3 +137,12 @@ app.UseWhen(
     branch => branch.UseOcelot().GetAwaiter().GetResult());
 
 app.Run();
+
+internal static partial class GatewayRoutes
+{
+    [GeneratedRegex("^/api/(v1/)?content/items/[0-9a-fA-F-]{32,36}/upload/?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ContentUploadPattern();
+
+    public static bool IsContentUpload(PathString path) =>
+        path.HasValue && ContentUploadPattern().IsMatch(path.Value!);
+}

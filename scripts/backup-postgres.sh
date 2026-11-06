@@ -26,6 +26,7 @@ DATABASES=(
   eduplatform_notification
   eduplatform_file
   eduplatform_subscription
+  eduplatform_content
 )
 
 mkdir -p "${OUTPUT_DIR}"
