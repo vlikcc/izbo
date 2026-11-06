@@ -4,6 +4,7 @@ import { Button, Card } from '../../components/ui';
 import { examService } from '../../services/exam.service';
 import { toast } from '../../lib/toast';
 import type { ExamResult } from '../../types/examSession';
+import { MathText } from '../../components/math/MathText';
 import './Exams.css';
 
 export const ExamResultPage: React.FC = () => {
@@ -72,11 +73,11 @@ export const ExamResultPage: React.FC = () => {
 
             {result.questionResults?.map((item) => (
                 <Card key={item.questionId} variant="default" padding="md" className="exam-card">
-                    <h3>{item.content}</h3>
+                    <h3><MathText text={item.content} /></h3>
                     <p>Cevabınız: {item.yourAnswer || '—'}</p>
                     {item.correctAnswer && <p>Doğru cevap: {item.correctAnswer}</p>}
                     <p>{item.isCorrect ? 'Doğru' : 'Yanlış'} · {item.pointsAwarded}/{item.maxPoints} puan</p>
-                    {item.explanation && <p>{item.explanation}</p>}
+                    {item.explanation && <p><MathText text={item.explanation} /></p>}
                 </Card>
             ))}
 

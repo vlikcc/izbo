@@ -6,6 +6,10 @@ import { EXAM_LABELS, gradeLabel } from '../../utils/roles';
 import { missedHomework, pendingHomework } from '../../utils/homework';
 import contentService from '../../services/content.service';
 import type { StudentContentActivity } from '../../types/content';
+import assessmentService from '../../services/assessment.service';
+import type { AttemptSummary, Mastery } from '../../types/assessment';
+import { Link } from 'react-router-dom';
+import { formatNet } from '../../utils/questions';
 import './Parent.css';
 
 interface Summary {
@@ -14,6 +18,8 @@ interface Summary {
     sessions: ClassSession[];
     homework: StudentHomework[];
     exams: ExamSession[];
+    attempts: AttemptSummary[];
+    mastery: Mastery | null;
 }
 
 const formatDateTime = (iso: string) =>
@@ -40,8 +46,10 @@ export const ChildSummaryCard: React.FC<{ child: Child }> = ({ child }) => {
             settle(guardianService.getChildHomework(child.id), [] as StudentHomework[]),
             settle(guardianService.getChildExamSessions(child.id), [] as ExamSession[]),
             settle(contentService.getStudentActivity(child.id, 7), null as StudentContentActivity | null),
-        ]).then(([classrooms, sessions, homework, exams, activity]) => {
-            if (!cancelled) setSummary({ classrooms, sessions, homework, exams, activity });
+            settle(assessmentService.getStudentAttempts(child.id, 5), [] as AttemptSummary[]),
+            settle(assessmentService.getStudentMastery(child.id), null as Mastery | null),
+        ]).then(([classrooms, sessions, homework, exams, activity, attempts, mastery]) => {
+            if (!cancelled) setSummary({ classrooms, sessions, homework, exams, activity, attempts, mastery });
         });
 
         return () => {
@@ -102,6 +110,38 @@ export const ChildSummaryCard: React.FC<{ child: Child }> = ({ child }) => {
                             </>
                         )}
                     </div>
+
+                    <div className="child-section">
+                        <h4>Son testleri</h4>
+                        {summary.attempts.filter(a => a.status !== 'InProgress').length === 0 ? (
+                            <p className="child-muted">Henüz test çözmedi</p>
+                        ) : (
+                            <ul className="child-list">
+                                {summary.attempts.filter(a => a.status !== 'InProgress').slice(0, 3).map(a => (
+                                    <li key={a.id}>
+                                        <Link to={`/app/test/${a.id}/sonuc`}>{a.title}</Link>
+                                        <span className="child-muted">
+                                            {a.resultsVisible ? `${formatNet(a.net)} net · %${formatNet(a.percent)}` : 'Sonuç bekleniyor'}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    {summary.mastery && summary.mastery.weak.length > 0 && (
+                        <div className="child-section">
+                            <h4>Tekrar etmesi gereken konular</h4>
+                            <ul className="child-list">
+                                {summary.mastery.weak.slice(0, 3).map(t => (
+                                    <li key={t.topicId}>
+                                        <span>{t.topicName}</span>
+                                        <span className="child-fail">%{Math.round(t.percent)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
                     <div className="child-section">
                         <h4>Yaklaşan dersler</h4>

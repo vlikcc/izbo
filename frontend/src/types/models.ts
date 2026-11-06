@@ -46,6 +46,9 @@ export interface ExamSession {
 }
 
 // Homework Types
+/** What a homework points students to: a lesson, or a topic test from the question bank. */
+export type HomeworkLinkKind = 'None' | 'ContentItem' | 'TopicTest';
+
 export interface CreateHomeworkRequest {
     classroomId: string;
     title: string;
@@ -55,6 +58,9 @@ export interface CreateHomeworkRequest {
     dueDate: string;
     allowLateSubmission: boolean;
     latePenaltyPercent: number;
+    linkKind?: HomeworkLinkKind;
+    linkTargetId?: string | null;
+    linkTitle?: string | null;
 }
 
 export interface Homework {
@@ -71,6 +77,9 @@ export interface Homework {
     submissionCount: number;
     isActive: boolean;
     createdAt: string;
+    linkKind?: HomeworkLinkKind;
+    linkTargetId?: string | null;
+    linkTitle?: string | null;
 }
 
 export interface Submission {

@@ -17,7 +17,7 @@ namespace HomeworkService.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -52,6 +52,18 @@ namespace HomeworkService.Migrations
 
                     b.Property<int>("LatePenaltyPercent")
                         .HasColumnType("integer");
+
+                    b.Property<string>("LinkKind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid?>("LinkTargetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LinkTitle")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
                     b.Property<int>("MaxScore")
                         .HasColumnType("integer");

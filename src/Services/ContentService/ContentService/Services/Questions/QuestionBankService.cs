@@ -1,4 +1,5 @@
 using ContentService.Data;
+using ContentService.Services.Assessments;
 using ContentService.Services.Import;
 using ContentService.Services.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -41,13 +42,20 @@ public class QuestionBankService : IQuestionBankService
     private readonly ContentDbContext _db;
     private readonly IContentStorage _storage;
     private readonly IAuditLogger _audit;
+    private readonly TimeProvider _clock;
     private readonly ILogger<QuestionBankService> _logger;
 
-    public QuestionBankService(ContentDbContext db, IContentStorage storage, IAuditLogger audit, ILogger<QuestionBankService> logger)
+    public QuestionBankService(
+        ContentDbContext db,
+        IContentStorage storage,
+        IAuditLogger audit,
+        TimeProvider clock,
+        ILogger<QuestionBankService> logger)
     {
         _db = db;
         _storage = storage;
         _audit = audit;
+        _clock = clock;
         _logger = logger;
     }
 
@@ -175,6 +183,13 @@ public class QuestionBankService : IQuestionBankService
         if (question is null)
         {
             return ContentResult.NotFound<bool>("Question not found");
+        }
+
+        // Results point at their questions; a used question is retired by unpublishing it instead.
+        if (await _db.AttemptItems.AnyAsync(i => i.QuestionId == id, cancellationToken) ||
+            await _db.AssessmentQuestions.AnyAsync(q => q.QuestionId == id, cancellationToken))
+        {
+            return ContentResult.Conflict<bool>("This question is used in tests; unpublish it instead");
         }
 
         _db.BankQuestions.Remove(question);
@@ -503,7 +518,10 @@ public class QuestionBankService : IQuestionBankService
             return query.Where(_ => false);
         }
 
-        return query.Where(q => q.OwnerId == caller.UserId || q.Status == ContentStatus.Published);
+        // Questions held for a mock exam that is not over yet stay hidden from other teachers.
+        var reserved = AssessmentQueries.ReservedQuestionIds(_db, _clock.GetUtcNow().UtcDateTime);
+        return query.Where(q => q.OwnerId == caller.UserId
+            || (q.Status == ContentStatus.Published && !reserved.Contains(q.Id)));
     }
 
     private static IQueryable<BankQuestion> WithDetails(IQueryable<BankQuestion> query) =>

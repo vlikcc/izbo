@@ -26,6 +26,8 @@ public class HomeworkDbContext : DbContext
             entity.ToTable("homeworks");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.LinkKind).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.LinkTitle).HasMaxLength(300);
             entity.HasIndex(e => e.ClassroomId);
             entity.HasIndex(e => e.DueDate);
             // Ignore Classroom navigation - Classroom is in different database

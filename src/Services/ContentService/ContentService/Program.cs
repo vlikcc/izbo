@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using ContentService.Data;
 using ContentService.Services;
+using ContentService.Services.Assessments;
 using ContentService.Services.Media;
 using ContentService.Services.Questions;
 using ContentService.Services.Storage;
@@ -51,6 +52,10 @@ builder.Services.AddSingleton<IContentAccessPolicy, AllowAllContentAccessPolicy>
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddScoped<IContentItemService, ContentItemService>();
 builder.Services.AddScoped<IQuestionBankService, QuestionBankService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<IAttemptService, AttemptService>();
+builder.Services.AddScoped<IAssessmentService, AssessmentService>();
+builder.Services.AddHostedService<AttemptMaintenanceWorker>();
 builder.Services.AddScoped<TranscodeJobStore>();
 builder.Services.AddHostedService<VideoTranscodeWorker>();
 builder.Services.AddSubscriptionGuard(builder.Configuration);

@@ -1,0 +1,16 @@
+.math-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.math-display {
+    display: block;
+    margin: var(--space-2) 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: normal;
+}
+
+.math-inline {
+    white-space: normal;
+}

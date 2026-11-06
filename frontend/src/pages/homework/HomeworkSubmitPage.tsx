@@ -5,6 +5,8 @@ import { homeworkService } from '../../services/homework.service';
 import { fileService } from '../../services/file.service';
 import { toast } from '../../lib/toast';
 import type { Homework, Submission } from '../../types';
+import { StartPracticeButton } from '../../components/test/StartPracticeButton';
+import contentService from '../../services/content.service';
 import './Homework.css';
 
 export const HomeworkSubmitPage: React.FC = () => {
@@ -41,6 +43,15 @@ export const HomeworkSubmitPage: React.FC = () => {
             cancelled = true;
         };
     }, [id, navigate]);
+
+    const openLinkedItem = async (itemId: string) => {
+        try {
+            const item = await contentService.getItem(itemId);
+            navigate(`/app/konu/${item.topicId}?item=${item.id}`);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'İçerik açılamadı');
+        }
+    };
 
     const handleFile = async (file: File | undefined) => {
         if (!file || !id) return;
@@ -96,6 +107,18 @@ export const HomeworkSubmitPage: React.FC = () => {
             <Card variant="default" padding="lg">
                 <p>{homework.description}</p>
                 <p>Son teslim: {new Date(homework.dueDate).toLocaleString('tr-TR')}</p>
+                {homework.linkKind === 'TopicTest' && homework.linkTargetId && !graded && (
+                    <div className="homework-link">
+                        <span>📝 Bu ödev bir konu testi: <strong>{homework.linkTitle}</strong>. Testi bitirince sonucun otomatik teslim edilir.</span>
+                        <StartPracticeButton target={{ topicId: homework.linkTargetId }} homeworkId={homework.id}>Testi çöz</StartPracticeButton>
+                    </div>
+                )}
+                {homework.linkKind === 'ContentItem' && homework.linkTargetId && (
+                    <div className="homework-link">
+                        <span>🎬 Çalışılacak içerik: <strong>{homework.linkTitle}</strong></span>
+                        <Button variant="secondary" onClick={() => void openLinkedItem(homework.linkTargetId!)}>İçeriği aç</Button>
+                    </div>
+                )}
                 {graded ? (
                     <div>
                         <p>Bu ödev notlandırıldı; yeniden teslim edilemez.</p>
