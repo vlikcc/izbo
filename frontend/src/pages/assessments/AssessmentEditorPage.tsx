@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Modal } from '../../components/ui';
 import { MathText } from '../../components/math/MathText';
 import { AssessmentSettingsForm } from './AssessmentSettingsForm';
-import { QuestionPicker } from './QuestionPicker';
+import { QuestionPicker } from '../../components/questions/QuestionPicker';
 import assessmentService from '../../services/assessment.service';
 import contentService from '../../services/content.service';
 import { toast } from '../../lib/toast';

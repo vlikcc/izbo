@@ -1,5 +1,6 @@
 using FluentValidation;
 using Shared.DTOs;
+using Shared.Models;
 using Shared.Security;
 using Shared.Text;
 
@@ -274,6 +275,10 @@ public sealed class CreateHomeworkRequestValidator : AbstractValidator<CreateHom
         RuleFor(x => x.Description).NotEmpty().MaximumLength(8000);
         RuleFor(x => x.MaxScore).InclusiveBetween(1, 1000);
         RuleFor(x => x.LatePenaltyPercent).InclusiveBetween(0, 100);
+        RuleFor(x => x.LinkKind).IsInEnum();
+        RuleFor(x => x.LinkTargetId).NotEmpty().When(x => x.LinkKind != HomeworkLinkKind.None)
+            .WithMessage("Bağlantı için bir içerik ya da konu seçin.");
+        RuleFor(x => x.LinkTitle).MaximumLength(300);
     }
 }
 
@@ -284,6 +289,11 @@ public sealed class UpdateHomeworkRequestValidator : AbstractValidator<UpdateHom
         RuleFor(x => x.Title).MaximumLength(200).When(x => x.Title is not null);
         RuleFor(x => x.MaxScore).InclusiveBetween(1, 1000).When(x => x.MaxScore.HasValue);
         RuleFor(x => x.LatePenaltyPercent).InclusiveBetween(0, 100).When(x => x.LatePenaltyPercent.HasValue);
+        RuleFor(x => x.LinkKind).IsInEnum().When(x => x.LinkKind.HasValue);
+        RuleFor(x => x.LinkTargetId).NotEmpty()
+            .When(x => x.LinkKind.HasValue && x.LinkKind != HomeworkLinkKind.None)
+            .WithMessage("Bağlantı için bir içerik ya da konu seçin.");
+        RuleFor(x => x.LinkTitle).MaximumLength(300);
     }
 }
 

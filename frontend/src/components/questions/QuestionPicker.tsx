@@ -1,23 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from '../../components/ui';
-import { TopicPicker } from '../../components/content/TopicPicker';
-import { MathText } from '../../components/math/MathText';
+import { Button } from '../ui';
+import { TopicPicker } from '../content/TopicPicker';
+import { MathText } from '../math/MathText';
 import assessmentService from '../../services/assessment.service';
 import contentService from '../../services/content.service';
 import { toast } from '../../lib/toast';
 import { DIFFICULTY_LABELS } from '../../utils/questions';
 import type { BankQuestion } from '../../types/assessment';
-import '../../components/content/Content.css';
-import '../../components/questions/Questions.css';
+import '../content/Content.css';
+import './Questions.css';
 
 interface QuestionPickerProps {
     /** Questions already in the test; they are not offered again. */
     exclude: string[];
     onAdd: (questions: BankQuestion[]) => void;
+    /** Random draws use an administrator-only endpoint; teachers pick by hand. */
+    allowRandom?: boolean;
+    /** Label of the confirm button; "{n}" is replaced with the number picked. */
+    addLabel?: string;
 }
 
 /** Choose published bank questions by hand, or draw a random set from a topic or a whole subject. */
-export const QuestionPicker: React.FC<QuestionPickerProps> = ({ exclude, onAdd }) => {
+export const QuestionPicker: React.FC<QuestionPickerProps> = ({ exclude, onAdd, allowRandom = true, addLabel = '{n} soruyu ekle' }) => {
     const [topicId, setTopicId] = useState('');
     const [subjectId, setSubjectId] = useState('');
     const [loaded, setLoaded] = useState<{ key: string; items: BankQuestion[] } | null>(null);
@@ -68,7 +72,7 @@ export const QuestionPicker: React.FC<QuestionPickerProps> = ({ exclude, onAdd }
             <TopicPicker value={topicId} emptyLabel="Tümü" onChange={setTopicId}
                 onContext={c => { setSubjectId(c.subjectId); setPicked(new Set()); }} />
 
-            {subjectId && (
+            {allowRandom && subjectId && (
                 <div className="row-actions">
                     <span>Rastgele</span>
                     <input type="number" min={1} max={50} className="field-select" style={{ width: 80 }} value={count}
@@ -101,7 +105,7 @@ export const QuestionPicker: React.FC<QuestionPickerProps> = ({ exclude, onAdd }
             <div className="modal-actions">
                 <Button variant="primary" disabled={picked.size === 0}
                     onClick={() => onAdd(items.filter(q => picked.has(q.id)))}>
-                    {picked.size ? `${picked.size} soruyu ekle` : 'Soru seçin'}
+                    {picked.size ? addLabel.replace('{n}', String(picked.size)) : 'Soru seçin'}
                 </Button>
             </div>
         </div>
