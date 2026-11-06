@@ -1,3 +1,4 @@
+using ContentService.Services.Assessments;
 using ContentService.Services.Import;
 using ContentService.Services.Questions;
 using Shared.DTOs;
@@ -176,5 +177,69 @@ public class QuestionImportParserTests
         var row = result.Rows.ShouldHaveSingleItem();
         row.Type.ShouldBe(BankQuestionType.TrueFalse);
         row.Question.CorrectKey.ShouldBe(BankQuestionRules.FalseKey);
+    }
+}
+
+public class ScoringTests
+{
+    [Theory]
+    [InlineData(ScoringRule.Plain, 8, 2, 0, 8, 80)]
+    [InlineData(ScoringRule.NetThird, 15, 3, 2, 14, 70)]
+    [InlineData(ScoringRule.NetQuarter, 30, 10, 0, 27.5, 68.75)]
+    [InlineData(ScoringRule.NetQuarter, 0, 8, 2, -2, 0)]
+    [InlineData(ScoringRule.Plain, 0, 0, 0, 0, 0)]
+    public void Nets_and_percentages_follow_the_scoring_rule(ScoringRule rule, int correct, int wrong, int blank, double net, double percent)
+    {
+        var score = ScoringCalculator.Compute(rule, correct, wrong, blank);
+        score.Net.ShouldBe((decimal)net);
+        score.Percent.ShouldBe((decimal)percent);
+    }
+
+    [Fact]
+    public void Net_is_rounded_to_two_decimals()
+    {
+        ScoringCalculator.Compute(ScoringRule.NetThird, 10, 1, 0).Net.ShouldBe(9.67m);
+    }
+
+    [Theory]
+    [InlineData("lgs", ScoringRule.NetThird)]
+    [InlineData("yks-tyt", ScoringRule.NetQuarter)]
+    [InlineData("8-sinif", ScoringRule.Plain)]
+    public void Default_rule_comes_from_the_level(string slug, ScoringRule expected)
+    {
+        ScoringCalculator.DefaultFor(new Level { Slug = slug }).ShouldBe(expected);
+    }
+
+    [Fact]
+    public void Ties_share_a_rank_and_top_percent_counts_everyone_at_or_above()
+    {
+        var a = Guid.NewGuid();
+        var b = Guid.NewGuid();
+        var c = Guid.NewGuid();
+        var d = Guid.NewGuid();
+
+        var ranks = RankingCalculator.Rank([(a, 18m), (b, 15.5m), (c, 15.5m), (d, 3m)]);
+
+        ranks[a].ShouldBe(new Placement(1, 4, 25m));
+        ranks[b].ShouldBe(new Placement(2, 4, 75m));
+        ranks[c].ShouldBe(new Placement(2, 4, 75m));
+        ranks[d].ShouldBe(new Placement(4, 4, 100m));
+    }
+
+    [Fact]
+    public void Practice_prefers_unseen_questions_and_orders_easy_to_hard()
+    {
+        var easySeen = (Guid.NewGuid(), QuestionDifficulty.Easy);
+        var hard = (Guid.NewGuid(), QuestionDifficulty.Hard);
+        var medium = (Guid.NewGuid(), QuestionDifficulty.Medium);
+        var easy = (Guid.NewGuid(), QuestionDifficulty.Easy);
+
+        var picked = PracticeSelector.Select([easySeen, hard, medium, easy], new HashSet<Guid> { easySeen.Item1 }, 3, new Random(7));
+
+        picked.ShouldBe([easy.Item1, medium.Item1, hard.Item1]);
+
+        // Seen questions fill in only when the unseen ones run out.
+        PracticeSelector.Select([easySeen, hard], new HashSet<Guid> { easySeen.Item1 }, 5, new Random(7))
+            .ShouldBe([easySeen.Item1, hard.Item1]);
     }
 }

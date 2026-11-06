@@ -178,7 +178,7 @@ public class QuestionBankTests
         new(db, new NullAuditLogger(), NullLogger<CurriculumService>.Instance);
 
     private static QuestionBankService CreateBank(ContentDbContext db, InMemoryContentStorage? storage = null) =>
-        new(db, storage ?? new InMemoryContentStorage(), new NullAuditLogger(), NullLogger<QuestionBankService>.Instance);
+        new(db, storage ?? new InMemoryContentStorage(), new NullAuditLogger(), TimeProvider.System, NullLogger<QuestionBankService>.Instance);
 
     private static SaveBankQuestionRequest Choice(Guid topicId, string stem) =>
         new(topicId, null, BankQuestionType.MultipleChoice, stem, null, [new("1"), new("2"), new("3"), new("4")], "B");

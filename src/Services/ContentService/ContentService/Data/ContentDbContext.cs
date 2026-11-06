@@ -21,6 +21,11 @@ public class ContentDbContext : DbContext
     public DbSet<ContentProgress> Progress { get; set; }
     public DbSet<BankQuestion> BankQuestions { get; set; }
     public DbSet<QuestionAsset> QuestionAssets { get; set; }
+    public DbSet<Assessment> Assessments { get; set; }
+    public DbSet<AssessmentSection> AssessmentSections { get; set; }
+    public DbSet<AssessmentQuestion> AssessmentQuestions { get; set; }
+    public DbSet<Attempt> Attempts { get; set; }
+    public DbSet<AttemptItem> AttemptItems { get; set; }
 
     private static readonly JsonSerializerOptions OptionJson = new(JsonSerializerDefaults.Web);
 
@@ -210,6 +215,104 @@ public class ContentDbContext : DbContext
             entity.Property(e => e.StorageKey).IsRequired().HasMaxLength(512);
             entity.Property(e => e.ContentType).IsRequired().HasMaxLength(64);
             entity.HasIndex(e => e.OwnerId);
+        });
+
+        modelBuilder.Entity<Assessment>(entity =>
+        {
+            entity.ToTable("assessments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.ScoringRule).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.AccessTier).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(4000);
+            entity.HasOne(e => e.Level)
+                .WithMany()
+                .HasForeignKey(e => e.LevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => new { e.Status, e.LevelId });
+            entity.HasIndex(e => e.WindowEnd);
+        });
+
+        modelBuilder.Entity<AssessmentSection>(entity =>
+        {
+            entity.ToTable("assessment_sections");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.HasOne(e => e.Assessment)
+                .WithMany(a => a.Sections)
+                .HasForeignKey(e => e.AssessmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Subject)
+                .WithMany()
+                .HasForeignKey(e => e.SubjectId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => new { e.AssessmentId, e.Order });
+        });
+
+        modelBuilder.Entity<AssessmentQuestion>(entity =>
+        {
+            entity.ToTable("assessment_questions");
+            entity.HasKey(e => new { e.AssessmentId, e.QuestionId });
+            entity.HasOne(e => e.Assessment)
+                .WithMany(a => a.Questions)
+                .HasForeignKey(e => e.AssessmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Section)
+                .WithMany()
+                .HasForeignKey(e => e.SectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // A question inside a test cannot be deleted; it can be unpublished.
+            entity.HasOne(e => e.Question)
+                .WithMany()
+                .HasForeignKey(e => e.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.QuestionId);
+        });
+
+        modelBuilder.Entity<Attempt>(entity =>
+        {
+            entity.ToTable("attempts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Scope).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.ScoringRule).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(300);
+            entity.Property(e => e.Net).HasPrecision(8, 2);
+            entity.Property(e => e.Percent).HasPrecision(5, 2);
+            entity.Property(e => e.TopPercent).HasPrecision(5, 2);
+            entity.HasOne(e => e.Assessment)
+                .WithMany()
+                .HasForeignKey(e => e.AssessmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // One sitting per curated test; generated tests can be repeated.
+            entity.HasIndex(e => new { e.UserId, e.AssessmentId })
+                .IsUnique()
+                .HasFilter("assessment_id IS NOT NULL");
+            entity.HasIndex(e => new { e.UserId, e.StartedAt });
+            entity.HasIndex(e => new { e.Status, e.Deadline });
+            entity.HasIndex(e => new { e.AssessmentId, e.IsRanked });
+        });
+
+        modelBuilder.Entity<AttemptItem>(entity =>
+        {
+            entity.ToTable("attempt_items");
+            entity.HasKey(e => new { e.AttemptId, e.Order });
+            entity.Property(e => e.CorrectKey).IsRequired().HasMaxLength(1);
+            entity.Property(e => e.SelectedKey).HasMaxLength(1);
+            entity.HasOne(e => e.Attempt)
+                .WithMany(a => a.Items)
+                .HasForeignKey(e => e.AttemptId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Question)
+                .WithMany()
+                .HasForeignKey(e => e.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.QuestionId);
+            entity.HasIndex(e => e.TopicId);
         });
 
         ApplySnakeCaseColumnNames(modelBuilder);
