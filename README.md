@@ -144,21 +144,15 @@ Traefik etiketlerine taşınmıştır. Adımlar: [docs/ops/dokploy.md](docs/ops/
 
 ### Mevcut bir kurulumu yükseltmek
 
-`scripts/init-db.sh` yalnızca **boş** bir postgres volume’ünde çalışır. Bu sürümden önce kurulmuş bir
-stack’te `eduplatform_subscription` veritabanı yoktur; SubscriptionService onsuz açılmaz ve ona bağlı
-servisler de başlamaz. Yükseltmeden önce bir kez elle oluşturun:
-
-```bash
-docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -c "CREATE DATABASE eduplatform_subscription;"
-```
-
-ContentService ile gelen `eduplatform_content` veritabanı için de aynısı geçerlidir:
+`scripts/init-db.sh` yalnızca **boş** bir postgres volume’ünde çalışır. Sonradan eklenen bir servisin
+veritabanı (ör. `eduplatform_subscription`, ContentService'in `eduplatform_content`'i) eski bir kurulumda
+bulunmaz; her servis açılışta kendi veritabanı yoksa oluşturur, sonra EF migration'larını uygular. Bunun
+için postgres kullanıcısının `CREATEDB` yetkisi gerekir (stack'in varsayılan `postgres` kullanıcısında
+vardır). Yetkisi kısıtlı bir kullanıcıyla çalışıyorsanız veritabanını önceden elle oluşturun:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -c "CREATE DATABASE eduplatform_content;"
 ```
-
-Tablolar servis ilk açılışta EF migration’larıyla kurulur. Temiz kurulumlarda bu adım gerekmez.
 
 ### Ortam değişkenleri
 
