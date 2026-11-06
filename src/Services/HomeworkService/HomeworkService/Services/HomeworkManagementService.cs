@@ -74,6 +74,9 @@ public class HomeworkManagementService : IHomeworkManagementService
             DueDate = DateTime.SpecifyKind(request.DueDate, DateTimeKind.Utc),
             AllowLateSubmission = request.AllowLateSubmission,
             LatePenaltyPercent = request.LatePenaltyPercent,
+            LinkKind = request.LinkKind,
+            LinkTargetId = request.LinkKind == HomeworkLinkKind.None ? null : request.LinkTargetId,
+            LinkTitle = request.LinkKind == HomeworkLinkKind.None ? null : request.LinkTitle?.Trim(),
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -104,7 +107,10 @@ public class HomeworkManagementService : IHomeworkManagementService
                 h.LatePenaltyPercent,
                 SubmissionCount = h.Submissions.Count,
                 h.IsActive,
-                h.CreatedAt
+                h.CreatedAt,
+                h.LinkKind,
+                h.LinkTargetId,
+                h.LinkTitle
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -118,7 +124,8 @@ public class HomeworkManagementService : IHomeworkManagementService
         return new HomeworkDto(
             homework.Id, homework.ClassroomId, string.Empty, homework.Title, homework.Description,
             homework.AttachmentUrl, homework.MaxScore, homework.DueDate, homework.AllowLateSubmission,
-            homework.LatePenaltyPercent, homework.SubmissionCount, homework.IsActive, homework.CreatedAt);
+            homework.LatePenaltyPercent, homework.SubmissionCount, homework.IsActive, homework.CreatedAt,
+            homework.LinkKind, homework.LinkTargetId, homework.LinkTitle);
     }
 
     public async Task<PagedResponse<HomeworkDto>> GetHomeworksAsync(Guid? classroomId, PagedRequest request, Caller caller, CancellationToken cancellationToken = default)
@@ -164,7 +171,8 @@ public class HomeworkManagementService : IHomeworkManagementService
             .Select(h => new HomeworkDto(
                 h.Id, h.ClassroomId, string.Empty, h.Title, h.Description,
                 h.AttachmentUrl, h.MaxScore, h.DueDate, h.AllowLateSubmission,
-                h.LatePenaltyPercent, h.Submissions.Count, h.IsActive, h.CreatedAt))
+                h.LatePenaltyPercent, h.Submissions.Count, h.IsActive, h.CreatedAt,
+                h.LinkKind, h.LinkTargetId, h.LinkTitle))
             .ToListAsync(cancellationToken);
 
         return new PagedResponse<HomeworkDto>(
@@ -190,6 +198,13 @@ public class HomeworkManagementService : IHomeworkManagementService
         if (request.DueDate.HasValue) homework.DueDate = DateTime.SpecifyKind(request.DueDate.Value, DateTimeKind.Utc);
         if (request.AllowLateSubmission.HasValue) homework.AllowLateSubmission = request.AllowLateSubmission.Value;
         if (request.LatePenaltyPercent.HasValue) homework.LatePenaltyPercent = request.LatePenaltyPercent.Value;
+        if (request.LinkKind.HasValue)
+        {
+            var linked = request.LinkKind.Value != HomeworkLinkKind.None;
+            homework.LinkKind = request.LinkKind.Value;
+            homework.LinkTargetId = linked ? request.LinkTargetId : null;
+            homework.LinkTitle = linked ? request.LinkTitle?.Trim() : null;
+        }
 
         homework.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
@@ -391,7 +406,10 @@ public class HomeworkManagementService : IHomeworkManagementService
         h.LatePenaltyPercent,
         h.Submissions?.Count ?? 0,
         h.IsActive,
-        h.CreatedAt
+        h.CreatedAt,
+        h.LinkKind,
+        h.LinkTargetId,
+        h.LinkTitle
     );
 
     public async Task<List<StudentHomeworkDto>> GetStudentHomeworkAsync(Guid studentId, int limit = 20, CancellationToken cancellationToken = default)

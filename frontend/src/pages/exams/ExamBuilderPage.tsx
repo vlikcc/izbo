@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui';
+import { Button, Modal } from '../../components/ui';
 import { QuestionEditor } from '../../components/exams/QuestionEditor';
+import { QuestionPicker } from '../../components/questions/QuestionPicker';
+import assessmentService from '../../services/assessment.service';
+import { useAuthStore } from '../../stores/authStore';
+import { isAdmin } from '../../utils/roles';
+import { bankToExamQuestion } from '../../utils/questions';
+import { toast } from '../../lib/toast';
+import type { BankQuestion } from '../../types/assessment';
 import { FileImportModal } from '../../components/exams/FileImportModal';
 import { examService } from '../../services/exam.service';
 import { useSubscriptionStore } from '../../stores/subscriptionStore';
@@ -22,6 +29,8 @@ export const ExamBuilderPage: React.FC = () => {
     const [isImporting, setIsImporting] = useState(false);
     const hasQuestionImport = useSubscriptionStore((s) => s.hasFeature('question_import'));
     const openUpgradeModal = useUpgradeStore((s) => s.open);
+    const { user } = useAuthStore();
+    const [isBankOpen, setIsBankOpen] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -84,6 +93,37 @@ export const ExamBuilderPage: React.FC = () => {
         } finally {
             setIsImporting(false);
         }
+    };
+
+    /**
+     * Copies bank questions into this exam one by one (the bulk import endpoint is a paid feature; reusing
+     * the platform's bank is not). The exam keeps its own copy.
+     */
+    const handleAddFromBank = async (picked: BankQuestion[]) => {
+        if (!id) return;
+        setIsBankOpen(false);
+        setIsImporting(true);
+
+        const added: Question[] = [];
+        let skipped = 0;
+        try {
+            for (const bankQuestion of picked) {
+                const request = bankToExamQuestion(bankQuestion, questions.length + added.length + 1, assessmentService.assetUrl);
+                if (!request) {
+                    skipped++;
+                    continue;
+                }
+                added.push(await examService.addQuestion(id, request));
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Soru eklenemedi');
+        } finally {
+            setQuestions(current => [...current, ...added]);
+            setIsImporting(false);
+        }
+
+        if (added.length) toast.success(`${added.length} soru bankadan eklendi`);
+        if (skipped) toast.info(`${skipped} soru görselli şıkları olduğu için eklenemedi`);
     };
 
     const handleUpdateQuestion = async (questionId: string, data: CreateQuestionRequest) => {
@@ -206,6 +246,9 @@ export const ExamBuilderPage: React.FC = () => {
                                 >
                                     {hasQuestionImport ? '📁 Dosyadan İçe Aktar' : '🔒 Dosyadan İçe Aktar'}
                                 </Button>
+                                <Button variant="secondary" size="md" onClick={() => setIsBankOpen(true)} isLoading={isImporting}>
+                                    🏦 Soru bankasından
+                                </Button>
                                 <Button
                                     variant="primary"
                                     size="md"
@@ -287,6 +330,13 @@ export const ExamBuilderPage: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            <Modal isOpen={isBankOpen} onClose={() => setIsBankOpen(false)} title="Soru bankasından ekle" size="lg">
+                {isBankOpen && (
+                    <QuestionPicker exclude={[]} allowRandom={isAdmin(user)} addLabel="{n} soruyu sınava ekle"
+                        onAdd={picked => void handleAddFromBank(picked)} />
+                )}
+            </Modal>
 
             {/* File Import Modal */}
             <FileImportModal

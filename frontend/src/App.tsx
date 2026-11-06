@@ -37,6 +37,13 @@ const LessonsPage = lazy(() => import('./pages/content/LessonsPage').then((m) =>
 const SubjectPage = lazy(() => import('./pages/content/SubjectPage').then((m) => ({ default: m.SubjectPage })));
 const TopicPage = lazy(() => import('./pages/content/TopicPage').then((m) => ({ default: m.TopicPage })));
 const MyContentPage = lazy(() => import('./pages/content/MyContentPage').then((m) => ({ default: m.MyContentPage })));
+const QuestionBankPage = lazy(() => import('./pages/questions/QuestionBankPage').then((m) => ({ default: m.QuestionBankPage })));
+const QuestionImportPage = lazy(() => import('./pages/questions/QuestionImportPage').then((m) => ({ default: m.QuestionImportPage })));
+const AttemptPage = lazy(() => import('./pages/test/AttemptPage').then((m) => ({ default: m.AttemptPage })));
+const AttemptReportPage = lazy(() => import('./pages/test/AttemptReportPage').then((m) => ({ default: m.AttemptReportPage })));
+const MockExamsPage = lazy(() => import('./pages/test/MockExamsPage').then((m) => ({ default: m.MockExamsPage })));
+const AssessmentAdminPage = lazy(() => import('./pages/assessments/AssessmentAdminPage').then((m) => ({ default: m.AssessmentAdminPage })));
+const AssessmentEditorPage = lazy(() => import('./pages/assessments/AssessmentEditorPage').then((m) => ({ default: m.AssessmentEditorPage })));
 const CurriculumAdminPage = lazy(() => import('./pages/content/CurriculumAdminPage').then((m) => ({ default: m.CurriculumAdminPage })));
 const ReviewQueuePage = lazy(() => import('./pages/content/ReviewQueuePage').then((m) => ({ default: m.ReviewQueuePage })));
 const ChildrenPage = lazy(() => import('./pages/parent/ChildrenPage').then((m) => ({ default: m.ChildrenPage })));
@@ -214,6 +221,41 @@ function AppRoutes() {
                         element={
                             <RoleRoute roles={['Instructor', 'Admin', 'SuperAdmin']}>
                                 <MyContentPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route path="test/:attemptId" element={<RoleRoute roles={LEARNER_ROLES}><AttemptPage /></RoleRoute>} />
+                    <Route path="test/:attemptId/sonuc" element={<RoleRoute roles={[...LEARNER_ROLES, 'Parent']}><AttemptReportPage /></RoleRoute>} />
+                    <Route path="denemeler" element={<RoleRoute roles={LEARNER_ROLES}><MockExamsPage /></RoleRoute>} />
+                    <Route
+                        path="admin/denemeler"
+                        element={
+                            <RoleRoute roles={['Admin', 'SuperAdmin']}>
+                                <AssessmentAdminPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="admin/denemeler/:assessmentId"
+                        element={
+                            <RoleRoute roles={['Admin', 'SuperAdmin']}>
+                                <AssessmentEditorPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="sorular"
+                        element={
+                            <RoleRoute roles={['Instructor', 'Admin', 'SuperAdmin']}>
+                                <QuestionBankPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="admin/soru-aktar"
+                        element={
+                            <RoleRoute roles={['Admin', 'SuperAdmin']}>
+                                <QuestionImportPage />
                             </RoleRoute>
                         }
                     />

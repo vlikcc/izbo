@@ -1,3 +1,5 @@
+using Shared.Models;
+
 namespace Shared.DTOs;
 
 // Homework DTOs
@@ -14,7 +16,10 @@ public record HomeworkDto(
     int LatePenaltyPercent,
     int SubmissionCount,
     bool IsActive,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    HomeworkLinkKind LinkKind = HomeworkLinkKind.None,
+    Guid? LinkTargetId = null,
+    string? LinkTitle = null);
 
 public record CreateHomeworkRequest(
     Guid ClassroomId,
@@ -24,7 +29,10 @@ public record CreateHomeworkRequest(
     int MaxScore,
     DateTime DueDate,
     bool AllowLateSubmission,
-    int LatePenaltyPercent);
+    int LatePenaltyPercent,
+    HomeworkLinkKind LinkKind = HomeworkLinkKind.None,
+    Guid? LinkTargetId = null,
+    string? LinkTitle = null);
 
 public record UpdateHomeworkRequest(
     string? Title,
@@ -33,7 +41,10 @@ public record UpdateHomeworkRequest(
     int? MaxScore,
     DateTime? DueDate,
     bool? AllowLateSubmission,
-    int? LatePenaltyPercent);
+    int? LatePenaltyPercent,
+    HomeworkLinkKind? LinkKind = null,
+    Guid? LinkTargetId = null,
+    string? LinkTitle = null);
 
 // Submission DTOs
 public record SubmissionDto(

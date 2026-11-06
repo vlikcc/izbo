@@ -1,5 +1,17 @@
 namespace Shared.Models;
 
+/// <summary>What a homework points students to, besides its own text.</summary>
+public enum HomeworkLinkKind
+{
+    None = 0,
+
+    /// <summary>A lesson in the content catalog (video, PDF…); the target is the content item.</summary>
+    ContentItem = 1,
+
+    /// <summary>A generated topic test from the question bank; the target is the topic.</summary>
+    TopicTest = 2
+}
+
 public class Homework
 {
     public Guid Id { get; set; }
@@ -14,6 +26,13 @@ public class Homework
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Optional link to platform content; ids live in ContentService and are not checked here.</summary>
+    public HomeworkLinkKind LinkKind { get; set; } = HomeworkLinkKind.None;
+    public Guid? LinkTargetId { get; set; }
+
+    /// <summary>The linked lesson or topic's name as it was when assigned, for display.</summary>
+    public string? LinkTitle { get; set; }
 
     // Navigation properties
     public virtual Classroom? Classroom { get; set; }
