@@ -369,6 +369,11 @@ public class CurriculumService : ICurriculumService
             return ContentResult.Conflict<bool>("The topic still has content; move or delete it first");
         }
 
+        if (await _db.BankQuestions.AnyAsync(q => q.TopicId == id, cancellationToken))
+        {
+            return ContentResult.Conflict<bool>("The topic still has questions; move or delete them first");
+        }
+
         _db.Topics.Remove(topic);
         await _db.SaveChangesAsync(cancellationToken);
         await AuditAsync("ContentTopicDeleted", caller, "Topic", id, cancellationToken);
@@ -455,27 +460,10 @@ public class CurriculumService : ICurriculumService
         ArgumentNullException.ThrowIfNull(file);
         ArgumentNullException.ThrowIfNull(caller);
 
-        List<List<string>> table;
-        try
+        var (table, readError) = SpreadsheetTable.Read(file, fileName, CurriculumImportParser.MaxRows);
+        if (table is null)
         {
-            var extension = Path.GetExtension(fileName ?? string.Empty).ToLowerInvariant();
-            if (extension == ".xlsx")
-            {
-                table = XlsxTableReader.Read(file, CurriculumImportParser.MaxRows);
-            }
-            else if (extension is ".csv" or ".txt")
-            {
-                using var reader = new StreamReader(file, System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
-                table = CsvTableReader.Read(reader, CurriculumImportParser.MaxRows);
-            }
-            else
-            {
-                return ContentResult.Invalid<CurriculumImportResult>("Upload an .xlsx or .csv file.");
-            }
-        }
-        catch (Exception ex) when (ex is InvalidDataException or System.Xml.XmlException)
-        {
-            return ContentResult.Invalid<CurriculumImportResult>("The file could not be read: " + ex.Message);
+            return ContentResult.Invalid<CurriculumImportResult>(readError!);
         }
 
         var parsed = CurriculumImportParser.Parse(table);
