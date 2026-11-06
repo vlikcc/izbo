@@ -31,6 +31,12 @@ const HomeworkSubmitPage = lazy(() => import('./pages/homework/HomeworkSubmitPag
 const HomeworkGradePage = lazy(() => import('./pages/homework/HomeworkGradePage').then((m) => ({ default: m.HomeworkGradePage })));
 const LivePage = lazy(() => import('./pages/live/LivePage'));
 const CustomLiveRoomPage = lazy(() => import('./pages/live/CustomLiveRoomPage').then((m) => ({ default: m.CustomLiveRoomPage })));
+const LessonsPage = lazy(() => import('./pages/content/LessonsPage').then((m) => ({ default: m.LessonsPage })));
+const SubjectPage = lazy(() => import('./pages/content/SubjectPage').then((m) => ({ default: m.SubjectPage })));
+const TopicPage = lazy(() => import('./pages/content/TopicPage').then((m) => ({ default: m.TopicPage })));
+const MyContentPage = lazy(() => import('./pages/content/MyContentPage').then((m) => ({ default: m.MyContentPage })));
+const CurriculumAdminPage = lazy(() => import('./pages/content/CurriculumAdminPage').then((m) => ({ default: m.CurriculumAdminPage })));
+const ReviewQueuePage = lazy(() => import('./pages/content/ReviewQueuePage').then((m) => ({ default: m.ReviewQueuePage })));
 const ChildrenPage = lazy(() => import('./pages/parent/ChildrenPage').then((m) => ({ default: m.ChildrenPage })));
 const JoinClassroomPage = lazy(() => import('./pages/classrooms/JoinClassroomPage').then((m) => ({ default: m.JoinClassroomPage })));
 const ProfilePage = lazy(() => import('./pages/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
@@ -190,6 +196,33 @@ function AppRoutes() {
                         element={
                             <RoleRoute roles={['Admin', 'SuperAdmin']}>
                                 <AdminUsersPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route path="dersler" element={<RoleRoute roles={LEARNER_ROLES}><LessonsPage /></RoleRoute>} />
+                    <Route path="dersler/:subjectId" element={<RoleRoute roles={LEARNER_ROLES}><SubjectPage /></RoleRoute>} />
+                    <Route path="konu/:topicId" element={<RoleRoute roles={LEARNER_ROLES}><TopicPage /></RoleRoute>} />
+                    <Route
+                        path="icerik"
+                        element={
+                            <RoleRoute roles={['Instructor', 'Admin', 'SuperAdmin']}>
+                                <MyContentPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="admin/mufredat"
+                        element={
+                            <RoleRoute roles={['Admin', 'SuperAdmin']}>
+                                <CurriculumAdminPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="admin/icerik-onay"
+                        element={
+                            <RoleRoute roles={['Admin', 'SuperAdmin']}>
+                                <ReviewQueuePage />
                             </RoleRoute>
                         }
                     />

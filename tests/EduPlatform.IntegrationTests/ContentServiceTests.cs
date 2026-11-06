@@ -245,7 +245,15 @@ public class ContentServiceTests
         rewatch.PositionSeconds.ShouldBe(5);
         (await items.GetContinueAsync(_student)).ShouldBeEmpty();
 
-        var tree = (await CreateCurriculum(db).GetSubjectTreeAsync(FifthGradeMath, _student))!;
+        // The parent's weekly view still lists the finished lesson, which "continue" no longer does.
+        var activity = await items.GetStudentActivityAsync(_student.UserId, DateTime.UtcNow.AddDays(-7));
+        activity.ItemsStudied.ShouldBe(1);
+        activity.ItemsCompleted.ShouldBe(1);
+        activity.Recent.ShouldHaveSingleItem().Item.Id.ShouldBe(video.Id);
+        (await items.GetStudentActivityAsync(_student.UserId, DateTime.UtcNow.AddMinutes(1))).ItemsStudied.ShouldBe(0);
+        (await items.GetStudentActivityAsync(Guid.NewGuid(), DateTime.UtcNow.AddDays(-7))).Recent.ShouldBeEmpty();
+
+        var tree =(await CreateCurriculum(db).GetSubjectTreeAsync(FifthGradeMath, _student))!;
         var node = tree.Units.SelectMany(u => u.Topics).Single(t => t.Id == topicId);
         node.ItemCount.ShouldBe(1);
         node.CompletedCount.ShouldBe(1);

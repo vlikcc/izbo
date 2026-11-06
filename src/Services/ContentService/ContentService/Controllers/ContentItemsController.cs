@@ -20,6 +20,7 @@ public class ContentItemsController : ControllerBase
 {
     private readonly IContentItemService _items;
     private readonly IContentStorage _storage;
+    private readonly IGuardianAccessClient _guardianAccess;
     private readonly ContentOptions _options;
     private readonly ILogger<ContentItemsController> _logger;
 
@@ -27,12 +28,14 @@ public class ContentItemsController : ControllerBase
         IContentItemService items,
         IContentStorage storage,
         IOptions<ContentOptions> options,
+        IGuardianAccessClient guardianAccess,
         ILogger<ContentItemsController> logger)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         _items = items;
         _storage = storage;
+        _guardianAccess = guardianAccess;
         _options = options.Value;
         _logger = logger;
     }
@@ -313,6 +316,26 @@ public class ContentItemsController : ControllerBase
     [HttpGet("progress/continue")]
     public async Task<ActionResult<ApiResponse<List<ContinueWatchingDto>>>> Continue(CancellationToken cancellationToken) =>
         Ok(new ApiResponse<List<ContinueWatchingDto>>(true, await _items.GetContinueAsync(Caller, 5, cancellationToken)));
+
+    /// <summary>
+    /// A student's study over the last <paramref name="days"/> days, for the student, a linked parent, or an
+    /// administrator. Anyone else gets 404 so student ids cannot be probed.
+    /// </summary>
+    [HttpGet("progress/student/{studentId:guid}")]
+    public async Task<ActionResult<ApiResponse<StudentContentActivityDto>>> StudentActivity(
+        Guid studentId,
+        [FromQuery] int days = 7,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _guardianAccess.CanViewStudentAsync(studentId, Caller, cancellationToken))
+        {
+            return NotFound(new ApiResponse<StudentContentActivityDto>(false, null, "Student not found"));
+        }
+
+        var since = DateTime.UtcNow.AddDays(-Math.Clamp(days, 1, 90));
+        return Ok(new ApiResponse<StudentContentActivityDto>(
+            true, await _items.GetStudentActivityAsync(studentId, since, 5, cancellationToken)));
+    }
 
     private ObjectResult TooLarge(long maxBytes) =>
         StatusCode(StatusCodes.Status413PayloadTooLarge,
