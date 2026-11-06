@@ -3,6 +3,8 @@ import { Modal, Button } from '../ui';
 import { homeworkService } from '../../services/homework.service';
 import { classroomService } from '../../services/classroom.service';
 import type { CreateHomeworkRequest, Classroom } from '../../types';
+import { HomeworkLinkPicker } from './HomeworkLinkPicker';
+import { NO_LINK, type HomeworkLink } from '../../utils/homework';
 import '../exams/CreateExamModal.css';
 
 interface CreateHomeworkModalProps {
@@ -20,6 +22,9 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
 }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+    const [link, setLink] = useState<HomeworkLink>(NO_LINK);
+    // Remounting the picker clears its choices when the form resets.
+    const [linkSession, setLinkSession] = useState(0);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -68,6 +73,8 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
             latePenaltyPercent: 0,
             classroomId: classroomId || '',
         });
+        setLink(NO_LINK);
+        setLinkSession(n => n + 1);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -100,6 +107,9 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
                 dueDate: due.toISOString(),
                 allowLateSubmission: formData.allowLateSubmission,
                 latePenaltyPercent: formData.allowLateSubmission ? formData.latePenaltyPercent : 0,
+                linkKind: link.kind,
+                linkTargetId: link.targetId,
+                linkTitle: link.title,
             };
 
             await homeworkService.createHomework(payload);
@@ -247,6 +257,8 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
                         />
                     </div>
                 )}
+
+                <HomeworkLinkPicker key={linkSession} onChange={setLink} />
 
                 <div className="form-actions">
                     <Button type="button" variant="ghost" size="md" onClick={onClose}>

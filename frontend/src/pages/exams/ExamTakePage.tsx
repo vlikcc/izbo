@@ -5,6 +5,7 @@ import { examService } from '../../services/exam.service';
 import { toast } from '../../lib/toast';
 import type { Question } from '../../types';
 import type { StartExamResponse } from '../../types/examSession';
+import { MathText } from '../../components/math/MathText';
 import './Exams.css';
 
 function formatRemaining(totalSeconds: number): string {
@@ -120,7 +121,7 @@ export const ExamTakePage: React.FC = () => {
             {question && (
                 <Card variant="default" padding="lg">
                     <p><strong>{question.points} puan</strong></p>
-                    <h2>{question.content}</h2>
+                    <h2><MathText text={question.content} /></h2>
                     {question.type === 'MultipleChoice' && (question.options ?? []).map((option) => (
                         <label key={option} style={{ display: 'block', margin: '8px 0' }}>
                             <input
@@ -130,7 +131,7 @@ export const ExamTakePage: React.FC = () => {
                                 checked={currentAnswer === option}
                                 onChange={() => updateAnswer(question, option)}
                             />
-                            {' '}{option}
+                            {' '}<MathText text={option} />
                         </label>
                     ))}
                     {question.type === 'TrueFalse' && ['Doğru', 'Yanlış'].map((option) => (
@@ -142,7 +143,7 @@ export const ExamTakePage: React.FC = () => {
                                 checked={currentAnswer === option}
                                 onChange={() => updateAnswer(question, option)}
                             />
-                            {' '}{option}
+                            {' '}<MathText text={option} />
                         </label>
                     ))}
                     {question.type === 'FillInBlank' && (

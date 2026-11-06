@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Card } from '../../components/ui';
 import { ContentViewer } from '../../components/content/ContentViewer';
+import { StartPracticeButton } from '../../components/test/StartPracticeButton';
 import contentService from '../../services/content.service';
 import { useAuthStore } from '../../stores/authStore';
 import type { ContentItem, TopicDetail } from '../../types/content';
@@ -58,6 +59,16 @@ export const TopicPage: React.FC = () => {
                     <p className="page-subtitle">{topic.unitName}</p>
                 </div>
             </div>
+
+            {student && (
+                <Card variant="default" padding="md" className="section-gap practice-card">
+                    <div>
+                        <h2 className="unit-title" style={{ margin: 0 }}>📝 Konuyu pekiştir</h2>
+                        <p className="content-muted">10 soruluk konu testi; sonunda eksik kazanımlarını ve tekrar izlemen gerekenleri gösterir.</p>
+                    </div>
+                    <StartPracticeButton target={{ topicId: topic.id }}>Konu testi çöz</StartPracticeButton>
+                </Card>
+            )}
 
             {topic.items.length === 0 ? (
                 <Card variant="default" padding="lg"><p className="content-muted">Bu konuya henüz içerik eklenmedi.</p></Card>

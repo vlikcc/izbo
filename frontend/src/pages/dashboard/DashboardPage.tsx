@@ -10,6 +10,10 @@ import { ContinueWatchingList } from '../../components/content/ContinueWatchingL
 import contentService from '../../services/content.service';
 import type { ContinueWatching } from '../../types/content';
 import { Link } from 'react-router-dom';
+import { StudentProgressPanel } from './StudentProgressPanel';
+import guardianService from '../../services/guardian.service';
+import assessmentService from '../../services/assessment.service';
+import { pendingHomework } from '../../utils/homework';
 import './Dashboard.css';
 
 const getGreeting = () => {
@@ -48,9 +52,19 @@ const LearnerDashboard: React.FC = () => {
     const [continueItems, setContinueItems] = useState<ContinueWatching[]>([]);
     const student = isStudent(user);
 
+    const [studentStats, setStudentStats] = useState<{ pending: number; tests: number } | null>(null);
+
     useEffect(() => {
         if (student) contentService.getContinue().then(setContinueItems).catch(() => setContinueItems([]));
     }, [student]);
+
+    useEffect(() => {
+        if (!student || !user) return;
+        void Promise.all([
+            guardianService.getChildHomework(user.id).then(h => pendingHomework(h).length).catch(() => 0),
+            assessmentService.getMyAttempts(50).then(a => a.filter(x => x.status !== 'InProgress').length).catch(() => 0),
+        ]).then(([pending, tests]) => setStudentStats({ pending, tests }));
+    }, [student, user]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -115,6 +129,8 @@ const LearnerDashboard: React.FC = () => {
                 </Card>
             )}
 
+            {student && <StudentProgressPanel />}
+
             {/* Stats Grid */}
             <div className="dashboard-stats">
                 <Card variant="default" padding="md" className="dashboard-stat-card">
@@ -131,20 +147,24 @@ const LearnerDashboard: React.FC = () => {
                         <span className="stat-label">Yaklaşan Ders</span>
                     </div>
                 </Card>
-                <Card variant="default" padding="md" className="dashboard-stat-card">
-                    <div className="stat-icon stat-icon-warning">📝</div>
-                    <div className="stat-info">
-                        <span className="stat-value">0</span>
-                        <span className="stat-label">Bekleyen Ödev</span>
-                    </div>
-                </Card>
-                <Card variant="default" padding="md" className="dashboard-stat-card">
-                    <div className="stat-icon stat-icon-info">🏆</div>
-                    <div className="stat-info">
-                        <span className="stat-value">0</span>
-                        <span className="stat-label">Rozet</span>
-                    </div>
-                </Card>
+                {student && (
+                    <>
+                        <Card variant="default" padding="md" className="dashboard-stat-card">
+                            <div className="stat-icon stat-icon-warning">📝</div>
+                            <div className="stat-info">
+                                <span className="stat-value">{studentStats?.pending ?? 0}</span>
+                                <span className="stat-label">Bekleyen Ödev</span>
+                            </div>
+                        </Card>
+                        <Card variant="default" padding="md" className="dashboard-stat-card">
+                            <div className="stat-icon stat-icon-info">✅</div>
+                            <div className="stat-info">
+                                <span className="stat-value">{studentStats?.tests ?? 0}</span>
+                                <span className="stat-label">Çözülen Test</span>
+                            </div>
+                        </Card>
+                    </>
+                )}
             </div>
 
             {/* Content Grid */}
