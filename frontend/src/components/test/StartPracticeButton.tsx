@@ -9,10 +9,12 @@ interface StartPracticeButtonProps {
     children: React.ReactNode;
     variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
     size?: 'sm' | 'md' | 'lg';
+    /** When the test is homework, its result is handed in as the submission once finished. */
+    homeworkId?: string;
 }
 
 /** Starts (or resumes) a generated topic or unit test from the bank and opens it. */
-export const StartPracticeButton: React.FC<StartPracticeButtonProps> = ({ target, children, variant = 'primary', size = 'md' }) => {
+export const StartPracticeButton: React.FC<StartPracticeButtonProps> = ({ target, children, variant = 'primary', size = 'md', homeworkId }) => {
     const navigate = useNavigate();
     const [busy, setBusy] = useState(false);
 
@@ -20,7 +22,7 @@ export const StartPracticeButton: React.FC<StartPracticeButtonProps> = ({ target
         setBusy(true);
         try {
             const attempt = await assessmentService.startPractice(target);
-            navigate(`/app/test/${attempt.summary.id}`);
+            navigate(`/app/test/${attempt.summary.id}${homeworkId ? `?odev=${encodeURIComponent(homeworkId)}` : ''}`);
         } catch (e) {
             const status = (e as { response?: { status?: number } }).response?.status;
             toast.error(status === 400 ? 'Bu konu için henüz soru eklenmedi.' : e instanceof Error ? e.message : 'Test başlatılamadı');
