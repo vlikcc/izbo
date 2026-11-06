@@ -199,8 +199,11 @@ jobs:
           tags: ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:ci
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=min,scope=${{ matrix.name }}
-          build-args: |
-            VITE_API_URL=https://api.example.com
+          # Links the GHCR package to this (public) repository. The frontend takes its API address at
+          # runtime (APP_API_URL → /config.js), so no domain is baked into any image.
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Trivy scan
         # v0.36.0; pin the commit because pre-0.35 tags were hijacked in 2026.
@@ -212,19 +215,49 @@ jobs:
           severity: CRITICAL
           ignore-unfixed: true
 
+      # main only, and only after the tests and the scan passed: the server pulls these instead of building.
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image (main, sha-<commit>)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          SRC="${IMAGE_PREFIX}/${{ matrix.name }}:ci"
+          for TAG in main "sha-${GITHUB_SHA::7}"; do
+            docker tag "$SRC" "${IMAGE_PREFIX}/${{ matrix.name }}:${TAG}"
+            docker push "${IMAGE_PREFIX}/${{ matrix.name }}:${TAG}"
+          done
+
   publish:
+    # Every image of this commit is on GHCR now; Dokploy only has to pull them. Dokploy's own
+    # auto-deploy would start before the images exist, so the deploy is triggered from here instead.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [docker]
     runs-on: ubuntu-latest
+    concurrency:
+      group: dokploy-deploy
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish note
-        run: echo "Images are published from the deploy workflow after a successful main build."
+      - name: Trigger Dokploy deploy
+        env:
+          DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+          DOKPLOY_COMPOSE_ID: ${{ vars.DOKPLOY_COMPOSE_ID }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+        run: |
+          if [ -z "$DOKPLOY_URL" ] || [ -z "$DOKPLOY_COMPOSE_ID" ] || [ -z "$DOKPLOY_API_KEY" ]; then
+            echo "::warning::DOKPLOY_URL / DOKPLOY_COMPOSE_ID (variables) or DOKPLOY_API_KEY (secret) is not set; images are pushed but nothing was deployed."
+            exit 0
+          fi
+          curl -fsS --retry 3 --retry-all-errors --max-time 60 -X POST "${DOKPLOY_URL%/}/api/compose.deploy" \
+            -H "x-api-key: ${DOKPLOY_API_KEY}" -H "Content-Type: application/json" \
+            -d "{\"composeId\":\"${DOKPLOY_COMPOSE_ID}\"}"
+          echo
+          echo "Deploy queued for sha-${GITHUB_SHA::7}."
 
   codeql:
     runs-on: ubuntu-latest

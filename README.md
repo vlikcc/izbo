@@ -163,7 +163,7 @@ docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -c "CRE
 | `POSTGRES_PASSWORD` | PostgreSQL şifresi |
 | `FRONTEND_URL` | CORS origin (`https://app...`) |
 | `API_PUBLIC_URL` | Ocelot BaseUrl |
-| `VITE_API_URL` | Frontend build-time API URL |
+| `VITE_API_URL` | Frontend API URL (derleme zamanı, yalnızca yedek). Dokploy kurulumunda gerekmez: frontend konteyneri `API_PUBLIC_URL`'i çalışma anında `/config.js` olarak sunar |
 | `APP_DOMAIN` / `API_DOMAIN` | Caddy TLS hostları |
 | `ACME_EMAIL` | Let’s Encrypt e-posta |
 | `CONTENT_MAX_UPLOAD_MB` | İçerik yükleme üst sınırı (MB, varsayılan 2048) |

@@ -6,6 +6,10 @@
 # /metrics — is reproduced as Traefik labels on frontend and apigateway below.
 #
 # Deploy through Dokploy (Compose application). See docs/ops/dokploy.md.
+#
+# Nothing is built on the server: CI builds every image after the tests pass on main, pushes it to
+# GHCR (ghcr.io/vlikcc/izbo/<service>:main and :sha-<commit>) and then asks Dokploy to deploy, which
+# only pulls. IMAGE_TAG pins a commit (sha-abc1234) for a rollback; it defaults to main.
 
 name: eduplatform-prod
 
@@ -67,9 +71,8 @@ services:
           memory: 512M
 
   authservice:
-    build:
-      context: .
-      dockerfile: src/Services/AuthService/AuthService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/authservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -117,9 +120,8 @@ services:
           memory: 512M
 
   userservice:
-    build:
-      context: .
-      dockerfile: src/Services/UserService/UserService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/userservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -156,9 +158,8 @@ services:
           memory: 512M
 
   classroomservice:
-    build:
-      context: .
-      dockerfile: src/Services/ClassroomService/ClassroomService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/classroomservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -195,9 +196,8 @@ services:
           memory: 512M
 
   homeworkservice:
-    build:
-      context: .
-      dockerfile: src/Services/HomeworkService/HomeworkService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/homeworkservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -234,9 +234,8 @@ services:
           memory: 512M
 
   examservice:
-    build:
-      context: .
-      dockerfile: src/Services/ExamService/ExamService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/examservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -276,9 +275,8 @@ services:
           memory: 512M
 
   livesessionservice:
-    build:
-      context: .
-      dockerfile: src/Services/LiveSessionService/LiveSessionService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/livesessionservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -314,9 +312,8 @@ services:
           memory: 512M
 
   notificationservice:
-    build:
-      context: .
-      dockerfile: src/Services/NotificationService/NotificationService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/notificationservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -346,9 +343,8 @@ services:
           memory: 512M
 
   fileservice:
-    build:
-      context: .
-      dockerfile: src/Services/FileService/FileService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/fileservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -389,9 +385,8 @@ services:
           memory: 512M
 
   contentservice:
-    build:
-      context: .
-      dockerfile: src/Services/ContentService/ContentService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/contentservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -434,9 +429,8 @@ services:
           memory: 2G
 
   subscriptionservice:
-    build:
-      context: .
-      dockerfile: src/Services/SubscriptionService/SubscriptionService/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/subscriptionservice:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -465,9 +459,8 @@ services:
           memory: 512M
 
   apigateway:
-    build:
-      context: .
-      dockerfile: src/ApiGateway/ApiGateway/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/apigateway:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -546,13 +539,12 @@ services:
           memory: 512M
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL is required}
+    image: ${IMAGE_PREFIX:-ghcr.io/vlikcc/izbo}/frontend:${IMAGE_TAG:-main}
+    pull_policy: always
     restart: unless-stopped
     environment:
+      # The API address the app calls, served to it as /config.js — the image itself is domain-free.
+      APP_API_URL: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
       # nginx substitutes these into Content-Security-Policy at container start.
       CSP_CONNECT_SRC: ${CSP_CONNECT_SRC:-https://${API_DOMAIN} wss://${API_DOMAIN}}
       CSP_FRAME_SRC: ${CSP_FRAME_SRC:-https://${VITE_JITSI_DOMAIN:-meet.jit.si}}

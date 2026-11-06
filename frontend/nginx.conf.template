@@ -5,6 +5,8 @@
 #   CSP_FRAME_SRC    origins the app may embed, e.g. "https://meet.jit.si"
 #   CSP_MEDIA_SRC    origins <video>/<audio> may load from, e.g. "https://api.example.com" — hls.js plays
 #                    through blob: URLs, but native HLS (Safari) fetches playlists from the API directly
+#   APP_API_URL      the API's public URL, handed to the app through /config.js at runtime, so one image
+#                    serves any domain; empty falls back to the URL baked in at build time (VITE_API_URL)
 
 # The public scheme as the visitor sees it: TLS ends at the proxy (Caddy/Traefik) in front of this container.
 map $http_x_forwarded_proto $public_scheme {
@@ -23,6 +25,15 @@ server {
 
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # Runtime settings for the app, rendered from the container's environment at start-up. The exact
+    # match wins over the long-cache *.js rule below; `expires` (not add_header) keeps the server-level
+    # security headers inherited.
+    location = /config.js {
+        default_type application/javascript;
+        expires -1;
+        return 200 'window.__APP_CONFIG__ = { apiUrl: "${APP_API_URL}" };';
+    }
 
     # Handle SPA routing
     location / {
