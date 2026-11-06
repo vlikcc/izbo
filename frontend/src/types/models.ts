@@ -263,7 +263,11 @@ export interface AdminOrder {
 
 export interface QuotaExceededInfo {
     message: string;
-    errorCode: 'QUOTA_EXCEEDED';
+    /** QUOTA_EXCEEDED: a teacher plan limit. PACKAGE_REQUIRED: a student package is needed. */
+    errorCode: 'QUOTA_EXCEEDED' | 'PACKAGE_REQUIRED';
+    /** PACKAGE_REQUIRED: 1 Temel, 2 Plus, 3 Premium. */
+    requiredTier?: number;
+    reason?: 'premium_content' | 'daily_limit' | 'premium_assessment';
     metric?: QuotaMetric;
     featureCode?: string;
     limit?: number;

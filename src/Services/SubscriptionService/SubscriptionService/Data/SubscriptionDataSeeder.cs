@@ -56,7 +56,92 @@ public static class SubscriptionDataSeeder
 
         await context.SaveChangesAsync();
         logger.LogInformation("Plan catalog seed complete.");
+
+        await SeedLearnerPackagesAsync(context, logger);
     }
+
+    /// <summary>
+    /// Adds the student packages that are missing. Unlike the teacher plans, existing packages are never
+    /// overwritten: administrators set names, features and prices in the admin pages. Prices here are
+    /// placeholders to be replaced before selling.
+    /// </summary>
+    private static async Task SeedLearnerPackagesAsync(SubscriptionDbContext context, ILogger logger)
+    {
+        var existing = await context.LearnerPackages.Select(p => p.Code).ToListAsync();
+        foreach (var package in LearnerPackageDefinitions().Where(p => !existing.Contains(p.Code)))
+        {
+            context.LearnerPackages.Add(package);
+            logger.LogInformation("Seeding student package {Code}", package.Code);
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static LearnerPackagePrice Price(LearnerTerm term, int days, decimal amount) => new()
+    {
+        Id = Guid.NewGuid(),
+        Term = term,
+        DurationDays = days,
+        Price = amount,
+        Currency = "TRY",
+        IsActive = true
+    };
+
+    private static List<LearnerPackage> LearnerPackageDefinitions() =>
+    [
+        new LearnerPackage
+        {
+            Id = Guid.NewGuid(),
+            Code = "temel",
+            Name = "Temel",
+            Description = "Sınıfının tüm konu anlatımları ve dokümanları; günde 3 konu testi.",
+            Tier = 1,
+            Features = [LearnerFeatures.PremiumContent],
+            PracticeTestsPerDay = 3,
+            SortOrder = 1,
+            Prices =
+            [
+                Price(LearnerTerm.Month1, 30, 249m), Price(LearnerTerm.Month3, 90, 649m),
+                Price(LearnerTerm.Month12, 365, 1990m), Price(LearnerTerm.Summer, 0, 499m),
+            ]
+        },
+        new LearnerPackage
+        {
+            Id = Guid.NewGuid(),
+            Code = "plus",
+            Name = "Plus",
+            Description = "Temel'e ek olarak sınırsız konu ve ünite testi, takvimli denemeler ve sıralama.",
+            Tier = 2,
+            Features = [LearnerFeatures.PremiumContent, LearnerFeatures.UnlimitedPractice, LearnerFeatures.PremiumAssessments],
+            PracticeTestsPerDay = -1,
+            SortOrder = 2,
+            Prices =
+            [
+                Price(LearnerTerm.Month1, 30, 349m), Price(LearnerTerm.Month3, 90, 899m),
+                Price(LearnerTerm.Month12, 365, 2790m), Price(LearnerTerm.Summer, 0, 699m),
+            ]
+        },
+        new LearnerPackage
+        {
+            Id = Guid.NewGuid(),
+            Code = "premium",
+            Name = "Premium",
+            Description = "Plus'a ek olarak canlı grup dersleri (yakında).",
+            Tier = 3,
+            Features =
+            [
+                LearnerFeatures.PremiumContent, LearnerFeatures.UnlimitedPractice,
+                LearnerFeatures.PremiumAssessments, LearnerFeatures.LiveGroupLessons
+            ],
+            PracticeTestsPerDay = -1,
+            SortOrder = 3,
+            Prices =
+            [
+                Price(LearnerTerm.Month1, 30, 499m), Price(LearnerTerm.Month3, 90, 1290m),
+                Price(LearnerTerm.Month12, 365, 3990m), Price(LearnerTerm.Summer, 0, 990m),
+            ]
+        },
+    ];
 
     private static List<Plan> PlanDefinitions() =>
     [
@@ -85,7 +170,10 @@ public static class SubscriptionDataSeeder
                 new PlanLimit { Id = Guid.NewGuid(), Metric = QuotaMetric.MaxQuestionsPerExam, Value = 20, Period = QuotaPeriod.Absolute },
                 new PlanLimit { Id = Guid.NewGuid(), Metric = QuotaMetric.Seats, Value = 1, Period = QuotaPeriod.Absolute },
             ],
-            Features = []
+            Features =
+            [
+                new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "live_class", IsEnabled = true },
+            ]
         },
         new Plan
         {
@@ -114,6 +202,7 @@ public static class SubscriptionDataSeeder
             ],
             Features =
             [
+                new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "live_class", IsEnabled = true },
                 new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "live_quiz", IsEnabled = true },
                 new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "question_import", IsEnabled = true },
                 new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "analytics", IsEnabled = true },
@@ -146,6 +235,7 @@ public static class SubscriptionDataSeeder
             ],
             Features =
             [
+                new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "live_class", IsEnabled = true },
                 new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "live_quiz", IsEnabled = true },
                 new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "question_import", IsEnabled = true },
                 new PlanFeature { Id = Guid.NewGuid(), FeatureCode = "analytics", IsEnabled = true },

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Shared.DTOs;
 using Shared.Models;
 
@@ -22,7 +23,7 @@ internal static class ContentQueries
     public static ContentProgressDto? ToDto(this ContentProgress? progress) =>
         progress is null ? null : new ContentProgressDto(progress.PositionSeconds, progress.Completed, progress.UpdatedAt);
 
-    public static ContentItemSummaryDto ToSummary(this ContentItem item, ContentProgress? progress) => new(
+    public static ContentItemSummaryDto ToSummary(this ContentItem item, ContentProgress? progress, bool locked = false) => new(
         item.Id,
         item.TopicId,
         item.Type,
@@ -33,7 +34,15 @@ internal static class ContentQueries
         item.ProcessingStatus,
         item.ThumbnailKey != null,
         item.Order,
-        progress.ToDto());
+        progress.ToDto(),
+        locked);
+
+    /// <summary>The slug of the level an item belongs to (through topic, unit and subject).</summary>
+    public static Task<string?> LevelSlugOfItemAsync(this ContentService.Data.ContentDbContext db, Guid itemId, CancellationToken cancellationToken) =>
+        db.ContentItems.AsNoTracking()
+            .Where(i => i.Id == itemId)
+            .Select(i => i.Topic!.Unit!.Subject!.Level!.Slug)
+            .FirstOrDefaultAsync(cancellationToken);
 
     public static LevelDto ToDto(this Level level) =>
         new(level.Id, level.Slug, level.Name, level.Kind, level.GradeNumber, level.Order);

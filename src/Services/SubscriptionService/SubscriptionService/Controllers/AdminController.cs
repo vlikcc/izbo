@@ -50,12 +50,17 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("orders/{orderId}/mark-paid")]
-    public async Task<ActionResult<ApiResponse<bool>>> MarkOrderPaid(Guid orderId)
-    {
-        var result = await _subscriptionService.AdminMarkOrderPaidAsync(orderId);
-        if (!result)
-            return NotFound(new ApiResponse<bool>(false, false, "Sipariş bulunamadı"));
+    public async Task<ActionResult<ApiResponse<bool>>> MarkOrderPaid(Guid orderId) =>
+        Decision(await _subscriptionService.AdminMarkOrderPaidAsync(orderId), "Sipariş ödendi olarak işaretlendi");
 
-        return Ok(new ApiResponse<bool>(true, true, "Sipariş ödendi olarak işaretlendi"));
-    }
+    [HttpPost("orders/{orderId}/reject")]
+    public async Task<ActionResult<ApiResponse<bool>>> RejectOrder(Guid orderId) =>
+        Decision(await _subscriptionService.AdminRejectOrderAsync(orderId), "Sipariş reddedildi");
+
+    private ActionResult<ApiResponse<bool>> Decision(OrderDecision decision, string message) => decision switch
+    {
+        OrderDecision.Done => Ok(new ApiResponse<bool>(true, true, message)),
+        OrderDecision.NotPending => Conflict(new ApiResponse<bool>(false, false, "Sipariş artık beklemede değil")),
+        _ => NotFound(new ApiResponse<bool>(false, false, "Sipariş bulunamadı"))
+    };
 }

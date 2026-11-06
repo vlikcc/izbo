@@ -47,10 +47,12 @@ public class CurriculumService : ICurriculumService
     private readonly ContentDbContext _db;
     private readonly IAuditLogger _audit;
     private readonly ILogger<CurriculumService> _logger;
+    private readonly IContentAccessPolicy _accessPolicy;
 
-    public CurriculumService(ContentDbContext db, IAuditLogger audit, ILogger<CurriculumService> logger)
+    public CurriculumService(ContentDbContext db, IAuditLogger audit, ILogger<CurriculumService> logger, IContentAccessPolicy? accessPolicy = null)
     {
         _db = db;
+        _accessPolicy = accessPolicy ?? new AllowAllContentAccessPolicy();
         _audit = audit;
         _logger = logger;
     }
@@ -132,7 +134,7 @@ public class CurriculumService : ICurriculumService
         ArgumentNullException.ThrowIfNull(caller);
 
         var topic = await _db.Topics.AsNoTracking()
-            .Include(t => t.Unit).ThenInclude(u => u!.Subject)
+            .Include(t => t.Unit).ThenInclude(u => u!.Subject).ThenInclude(sj => sj!.Level)
             .Include(t => t.Outcomes)
             .FirstOrDefaultAsync(t => t.Id == topicId, cancellationToken);
         if (topic is null)
@@ -145,6 +147,9 @@ public class CurriculumService : ICurriculumService
             .Where(i => i.TopicId == topicId)
             .OrderBy(i => i.Order).ThenBy(i => i.CreatedAt)
             .ToListAsync(cancellationToken);
+
+        var entitlement = await _accessPolicy.GetAsync(caller, cancellationToken);
+        var levelSlug = topic.Unit!.Subject!.Level?.Slug;
 
         var itemIds = items.Select(i => i.Id).ToList();
         var progress = await _db.Progress.AsNoTracking()
@@ -161,7 +166,9 @@ public class CurriculumService : ICurriculumService
             topic.Name,
             topic.Order,
             topic.Outcomes.OrderBy(o => o.Code, StringComparer.Ordinal).Select(o => o.ToDto()).ToList(),
-            items.Select(i => i.ToSummary(progress.GetValueOrDefault(i.Id))).ToList());
+            items.Select(i => i.ToSummary(
+                progress.GetValueOrDefault(i.Id),
+                i.OwnerId != caller.UserId && entitlement.IsLocked(i.AccessTier, levelSlug))).ToList());
     }
 
     // ---- Subjects ----

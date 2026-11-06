@@ -32,8 +32,17 @@ public interface IContentItemService
     Task<PagedResponse<ContentItemDto>> GetReviewQueueAsync(PagedRequest paging, CancellationToken cancellationToken = default);
     Task<ContentResult<ContentItemDto>> RetryProcessingAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
 
-    /// <summary>The item when the caller may play it; null otherwise (reported as 404, so ids can't be probed).</summary>
+    /// <summary>
+    /// The item when the caller may see it (published, or their own); null otherwise (reported as 404, so ids
+    /// can't be probed). Premium items are visible but locked; see <see cref="FindPlayableAsync"/>.
+    /// </summary>
     Task<ContentItem?> FindViewableAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The item when the caller may play or download it. Null when it is not visible; throws
+    /// <see cref="Shared.Subscription.PackageRequiredException"/> (HTTP 402) when it is premium and their package doesn't cover it.
+    /// </summary>
+    Task<ContentItem?> FindPlayableAsync(Guid id, Caller caller, CancellationToken cancellationToken = default);
 
     /// <summary>A published item, for unauthenticated thumbnail requests from public pages.</summary>
     Task<ContentItem?> FindPublishedAsync(Guid id, CancellationToken cancellationToken = default);
@@ -138,9 +147,22 @@ public class ContentItemService : IContentItemService
     public async Task<ContentResult<ContentItemDto>> GetAsync(Guid id, Caller caller, CancellationToken cancellationToken = default)
     {
         var item = await FindViewableAsync(id, caller, cancellationToken);
-        return item is null
-            ? ContentResult.NotFound<ContentItemDto>("Content not found")
-            : ContentResult.Ok(await ToDtoAsync(item.Id, caller, cancellationToken));
+        if (item is null)
+        {
+            return ContentResult.NotFound<ContentItemDto>("Content not found");
+        }
+
+        var dto = await ToDtoAsync(item.Id, caller, cancellationToken);
+        if (item.AccessTier == ContentAccessTier.Free)
+        {
+            return ContentResult.Ok(dto);
+        }
+
+        var entitlement = await _accessPolicy.GetAsync(caller, cancellationToken);
+        var locked = item.OwnerId != caller.UserId
+            && entitlement.IsLocked(item.AccessTier, await _db.LevelSlugOfItemAsync(item.Id, cancellationToken));
+        // An embed plays straight from its URL, so a locked one must not hand the URL out.
+        return ContentResult.Ok(locked ? dto with { Locked = true, EmbedUrl = null } : dto);
     }
 
     public async Task<ContentResult<ContentItemDto>> UpdateAsync(Guid id, UpdateContentItemRequest request, Caller caller, CancellationToken cancellationToken = default)
@@ -547,12 +569,20 @@ public class ContentItemService : IContentItemService
         }
 
         // Draft, in-review and rejected content exists only for its author and the reviewers.
-        if (item.Status != ContentStatus.Published)
+        return item.Status == ContentStatus.Published ? item : null;
+    }
+
+    public async Task<ContentItem?> FindPlayableAsync(Guid id, Caller caller, CancellationToken cancellationToken = default)
+    {
+        var item = await FindViewableAsync(id, caller, cancellationToken);
+        if (item is null || item.AccessTier == ContentAccessTier.Free || caller.IsPlatformAdmin || item.OwnerId == caller.UserId)
         {
-            return null;
+            return item;
         }
 
-        return await _accessPolicy.CanConsumeAsync(caller, item, cancellationToken) ? item : null;
+        await _accessPolicy.EnsureCanOpenAsync(
+            caller, item.AccessTier, await _db.LevelSlugOfItemAsync(item.Id, cancellationToken), cancellationToken);
+        return item;
     }
 
     public Task<ContentItem?> FindPublishedAsync(Guid id, CancellationToken cancellationToken = default) =>
@@ -566,7 +596,7 @@ public class ContentItemService : IContentItemService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var item = await FindViewableAsync(id, caller, cancellationToken);
+        var item = await FindPlayableAsync(id, caller, cancellationToken);
         if (item is null)
         {
             return ContentResult.NotFound<ContentProgressDto>("Content not found");
@@ -612,13 +642,15 @@ public class ContentItemService : IContentItemService
                 x.Item,
                 SubjectId = x.Item.Topic!.Unit!.SubjectId,
                 SubjectName = x.Item.Topic.Unit.Subject!.Name,
-                TopicName = x.Item.Topic.Name
+                TopicName = x.Item.Topic.Name,
+                LevelSlug = x.Item.Topic.Unit.Subject.Level!.Slug
             })
             .ToListAsync(cancellationToken);
 
+        var entitlement = await _accessPolicy.GetAsync(caller, cancellationToken);
         return rows
             .Select(r => new ContinueWatchingDto(
-                r.Item.ToSummary(r.Progress),
+                r.Item.ToSummary(r.Progress, entitlement.IsLocked(r.Item.AccessTier, r.LevelSlug)),
                 r.SubjectId,
                 r.SubjectName,
                 r.TopicName,
