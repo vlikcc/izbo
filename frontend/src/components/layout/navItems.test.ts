@@ -9,13 +9,15 @@ describe('buildNavItems', () => {
         const items = paths({ role: 'Parent' });
 
         expect(items).toContain('/app/children');
+        expect(items).toContain('/app/paketler');
+        expect(items).not.toContain('/app/billing');
         expect(items).not.toContain('/app/exams');
         expect(items).not.toContain('/app/homework');
         expect(items).not.toContain('/app/classrooms');
         expect(items).not.toContain('/app/dersler');
     });
 
-    it('keeps billing away from students, whose parent pays', () => {
+    it('keeps teacher billing away from students; their packages have their own page', () => {
         const items = paths({ role: 'Student' });
 
         expect(items).toContain('/app/classrooms');
@@ -23,6 +25,7 @@ describe('buildNavItems', () => {
         expect(items).toContain('/app/exams');
         expect(items).not.toContain('/app/icerik');
         expect(items).not.toContain('/app/billing');
+        expect(items).toContain('/app/paketler');
         expect(items).not.toContain('/app/children');
         expect(items).not.toContain('/app/gradebook');
     });
@@ -42,6 +45,7 @@ describe('buildNavItems', () => {
 
         expect(items).toEqual(expect.arrayContaining([
             '/app/gradebook', '/app/admin', '/app/admin/subscriptions', '/app/admin/mufredat', '/app/admin/icerik-onay',
+            '/app/admin/odemeler', '/app/admin/paketler',
         ]));
     });
 });

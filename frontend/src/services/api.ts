@@ -33,14 +33,17 @@ api.interceptors.response.use(
         // Plan/quota limit hit — surface the upgrade modal instead of a generic error toast.
         if (error.response?.status === 402) {
             const body = error.response.data as Partial<QuotaExceededInfo> | undefined;
+            const packageRequired = body?.errorCode === 'PACKAGE_REQUIRED';
             useUpgradeStore.getState().open({
-                message: body?.message || 'Planınızın kotasını doldurdunuz.',
-                errorCode: 'QUOTA_EXCEEDED',
+                message: body?.message || (packageRequired ? 'Bunun için bir paket gerekiyor.' : 'Planınızın kotasını doldurdunuz.'),
+                errorCode: packageRequired ? 'PACKAGE_REQUIRED' : 'QUOTA_EXCEEDED',
                 metric: body?.metric,
                 featureCode: body?.featureCode,
                 limit: body?.limit,
                 current: body?.current,
-                upgradeUrl: body?.upgradeUrl || '/app/billing',
+                requiredTier: body?.requiredTier,
+                reason: body?.reason,
+                upgradeUrl: body?.upgradeUrl || (packageRequired ? '/app/paketler' : '/app/billing'),
             });
             return Promise.reject(error);
         }

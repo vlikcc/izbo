@@ -68,3 +68,13 @@
     box-shadow: var(--shadow-sm);
     background: var(--color-white);
 }
+
+.media-error.content-locked {
+    flex-direction: column;
+    gap: var(--space-2);
+    background: linear-gradient(135deg, rgba(30, 27, 75, 0.92), rgba(67, 56, 202, 0.88));
+}
+
+.content-locked-icon {
+    font-size: 2rem;
+}

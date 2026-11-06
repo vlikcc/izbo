@@ -22,7 +22,7 @@ export function buildNavItems(user: Pick<User, 'role'> | null | undefined, t: Tr
         return [
             home,
             { path: '/app/children', icon: '👨‍👩‍👧', label: 'Çocuklarım' },
-            billing,
+            { path: '/app/paketler', icon: '⭐', label: 'Paketler' },
             profile,
         ];
     }
@@ -37,7 +37,14 @@ export function buildNavItems(user: Pick<User, 'role'> | null | undefined, t: Tr
     ];
 
     if (isStudent(user)) {
-        return [home, lessons, { path: '/app/denemeler', icon: '🏆', label: 'Denemeler' }, ...learning, profile];
+        return [
+            home,
+            lessons,
+            { path: '/app/denemeler', icon: '🏆', label: 'Denemeler' },
+            ...learning,
+            { path: '/app/paketler', icon: '⭐', label: 'Paketim' },
+            profile,
+        ];
     }
 
     return [
@@ -59,6 +66,8 @@ export function buildNavItems(user: Pick<User, 'role'> | null | undefined, t: Tr
                 { path: '/app/admin/denemeler', icon: '🏆', label: 'Deneme sınavları' },
                 { path: '/app/admin/icerik-onay', icon: '✅', label: 'Onay kuyruğu' },
                 { path: '/app/admin/subscriptions', icon: '⚙️', label: 'Abonelikler' },
+                { path: '/app/admin/odemeler', icon: '💸', label: 'Ödemeler' },
+                { path: '/app/admin/paketler', icon: '⭐', label: 'Öğrenci paketleri' },
             ]
             : []),
         profile,

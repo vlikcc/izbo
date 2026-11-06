@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui';
 import { VideoPlayer } from '../media/VideoPlayer';
 import { PdfViewer } from '../media/PdfViewer';
@@ -24,6 +25,20 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ item, trackProgres
     const onVideoProgress = useCallback((_position: number, completed: boolean) => {
         if (completed) onCompleted?.();
     }, [onCompleted]);
+    const navigate = useNavigate();
+
+    if (item.locked) {
+        return (
+            <div className="media-frame">
+                <div className="media-error content-locked" role="note">
+                    <span className="content-locked-icon" aria-hidden="true">🔒</span>
+                    <strong>Bu içerik paketlere dahil</strong>
+                    <span>Temel, Plus ve Premium paketlerde, kendi sınıf düzeyinde açılır.</span>
+                    <Button variant="primary" size="sm" onClick={() => navigate('/app/paketler')}>Paketleri gör</Button>
+                </div>
+            </div>
+        );
+    }
 
     if (item.processingStatus !== 'Ready' && item.type !== 'Embed') {
         return (

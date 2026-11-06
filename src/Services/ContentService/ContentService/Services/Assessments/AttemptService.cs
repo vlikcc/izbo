@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Shared.Authorization;
 using Shared.DTOs;
 using Shared.Models;
+using Shared.Subscription;
 
 namespace ContentService.Services.Assessments;
 
@@ -13,6 +14,9 @@ public interface IAttemptService
 
     /// <summary>Starts a published mock exam or placement test; a second call returns the same sitting.</summary>
     Task<ContentResult<AttemptDto>> StartAssessmentAsync(Guid assessmentId, Caller caller, CancellationToken cancellationToken = default);
+
+    /// <summary>How many topic/unit tests the caller started today (Istanbul day) and their daily limit (-1 unlimited).</summary>
+    Task<PracticeUsageDto> GetPracticeUsageAsync(Caller caller, CancellationToken cancellationToken = default);
 
     Task<ContentResult<AttemptDto>> GetAsync(Guid attemptId, Caller caller, CancellationToken cancellationToken = default);
     Task<ContentResult<bool>> SaveAnswerAsync(Guid attemptId, int order, SaveAnswerRequest request, Caller caller, CancellationToken cancellationToken = default);
@@ -52,12 +56,14 @@ public class AttemptService : IAttemptService
     private readonly ContentDbContext _db;
     private readonly TimeProvider _clock;
     private readonly ILogger<AttemptService> _logger;
+    private readonly IContentAccessPolicy _accessPolicy;
 
-    public AttemptService(ContentDbContext db, TimeProvider clock, ILogger<AttemptService> logger)
+    public AttemptService(ContentDbContext db, TimeProvider clock, ILogger<AttemptService> logger, IContentAccessPolicy? accessPolicy = null)
     {
         _db = db;
         _clock = clock;
         _logger = logger;
+        _accessPolicy = accessPolicy ?? new AllowAllContentAccessPolicy();
     }
 
     private DateTime Now => _clock.GetUtcNow().UtcDateTime;
@@ -131,6 +137,14 @@ public class AttemptService : IAttemptService
 
             Grade(running, AttemptStatus.Expired, now);
             await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        // Resuming is free; only a new test counts against the day's allowance.
+        var usage = await GetPracticeUsageAsync(caller, cancellationToken);
+        if (usage.DailyLimit >= 0 && usage.UsedToday >= usage.DailyLimit)
+        {
+            throw new PackageRequiredException(2, PackageRequiredReasons.DailyLimit,
+                $"Bugünkü {usage.DailyLimit} ücretsiz testini kullandın; sınırsız test için Plus paket gerekiyor");
         }
 
         var count = Math.Clamp(
@@ -208,6 +222,13 @@ public class AttemptService : IAttemptService
             return ContentResult.Ok(await ResumeAsync(existing, now, cancellationToken));
         }
 
+        if (assessment.AccessTier == ContentAccessTier.Premium
+            && !(await _accessPolicy.GetAsync(caller, cancellationToken)).Has(LearnerFeatureCodes.PremiumAssessments))
+        {
+            throw new PackageRequiredException(2, PackageRequiredReasons.PremiumAssessment,
+                "Bu deneme Plus ve Premium paketlere dahil");
+        }
+
         var ranked = false;
         var deadline = now.AddMinutes(assessment.DurationMinutes);
         if (assessment.Kind == AssessmentKind.MockExam)
@@ -279,6 +300,19 @@ public class AttemptService : IAttemptService
         _logger.LogInformation("Assessment attempt {AttemptId} for {AssessmentId} started by {UserId} (ranked: {Ranked})",
             attempt.Id, assessmentId, caller.UserId, ranked);
         return ContentResult.Ok(await ToAttemptDtoAsync(attempt, now, cancellationToken));
+    }
+
+    public async Task<PracticeUsageDto> GetPracticeUsageAsync(Caller caller, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(caller);
+
+        var limit = (await _accessPolicy.GetAsync(caller, cancellationToken)).PracticeTestsPerDay;
+        var since = LearnerLevels.StartOfIstanbulDay(Now);
+        var used = await _db.Attempts.AsNoTracking()
+            .CountAsync(a => a.UserId == caller.UserId
+                && (a.Scope == AttemptScope.Topic || a.Scope == AttemptScope.Unit)
+                && a.StartedAt >= since, cancellationToken);
+        return new PracticeUsageDto(used, limit);
     }
 
     // ---- Answering ----

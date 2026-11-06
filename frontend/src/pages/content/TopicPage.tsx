@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Card } from '../../components/ui';
 import { ContentViewer } from '../../components/content/ContentViewer';
 import { StartPracticeButton } from '../../components/test/StartPracticeButton';
+import { PracticeUsageHint } from '../../components/test/PracticeUsageHint';
 import contentService from '../../services/content.service';
 import { useAuthStore } from '../../stores/authStore';
 import type { ContentItem, TopicDetail } from '../../types/content';
@@ -66,7 +67,10 @@ export const TopicPage: React.FC = () => {
                         <h2 className="unit-title" style={{ margin: 0 }}>📝 Konuyu pekiştir</h2>
                         <p className="content-muted">10 soruluk konu testi; sonunda eksik kazanımlarını ve tekrar izlemen gerekenleri gösterir.</p>
                     </div>
-                    <StartPracticeButton target={{ topicId: topic.id }}>Konu testi çöz</StartPracticeButton>
+                    <div className="practice-actions">
+                        <StartPracticeButton target={{ topicId: topic.id }}>Konu testi çöz</StartPracticeButton>
+                        <PracticeUsageHint />
+                    </div>
                 </Card>
             )}
 
@@ -105,7 +109,9 @@ export const TopicPage: React.FC = () => {
                                                     {i.durationSeconds ? ` · ${formatDuration(i.durationSeconds)}` : ''}
                                                 </span>
                                             </span>
-                                            {i.accessTier === 'Premium' && <span className="badge badge-Premium">Premium</span>}
+                                            {i.locked
+                                                ? <span className="item-lock" aria-label="Paket gerekiyor" title="Paketlere dahil">🔒</span>
+                                                : i.accessTier === 'Premium' && <span className="badge badge-Premium">Premium</span>}
                                             {i.progress?.completed && <span className="item-done" aria-label="Tamamlandı">✓</span>}
                                         </button>
                                     </li>

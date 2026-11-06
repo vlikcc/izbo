@@ -57,6 +57,9 @@ const GradebookPage = lazy(() => import('./pages/reports/GradebookPage').then((m
 const PricingPage = lazy(() => import('./pages/pricing/PricingPage').then((m) => ({ default: m.PricingPage })));
 const BillingPage = lazy(() => import('./pages/billing/BillingPage').then((m) => ({ default: m.BillingPage })));
 const SubscriptionsAdminPage = lazy(() => import('./pages/admin/SubscriptionsAdminPage').then((m) => ({ default: m.SubscriptionsAdminPage })));
+const PackagesPage = lazy(() => import('./pages/packages/PackagesPage').then((m) => ({ default: m.PackagesPage })));
+const LearnerPaymentsAdminPage = lazy(() => import('./pages/admin/LearnerPaymentsAdminPage').then((m) => ({ default: m.LearnerPaymentsAdminPage })));
+const LearnerPackagesAdminPage = lazy(() => import('./pages/admin/LearnerPackagesAdminPage').then((m) => ({ default: m.LearnerPackagesAdminPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
 const TermsPage = lazy(() => import('./pages/legal/TermsPage').then((m) => ({ default: m.TermsPage })));
@@ -285,6 +288,9 @@ function AppRoutes() {
                     />
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="billing" element={<BillingPage />} />
+                    <Route path="paketler" element={<RoleRoute roles={['Student', 'Parent', 'Admin', 'SuperAdmin']}><PackagesPage /></RoleRoute>} />
+                    <Route path="admin/odemeler" element={<RoleRoute roles={['Admin', 'SuperAdmin']}><LearnerPaymentsAdminPage /></RoleRoute>} />
+                    <Route path="admin/paketler" element={<RoleRoute roles={['Admin', 'SuperAdmin']}><LearnerPackagesAdminPage /></RoleRoute>} />
                     <Route
                         path="admin/subscriptions"
                         element={
