@@ -7,10 +7,14 @@ import './Content.css';
 interface TopicPickerProps {
     value: string;
     onChange: (topicId: string) => void;
+    /** Reports the chosen level and subject too, for filters that accept a level or subject alone. */
+    onContext?: (context: { levelId: string; subjectId: string }) => void;
+    /** Label of the empty choice, e.g. "Tümü" when the picker filters a list. */
+    emptyLabel?: string;
 }
 
 /** Level → subject → topic, for attaching content to the curriculum. */
-export const TopicPicker: React.FC<TopicPickerProps> = ({ value, onChange }) => {
+export const TopicPicker: React.FC<TopicPickerProps> = ({ value, onChange, onContext, emptyLabel = 'Seçin' }) => {
     const [levels, setLevels] = useState<Level[]>([]);
     const [levelSlug, setLevelSlug] = useState('');
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -35,12 +39,14 @@ export const TopicPicker: React.FC<TopicPickerProps> = ({ value, onChange }) => 
         setSubjectId('');
         setTree(null);
         onChange('');
+        onContext?.({ levelId: levels.find(l => l.slug === slug)?.id ?? '', subjectId: '' });
     };
 
     const chooseSubject = (id: string) => {
         setSubjectId(id);
         setTree(null);
         onChange('');
+        onContext?.({ levelId: levels.find(l => l.slug === levelSlug)?.id ?? '', subjectId: id });
     };
 
     const topicCount = tree?.units.reduce((n, u) => n + u.topics.length, 0) ?? 0;
@@ -50,21 +56,21 @@ export const TopicPicker: React.FC<TopicPickerProps> = ({ value, onChange }) => 
             <div className="input-wrapper">
                 <label className="input-label" htmlFor="pick-level">Seviye</label>
                 <select id="pick-level" className="field-select" value={levelSlug} onChange={e => chooseLevel(e.target.value)}>
-                    <option value="">Seçin</option>
+                    <option value="">{emptyLabel}</option>
                     {levels.map(l => <option key={l.slug} value={l.slug}>{l.name}</option>)}
                 </select>
             </div>
             <div className="input-wrapper">
                 <label className="input-label" htmlFor="pick-subject">Ders</label>
                 <select id="pick-subject" className="field-select" value={subjectId} onChange={e => chooseSubject(e.target.value)} disabled={!subjects.length}>
-                    <option value="">Seçin</option>
+                    <option value="">{emptyLabel}</option>
                     {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
             </div>
             <div className="input-wrapper" style={{ gridColumn: '1 / -1' }}>
                 <label className="input-label" htmlFor="pick-topic">Konu</label>
                 <select id="pick-topic" className="field-select" value={value} onChange={e => onChange(e.target.value)} disabled={!topicCount}>
-                    <option value="">{subjectId && tree && !topicCount ? 'Bu derste henüz konu yok' : 'Seçin'}</option>
+                    <option value="">{subjectId && tree && !topicCount ? 'Bu derste henüz konu yok' : emptyLabel}</option>
                     {tree?.units.map(u => (
                         <optgroup key={u.id} label={u.name}>
                             {u.topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}

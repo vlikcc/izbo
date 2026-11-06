@@ -44,14 +44,19 @@ export function buildNavItems(user: Pick<User, 'role'> | null | undefined, t: Tr
         home,
         lessons,
         ...learning,
-        ...(isStaff(user) ? [{ path: '/app/icerik', icon: '🎬', label: 'İçeriklerim' }] : []),
+        ...(isStaff(user)
+            ? [
+                { path: '/app/icerik', icon: '🎬', label: 'İçeriklerim' },
+                { path: '/app/sorular', icon: '❓', label: 'Soru bankası' },
+            ]
+            : []),
         billing,
         ...(isStaff(user) ? [{ path: '/app/gradebook', icon: '📊', label: t('nav.gradebook') }] : []),
         ...(isAdmin(user)
             ? [
                 { path: '/app/admin', icon: '🛡️', label: t('nav.admin') },
                 { path: '/app/admin/mufredat', icon: '🗂️', label: 'Müfredat' },
-                { path: '/app/admin/icerik-onay', icon: '✅', label: 'İçerik onayı' },
+                { path: '/app/admin/icerik-onay', icon: '✅', label: 'Onay kuyruğu' },
                 { path: '/app/admin/subscriptions', icon: '⚙️', label: 'Abonelikler' },
             ]
             : []),

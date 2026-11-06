@@ -37,6 +37,8 @@ const LessonsPage = lazy(() => import('./pages/content/LessonsPage').then((m) =>
 const SubjectPage = lazy(() => import('./pages/content/SubjectPage').then((m) => ({ default: m.SubjectPage })));
 const TopicPage = lazy(() => import('./pages/content/TopicPage').then((m) => ({ default: m.TopicPage })));
 const MyContentPage = lazy(() => import('./pages/content/MyContentPage').then((m) => ({ default: m.MyContentPage })));
+const QuestionBankPage = lazy(() => import('./pages/questions/QuestionBankPage').then((m) => ({ default: m.QuestionBankPage })));
+const QuestionImportPage = lazy(() => import('./pages/questions/QuestionImportPage').then((m) => ({ default: m.QuestionImportPage })));
 const CurriculumAdminPage = lazy(() => import('./pages/content/CurriculumAdminPage').then((m) => ({ default: m.CurriculumAdminPage })));
 const ReviewQueuePage = lazy(() => import('./pages/content/ReviewQueuePage').then((m) => ({ default: m.ReviewQueuePage })));
 const ChildrenPage = lazy(() => import('./pages/parent/ChildrenPage').then((m) => ({ default: m.ChildrenPage })));
@@ -214,6 +216,22 @@ function AppRoutes() {
                         element={
                             <RoleRoute roles={['Instructor', 'Admin', 'SuperAdmin']}>
                                 <MyContentPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="sorular"
+                        element={
+                            <RoleRoute roles={['Instructor', 'Admin', 'SuperAdmin']}>
+                                <QuestionBankPage />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="admin/soru-aktar"
+                        element={
+                            <RoleRoute roles={['Admin', 'SuperAdmin']}>
+                                <QuestionImportPage />
                             </RoleRoute>
                         }
                     />
