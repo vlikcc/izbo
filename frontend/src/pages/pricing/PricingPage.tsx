@@ -6,7 +6,7 @@ import subscriptionService from '../../services/subscription.service';
 import learnerService from '../../services/learner.service';
 import type { Plan, BillingCycle } from '../../types';
 import type { LearnerPackage } from '../../types/learner';
-import { FEATURE_LABELS, formatPrice, practiceLimitLabel, purchasableTerms } from '../../utils/learner';
+import { FEATURE_LABELS, TERM_LABELS, formatPrice, practiceLimitLabel, purchasableTerms } from '../../utils/learner';
 import './Pricing.css';
 
 const METRIC_LABELS: Record<string, string> = {
@@ -138,7 +138,7 @@ export const PricingPage: React.FC = () => {
                                         </ul>
                                         {terms.length > 1 && (
                                             <p className="pricing-card-desc">
-                                                {terms.filter(t => t.term !== 'Month1').map(t => `${t.term === 'Summer' ? 'Yaz' : t.durationDays / 30 + ' ay'}: ${formatPrice(t.price, t.currency)}`).join(' · ')}
+                                                {terms.filter(t => t.term !== 'Month1').map(t => `${TERM_LABELS[t.term]}: ${formatPrice(t.price, t.currency)}`).join(' · ')}
                                             </p>
                                         )}
                                         <Button variant={popular ? 'primary' : 'outline'} fullWidth onClick={choosePackage}>
