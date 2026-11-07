@@ -1,16 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { liveQuizHub } from '../../services/liveQuizHub';
+import {
+    liveQuizHub,
+    LIVE_QUIZ_EVENTS,
+    type JoinedQuizPayload,
+    type QuestionStartedPayload,
+    type QuizEndedPayload,
+    type ScoreUpdatedPayload,
+} from '../../services/liveQuizHub';
 import './LiveQuizPanel.css';
-
-interface QuestionData {
-    id: string;
-    content: string;
-    type: string;
-    options: string[];
-    orderIndex: number;
-    totalQuestions: number;
-    timeLimit?: number;
-}
 
 interface LiveQuizStudentPanelProps {
     quizCode: string | null;
@@ -22,7 +19,7 @@ const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 /// broadcast to the room (via ClassroomHub's QuizStarted event) instead of asking the student
 /// to type it in manually.
 export const LiveQuizStudentPanel: React.FC<LiveQuizStudentPanelProps> = ({ quizCode }) => {
-    const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null);
+    const [currentQuestion, setCurrentQuestion] = useState<QuestionStartedPayload | null>(null);
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [hasSubmitted, setHasSubmitted] = useState(false);
     const [score, setScore] = useState(0);
@@ -30,28 +27,25 @@ export const LiveQuizStudentPanel: React.FC<LiveQuizStudentPanelProps> = ({ quiz
     const [quizEnded, setQuizEnded] = useState(false);
     const [answerResult, setAnswerResult] = useState<'correct' | 'wrong' | null>(null);
     const joinedCodeRef = useRef<string | null>(null);
-    const selectedAnswerRef = useRef<string | null>(null);
-    useEffect(() => {
-        selectedAnswerRef.current = selectedAnswer;
-    }, [selectedAnswer]);
 
     const setupHubListeners = useCallback(() => {
-        liveQuizHub.on<QuestionData>('QuestionStarted', (data) => {
+        liveQuizHub.on<JoinedQuizPayload>(LIVE_QUIZ_EVENTS.JoinedQuiz, (data) => setScore(data.score));
+        liveQuizHub.on<QuestionStartedPayload>(LIVE_QUIZ_EVENTS.QuestionStarted, (data) => {
             setCurrentQuestion(data);
             setSelectedAnswer(null);
-            setHasSubmitted(false);
-            setWaiting(false);
+            setHasSubmitted(data.hasAnswered || data.revealed);
+            setWaiting(data.revealed);
             setAnswerResult(null);
         });
-        liveQuizHub.on<{ correctAnswer: string }>('QuestionEnded', (data) => {
-            const selected = selectedAnswerRef.current;
-            setAnswerResult(selected === data.correctAnswer ? 'correct' : selected ? 'wrong' : null);
-            setWaiting(true);
+        liveQuizHub.on(LIVE_QUIZ_EVENTS.QuestionEnded, () => setWaiting(true));
+        // Doğru/yanlış bilgisi sunucunun puanlamasından gelir.
+        liveQuizHub.on<ScoreUpdatedPayload>(LIVE_QUIZ_EVENTS.ScoreUpdated, (data) => {
+            setScore(data.score);
+            setAnswerResult(data.answered ? (data.correct ? 'correct' : 'wrong') : null);
         });
-        liveQuizHub.on<{ score: number }>('ScoreUpdated', (data) => setScore(data.score));
-        liveQuizHub.on<{ rank: number; totalScore: number }>('QuizEnded', (data) => {
+        liveQuizHub.on<QuizEndedPayload>(LIVE_QUIZ_EVENTS.QuizEnded, (data) => {
             setQuizEnded(true);
-            setScore(data.totalScore);
+            if (data.totalScore !== undefined) setScore(data.totalScore);
         });
     }, []);
 
@@ -71,13 +65,16 @@ export const LiveQuizStudentPanel: React.FC<LiveQuizStudentPanelProps> = ({ quiz
             setWaiting(true);
             setScore(0);
             setupHubListeners();
-            liveQuizHub.joinQuiz(quizCode);
+            return liveQuizHub.joinQuiz(quizCode);
+        }).catch((error: unknown) => {
+            console.error('Failed to join quiz:', error);
+            joinedCodeRef.current = null;
         });
     }, [quizCode, setupHubListeners]);
 
     const handleSubmit = async () => {
         if (!selectedAnswer || !currentQuestion || hasSubmitted) return;
-        await liveQuizHub.submitAnswer('', currentQuestion.id, selectedAnswer);
+        await liveQuizHub.submitAnswer(currentQuestion.examId, currentQuestion.id, selectedAnswer);
         setHasSubmitted(true);
     };
 
@@ -102,6 +99,7 @@ export const LiveQuizStudentPanel: React.FC<LiveQuizStudentPanelProps> = ({ quiz
             <div className="quiz-panel">
                 <div className="quiz-panel-end">
                     <div>⏳</div>
+                    {answerResult && <p>{answerResult === 'correct' ? '🎉 Doğru!' : '❌ Yanlış'}</p>}
                     <h3>Soru bekleniyor...</h3>
                     <p>Puanınız: <strong>{score}</strong></p>
                 </div>
@@ -115,6 +113,19 @@ export const LiveQuizStudentPanel: React.FC<LiveQuizStudentPanelProps> = ({ quiz
                 Soru {currentQuestion.orderIndex} / {currentQuestion.totalQuestions} · {score} puan
             </div>
             <div className="quiz-panel-question">{currentQuestion.content}</div>
+            {currentQuestion.imageUrl && (
+                <img className="quiz-panel-image" src={currentQuestion.imageUrl} alt="Soru görseli" />
+            )}
+
+            {currentQuestion.options.length === 0 && (
+                <input
+                    className="quiz-panel-select"
+                    value={selectedAnswer ?? ''}
+                    onChange={(e) => !hasSubmitted && setSelectedAnswer(e.target.value || null)}
+                    placeholder="Cevabınız"
+                    disabled={hasSubmitted}
+                />
+            )}
 
             {currentQuestion.options.map((option, idx) => {
                 const letter = OPTION_LETTERS[idx];

@@ -2,6 +2,7 @@ using ExamService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Shared.Authorization;
+using Shared.Models;
 using Shared.Subscription;
 
 namespace ExamService.Hubs;
@@ -46,7 +47,8 @@ public class ExamHub : Hub
     {
         foreach (var (quiz, userId) in _quizzes.RemoveConnection(Context.ConnectionId))
         {
-            await Clients.Client(quiz.PresenterConnectionId).SendAsync("ParticipantLeft", new { userId });
+            await Clients.Client(quiz.PresenterConnectionId).SendAsync(
+                LiveQuizEvents.ParticipantLeft, new { userId, participantCount = quiz.ParticipantCount });
         }
 
         await base.OnDisconnectedAsync(exception);
@@ -103,7 +105,18 @@ public class ExamHub : Hub
             throw new HubException(ex.Message);
         }
 
-        var quiz = _quizzes.Start(examGuid, caller.UserId, Context.ConnectionId);
+        // The quiz grades answers itself, so it takes the questions with their keys. Only the
+        // instructor may read those, which the access check above already established.
+        var questions = await _exams.GetQuestionsAsync(examGuid, caller, Context.ConnectionAborted);
+        if (questions is not { Count: > 0 })
+        {
+            throw new HubException("Bu sınavda soru yok.");
+        }
+
+        var quiz = _quizzes.Start(examGuid, caller.UserId, Context.ConnectionId, questions
+            .OrderBy(q => q.OrderIndex)
+            .Select(ToLiveQuestion)
+            .ToList());
         await Groups.AddToGroupAsync(Context.ConnectionId, QuizGroup(examGuid));
 
         _logger.LogInformation("Live quiz started for exam {ExamId}", examGuid);
@@ -115,14 +128,19 @@ public class ExamHub : Hub
     {
         var quiz = RequirePresenter(examId);
         var leaderboard = quiz.Leaderboard(take: int.MaxValue);
+        var totalQuestions = quiz.Questions.Count;
 
         _quizzes.End(quiz.ExamId);
 
-        await Clients.Group(QuizGroup(quiz.ExamId)).SendAsync("QuizEnded", new
+        await Clients.Client(quiz.PresenterConnectionId).SendAsync(
+            LiveQuizEvents.QuizEnded, new { leaderboard, totalQuestions });
+
+        // Each participant gets their own standing alongside the shared leaderboard.
+        foreach (var (connectionId, rank, score) in quiz.Standings())
         {
-            leaderboard,
-            totalQuestions = quiz.CurrentQuestionIndex + 1
-        });
+            await Clients.Client(connectionId).SendAsync(
+                LiveQuizEvents.QuizEnded, new { leaderboard, totalQuestions, rank, totalScore = score });
+        }
 
         _logger.LogInformation("Live quiz ended for exam {ExamId}", quiz.ExamId);
     }
@@ -131,10 +149,11 @@ public class ExamHub : Hub
     {
         var caller = Caller();
 
+        // Failures are thrown rather than sent as a separate message so the client's join call itself
+        // fails and it does not show a joined screen for a quiz it never entered.
         if (!_quizzes.TryGetByCode(quizCode, out var quiz))
         {
-            await Clients.Caller.SendAsync("Error", "Quiz bulunamadı. Kodu kontrol edin.");
-            return;
+            throw new HubException("Quiz bulunamadı. Kodu kontrol edin.");
         }
 
         // Knowing the code is not sufficient: a quiz belongs to a classroom, and only its members may
@@ -142,26 +161,32 @@ public class ExamHub : Hub
         var access = await _exams.GetExamAccessAsync(quiz.ExamId, caller, Context.ConnectionAborted);
         if (access?.CanView != true)
         {
-            await Clients.Caller.SendAsync("Error", "Bu quizin sınıfına kayıtlı değilsiniz.");
-            return;
+            throw new HubException("Bu quizin sınıfına kayıtlı değilsiniz.");
         }
 
-        quiz.AddParticipant(caller.UserId, DisplayName(), Context.ConnectionId);
+        var score = quiz.AddParticipant(caller.UserId, DisplayName(), Context.ConnectionId);
         await Groups.AddToGroupAsync(Context.ConnectionId, QuizGroup(quiz.ExamId));
 
-        await Clients.Client(quiz.PresenterConnectionId).SendAsync("ParticipantJoined", new
+        await Clients.Client(quiz.PresenterConnectionId).SendAsync(LiveQuizEvents.ParticipantJoined, new
         {
             userId = caller.UserId,
             userName = DisplayName(),
-            connectionId = Context.ConnectionId,
+            score,
             participantCount = quiz.ParticipantCount
         });
 
-        await Clients.Caller.SendAsync("JoinedQuiz", new
+        await Clients.Caller.SendAsync(LiveQuizEvents.JoinedQuiz, new
         {
             examId = quiz.ExamId,
-            currentQuestionIndex = quiz.CurrentQuestionIndex
+            totalQuestions = quiz.Questions.Count,
+            score
         });
+
+        // A late joiner sees the question already open, unless its answer has been revealed.
+        if (!quiz.CurrentQuestionRevealed && QuestionStartedPayload(quiz, caller.UserId) is { } current)
+        {
+            await Clients.Caller.SendAsync(LiveQuizEvents.QuestionStarted, current);
+        }
 
         _logger.LogInformation("User {UserId} joined the live quiz for exam {ExamId}", caller.UserId, quiz.ExamId);
     }
@@ -175,7 +200,8 @@ public class ExamHub : Hub
         if (_quizzes.TryGetByExam(examGuid, out var quiz))
         {
             quiz.RemoveParticipant(caller.UserId);
-            await Clients.Client(quiz.PresenterConnectionId).SendAsync("ParticipantLeft", new { userId = caller.UserId });
+            await Clients.Client(quiz.PresenterConnectionId).SendAsync(
+                LiveQuizEvents.ParticipantLeft, new { userId = caller.UserId, participantCount = quiz.ParticipantCount });
         }
     }
 
@@ -188,42 +214,70 @@ public class ExamHub : Hub
         var quiz = RequirePresenter(examId);
         quiz.RevealResults();
 
-        return Clients.Group(QuizGroup(quiz.ExamId)).SendAsync("QuestionResults", new
+        return Clients.Group(QuizGroup(quiz.ExamId)).SendAsync(LiveQuizEvents.QuestionResults, new
         {
             answers = quiz.AnswerTally(),
             totalResponses = quiz.ResponseCount
         });
     }
 
-    public Task RevealAnswer(string examId)
+    /// <summary>
+    /// Closes the current question: everyone learns the key, each participant learns how they did, and
+    /// the presenter gets the updated leaderboard.
+    /// </summary>
+    public async Task RevealAnswer(string examId)
     {
         var quiz = RequirePresenter(examId);
+        var reveal = quiz.Reveal() ?? throw new HubException("There is no question to reveal.");
 
-        return Clients.Group(QuizGroup(quiz.ExamId)).SendAsync("AnswerRevealed", new
+        await Clients.Group(QuizGroup(quiz.ExamId)).SendAsync(LiveQuizEvents.QuestionEnded, new
         {
-            questionIndex = quiz.CurrentQuestionIndex
+            questionId = reveal.Question.Id,
+            questionIndex = reveal.QuestionIndex,
+            correctAnswer = reveal.CorrectLetter ?? reveal.Question.CorrectAnswer
         });
+
+        foreach (var outcome in reveal.Outcomes.Where(o => o.ConnectionId is not null))
+        {
+            await Clients.Client(outcome.ConnectionId!).SendAsync(LiveQuizEvents.ScoreUpdated, new
+            {
+                score = outcome.Score,
+                rank = outcome.Rank,
+                answered = outcome.Answered,
+                correct = outcome.IsCorrect,
+                pointsAwarded = outcome.PointsAwarded
+            });
+        }
+
+        await Clients.Client(quiz.PresenterConnectionId).SendAsync(
+            LiveQuizEvents.Leaderboard, quiz.Leaderboard(take: int.MaxValue));
     }
 
-    public async Task SubmitAnswer(string examId, string questionId, string answer)
+    /// <summary>Records a participant's answer; false when it was not accepted (late, repeated, stale).</summary>
+    public async Task<bool> SubmitAnswer(string examId, string questionId, string answer)
     {
         var (caller, examGuid) = Identify(examId);
+        var questionGuid = ParseId(questionId);
 
         if (!_quizzes.TryGetByExam(examGuid, out var quiz) || !quiz.HasParticipant(caller.UserId))
         {
             throw new HubException("Join the quiz first.");
         }
 
-        if (!quiz.TryRecordAnswer(caller.UserId, answer))
+        var recorded = quiz.TryRecordAnswer(caller.UserId, questionGuid, answer);
+        if (recorded is null)
         {
-            return;
+            return false;
         }
 
-        await Clients.Client(quiz.PresenterConnectionId).SendAsync("AnswerReceived", new
+        await Clients.Client(quiz.PresenterConnectionId).SendAsync(LiveQuizEvents.AnswerReceived, new
         {
             userId = caller.UserId,
-            answer
+            answer = recorded,
+            responseCount = quiz.ResponseCount
         });
+
+        return true;
     }
 
     public Task GetLeaderboard(string examId)
@@ -236,17 +290,65 @@ public class ExamHub : Hub
             throw new HubException("Join the quiz first.");
         }
 
-        return Clients.Caller.SendAsync("Leaderboard", quiz.Leaderboard(take: 10));
+        return Clients.Caller.SendAsync(LiveQuizEvents.Leaderboard, quiz.Leaderboard(take: 10));
     }
 
-    private Task MoveToQuestion(string examId, int delta)
+    private async Task MoveToQuestion(string examId, int delta)
     {
         var quiz = RequirePresenter(examId);
+        quiz.MoveToQuestion(delta);
 
-        return Clients.Group(QuizGroup(quiz.ExamId)).SendAsync("QuestionChanged", new
+        if (quiz.CurrentQuestion is null)
         {
-            questionIndex = quiz.MoveToQuestion(delta)
-        });
+            return;
+        }
+
+        // Participants each get the question with whether they already answered it (the presenter
+        // can step back to a question that was open before).
+        foreach (var (connectionId, userId) in quiz.ConnectedParticipants())
+        {
+            await Clients.Client(connectionId).SendAsync(
+                LiveQuizEvents.QuestionStarted, QuestionStartedPayload(quiz, userId));
+        }
+    }
+
+    /// <summary>The open question as participants see it: no key, no explanation.</summary>
+    private static object? QuestionStartedPayload(LiveQuiz quiz, Guid userId)
+    {
+        var question = quiz.CurrentQuestion;
+        if (question is null)
+        {
+            return null;
+        }
+
+        return new
+        {
+            examId = quiz.ExamId,
+            id = question.Id,
+            content = question.Content,
+            type = question.Type.ToString(),
+            imageUrl = question.ImageUrl,
+            options = question.Options,
+            orderIndex = quiz.CurrentQuestionIndex + 1,
+            totalQuestions = quiz.Questions.Count,
+            hasAnswered = quiz.HasAnswered(userId),
+            revealed = quiz.CurrentQuestionRevealed
+        };
+    }
+
+    private static LiveQuizQuestion ToLiveQuestion(Shared.DTOs.QuestionWithAnswerDto question)
+    {
+        var type = Enum.TryParse<QuestionType>(question.Type, ignoreCase: true, out var parsed)
+            ? parsed
+            : QuestionType.MultipleChoice;
+
+        // True/false questions are answered by picking one of two options even when none were stored.
+        var options = question.Options is { Count: > 0 }
+            ? question.Options
+            : type == QuestionType.TrueFalse ? ["Doğru", "Yanlış"] : [];
+
+        return new LiveQuizQuestion(
+            question.Id, type, question.Content, question.ImageUrl, options, question.CorrectAnswer, question.Points);
     }
 
     /// <summary>

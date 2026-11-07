@@ -2,16 +2,21 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui';
 import { examService } from '../../services/exam.service';
-import { liveQuizHub } from '../../services/liveQuizHub';
+import {
+    applyLeaderboard,
+    liveQuizHub,
+    LIVE_QUIZ_EVENTS,
+    removeParticipant,
+    upsertParticipant,
+    type AnswerReceivedPayload,
+    type LeaderboardEntry,
+    type ParticipantJoinedPayload,
+    type ParticipantLeftPayload,
+    type PresenterParticipant,
+    type QuestionEndedPayload,
+} from '../../services/liveQuizHub';
 import type { Exam, Question } from '../../types';
 import './LiveQuizPresenter.css';
-
-interface ParticipantData {
-    odaId: string;
-    odaName: string;
-    connectionId: string;
-    score: number;
-}
 
 interface AnswerStats {
     [answer: string]: number;
@@ -26,9 +31,10 @@ export const LiveQuizPresenterPage: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [quizCode, setQuizCode] = useState<string>('');
-    const [participants, setParticipants] = useState<ParticipantData[]>([]);
+    const [participants, setParticipants] = useState<PresenterParticipant[]>([]);
     const [answerStats, setAnswerStats] = useState<AnswerStats>({});
     const [showAnswer, setShowAnswer] = useState(false);
+    const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
     const [isQuizActive, setIsQuizActive] = useState(false);
 
     const loadExamData = useCallback(async () => {
@@ -60,19 +66,21 @@ export const LiveQuizPresenterPage: React.FC = () => {
     }, [id, loadExamData]);
 
     const setupHubListeners = useCallback(() => {
-        liveQuizHub.on<ParticipantData>('ParticipantJoined', (data) => {
-            setParticipants(prev => [...prev, data]);
+        liveQuizHub.on<ParticipantJoinedPayload>(LIVE_QUIZ_EVENTS.ParticipantJoined, (data) => {
+            setParticipants((prev) => upsertParticipant(prev, data));
         });
-
-        liveQuizHub.on<{ odaId: string }>('ParticipantLeft', (data) => {
-            setParticipants(prev => prev.filter(p => p.odaId !== data.odaId));
+        liveQuizHub.on<ParticipantLeftPayload>(LIVE_QUIZ_EVENTS.ParticipantLeft, (data) => {
+            setParticipants((prev) => removeParticipant(prev, data));
         });
-
-        liveQuizHub.on<{ odaId: string; answer: string }>('AnswerReceived', (data) => {
-            setAnswerStats(prev => ({
-                ...prev,
-                [data.answer]: (prev[data.answer] || 0) + 1,
-            }));
+        liveQuizHub.on<AnswerReceivedPayload>(LIVE_QUIZ_EVENTS.AnswerReceived, (data) => {
+            setAnswerStats((prev) => ({ ...prev, [data.answer]: (prev[data.answer] || 0) + 1 }));
+        });
+        liveQuizHub.on<QuestionEndedPayload>(LIVE_QUIZ_EVENTS.QuestionEnded, (data) => {
+            setRevealedAnswer(data.correctAnswer);
+        });
+        // Puanlar sunucuda hesaplanır; cevap açıklandıktan sonra güncel tablo gelir.
+        liveQuizHub.on<LeaderboardEntry[]>(LIVE_QUIZ_EVENTS.Leaderboard, (data) => {
+            setParticipants((prev) => applyLeaderboard(prev, data));
         });
     }, []);
 
@@ -94,6 +102,7 @@ export const LiveQuizPresenterPage: React.FC = () => {
             setCurrentIndex(0);
             setAnswerStats({});
             setShowAnswer(false);
+            setRevealedAnswer(null);
         } catch (error) {
             console.error('Failed to start quiz:', error);
             alert('Quiz başlatılamadı.');
@@ -123,6 +132,7 @@ export const LiveQuizPresenterPage: React.FC = () => {
             setCurrentIndex(prev => prev + 1);
             setAnswerStats({});
             setShowAnswer(false);
+            setRevealedAnswer(null);
         } catch (error) {
             console.error('Failed to go to next question:', error);
         }
@@ -136,6 +146,7 @@ export const LiveQuizPresenterPage: React.FC = () => {
             setCurrentIndex(prev => prev - 1);
             setAnswerStats({});
             setShowAnswer(false);
+            setRevealedAnswer(null);
         } catch (error) {
             console.error('Failed to go to previous question:', error);
         }
@@ -253,7 +264,7 @@ export const LiveQuizPresenterPage: React.FC = () => {
                                         const letter = OPTION_LETTERS[idx];
                                         const count = answerStats[letter] || 0;
                                         const percentage = totalAnswers > 0 ? (count / totalAnswers) * 100 : 0;
-                                        const isCorrect = showAnswer && currentQuestion.correctAnswer === letter;
+                                        const isCorrect = showAnswer && (revealedAnswer ?? currentQuestion.correctAnswer) === letter;
 
                                         return (
                                             <div
@@ -304,7 +315,7 @@ export const LiveQuizPresenterPage: React.FC = () => {
                             </Button>
                         ) : (
                             <div className="answer-revealed">
-                                ✅ Doğru Cevap: {currentQuestion.correctAnswer}
+                                ✅ Doğru Cevap: {revealedAnswer ?? currentQuestion.correctAnswer}
                             </div>
                         )}
 
@@ -322,8 +333,8 @@ export const LiveQuizPresenterPage: React.FC = () => {
                         <h3>👥 Katılımcılar ({participants.length})</h3>
                         <div className="participants-list">
                             {participants.map((p) => (
-                                <div key={p.connectionId} className="participant-item">
-                                    <span className="participant-name">{p.odaName}</span>
+                                <div key={p.userId} className="participant-item">
+                                    <span className="participant-name">{p.userName}</span>
                                     <span className="participant-score">{p.score} puan</span>
                                 </div>
                             ))}

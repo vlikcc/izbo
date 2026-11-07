@@ -1,16 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Button } from '../ui';
 import { examService } from '../../services/exam.service';
-import { liveQuizHub } from '../../services/liveQuizHub';
+import {
+    applyLeaderboard,
+    liveQuizHub,
+    LIVE_QUIZ_EVENTS,
+    removeParticipant,
+    upsertParticipant,
+    type AnswerReceivedPayload,
+    type LeaderboardEntry,
+    type ParticipantJoinedPayload,
+    type ParticipantLeftPayload,
+    type PresenterParticipant,
+    type QuestionEndedPayload,
+} from '../../services/liveQuizHub';
 import type { Exam, Question } from '../../types';
 import './LiveQuizPanel.css';
-
-interface ParticipantData {
-    odaId: string;
-    odaName: string;
-    connectionId: string;
-    score: number;
-}
 
 interface AnswerStats {
     [answer: string]: number;
@@ -36,9 +41,10 @@ export const LiveQuizInstructorPanel: React.FC<LiveQuizInstructorPanelProps> = (
     const [questions, setQuestions] = useState<Question[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [quizCode, setQuizCode] = useState('');
-    const [participants, setParticipants] = useState<ParticipantData[]>([]);
+    const [participants, setParticipants] = useState<PresenterParticipant[]>([]);
     const [answerStats, setAnswerStats] = useState<AnswerStats>({});
     const [showAnswer, setShowAnswer] = useState(false);
+    const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
     const [isQuizActive, setIsQuizActive] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
 
@@ -52,14 +58,21 @@ export const LiveQuizInstructorPanel: React.FC<LiveQuizInstructorPanelProps> = (
     }, [classroomId]);
 
     const setupHubListeners = useCallback(() => {
-        liveQuizHub.on<ParticipantData>('ParticipantJoined', (data) => {
-            setParticipants((prev) => [...prev, data]);
+        liveQuizHub.on<ParticipantJoinedPayload>(LIVE_QUIZ_EVENTS.ParticipantJoined, (data) => {
+            setParticipants((prev) => upsertParticipant(prev, data));
         });
-        liveQuizHub.on<{ odaId: string }>('ParticipantLeft', (data) => {
-            setParticipants((prev) => prev.filter((p) => p.odaId !== data.odaId));
+        liveQuizHub.on<ParticipantLeftPayload>(LIVE_QUIZ_EVENTS.ParticipantLeft, (data) => {
+            setParticipants((prev) => removeParticipant(prev, data));
         });
-        liveQuizHub.on<{ odaId: string; answer: string }>('AnswerReceived', (data) => {
+        liveQuizHub.on<AnswerReceivedPayload>(LIVE_QUIZ_EVENTS.AnswerReceived, (data) => {
             setAnswerStats((prev) => ({ ...prev, [data.answer]: (prev[data.answer] || 0) + 1 }));
+        });
+        liveQuizHub.on<QuestionEndedPayload>(LIVE_QUIZ_EVENTS.QuestionEnded, (data) => {
+            setRevealedAnswer(data.correctAnswer);
+        });
+        // Puanlar sunucuda hesaplanır; cevap açıklandıktan sonra güncel tablo gelir.
+        liveQuizHub.on<LeaderboardEntry[]>(LIVE_QUIZ_EVENTS.Leaderboard, (data) => {
+            setParticipants((prev) => applyLeaderboard(prev, data));
         });
     }, []);
 
@@ -81,6 +94,7 @@ export const LiveQuizInstructorPanel: React.FC<LiveQuizInstructorPanelProps> = (
             setCurrentIndex(0);
             setAnswerStats({});
             setShowAnswer(false);
+            setRevealedAnswer(null);
             onQuizStarted(selectedExamId, code);
         } catch (error) {
             console.error('Failed to start quiz:', error);
@@ -109,6 +123,7 @@ export const LiveQuizInstructorPanel: React.FC<LiveQuizInstructorPanelProps> = (
         setCurrentIndex((prev) => prev + 1);
         setAnswerStats({});
         setShowAnswer(false);
+        setRevealedAnswer(null);
     };
 
     const previousQuestion = async () => {
@@ -117,6 +132,7 @@ export const LiveQuizInstructorPanel: React.FC<LiveQuizInstructorPanelProps> = (
         setCurrentIndex((prev) => prev - 1);
         setAnswerStats({});
         setShowAnswer(false);
+        setRevealedAnswer(null);
     };
 
     const revealAnswer = async () => {
@@ -183,7 +199,7 @@ export const LiveQuizInstructorPanel: React.FC<LiveQuizInstructorPanelProps> = (
                         const letter = OPTION_LETTERS[idx];
                         const count = answerStats[letter] || 0;
                         const percentage = totalAnswers > 0 ? (count / totalAnswers) * 100 : 0;
-                        const isCorrect = showAnswer && currentQuestion.correctAnswer === letter;
+                        const isCorrect = showAnswer && (revealedAnswer ?? currentQuestion.correctAnswer) === letter;
                         return (
                             <div key={idx} className={`quiz-panel-option ${isCorrect ? 'correct' : ''}`}>
                                 <div className="quiz-panel-option-fill" style={{ width: `${percentage}%` }} />
@@ -198,7 +214,7 @@ export const LiveQuizInstructorPanel: React.FC<LiveQuizInstructorPanelProps> = (
                         {!showAnswer ? (
                             <Button variant="primary" size="sm" onClick={revealAnswer}>👁️ Cevabı Göster</Button>
                         ) : (
-                            <span className="quiz-panel-correct-label">✅ {currentQuestion.correctAnswer}</span>
+                            <span className="quiz-panel-correct-label">✅ {revealedAnswer ?? currentQuestion.correctAnswer}</span>
                         )}
                         <Button variant="secondary" size="sm" onClick={nextQuestion} disabled={currentIndex === questions.length - 1}>→</Button>
                     </div>
