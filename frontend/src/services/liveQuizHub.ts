@@ -1,34 +1,126 @@
 import * as signalR from '@microsoft/signalr';
 import { API_URL } from '../config';
 
-export interface LiveQuizParticipant {
-    odaId: string;
-    odaCode: string;
-    participants: ParticipantInfo[];
-}
+/**
+ * ExamHub'ın canlı quiz için gönderdiği mesajlar. Sunucudaki karşılığı
+ * `src/Services/ExamService/ExamService/Hubs/LiveQuizEvents.cs`; bir test iki listeyi eşit tutar.
+ * Bir taraftaki ad değişirse mesaj sessizce kaybolur, bu yüzden adlar yalnızca buradan kullanılmalı.
+ */
+export const LIVE_QUIZ_EVENTS = {
+    ParticipantJoined: 'ParticipantJoined',
+    ParticipantLeft: 'ParticipantLeft',
+    JoinedQuiz: 'JoinedQuiz',
+    QuestionStarted: 'QuestionStarted',
+    AnswerReceived: 'AnswerReceived',
+    QuestionResults: 'QuestionResults',
+    QuestionEnded: 'QuestionEnded',
+    ScoreUpdated: 'ScoreUpdated',
+    Leaderboard: 'Leaderboard',
+    QuizEnded: 'QuizEnded',
+} as const;
 
-export interface ParticipantInfo {
-    odaId: string;
-    odaName: string;
-    connectionId: string;
+export type LiveQuizEvent = typeof LIVE_QUIZ_EVENTS[keyof typeof LIVE_QUIZ_EVENTS];
+
+/** Sunucu ekranına: biri katıldı (geri dönen katılımcı puanını korur). */
+export interface ParticipantJoinedPayload {
+    userId: string;
+    userName: string;
     score: number;
-    hasAnswered: boolean;
+    participantCount: number;
 }
 
-export interface QuestionResult {
-    questionId: string;
-    answers: { [answer: string]: number }; // answer -> count
-    correctAnswer: string;
+export interface ParticipantLeftPayload {
+    userId: string;
+    participantCount: number;
+}
+
+export interface JoinedQuizPayload {
+    examId: string;
+    totalQuestions: number;
+    score: number;
+}
+
+/** Katılımcının gördüğü açık soru; cevap anahtarı içermez. */
+export interface QuestionStartedPayload {
+    examId: string;
+    id: string;
+    content: string;
+    type: string;
+    imageUrl?: string | null;
+    options: string[];
+    /** 1'den başlayan sıra. */
+    orderIndex: number;
+    totalQuestions: number;
+    hasAnswered: boolean;
+    revealed: boolean;
+}
+
+export interface AnswerReceivedPayload {
+    userId: string;
+    /** Şık harfi (A–F) ya da kısa cevap metni. */
+    answer: string;
+    responseCount: number;
+}
+
+export interface QuestionResultsPayload {
+    answers: Record<string, number>;
     totalResponses: number;
 }
 
-export interface LiveQuizState {
-    examId: string;
-    currentQuestionIndex: number;
+export interface QuestionEndedPayload {
+    questionId: string;
+    questionIndex: number;
+    /** Doğru şıkkın harfi; şıksız sorularda cevap metni. */
+    correctAnswer: string | null;
+}
+
+export interface ScoreUpdatedPayload {
+    score: number;
+    rank: number;
+    answered: boolean;
+    correct: boolean;
+    pointsAwarded: number;
+}
+
+export interface LeaderboardEntry {
+    rank: number;
+    userId: string;
+    userName: string;
+    score: number;
+}
+
+export interface QuizEndedPayload {
+    leaderboard: LeaderboardEntry[];
     totalQuestions: number;
-    isActive: boolean;
-    showingResults: boolean;
-    timeRemaining?: number;
+    /** Yalnızca katılımcılara gider. */
+    rank?: number;
+    totalScore?: number;
+}
+
+/** Sunucu yayınının sunucu ekranındaki katılımcı listesine uygulanması. */
+export interface PresenterParticipant {
+    userId: string;
+    userName: string;
+    score: number;
+}
+
+export function upsertParticipant(list: PresenterParticipant[], joined: ParticipantJoinedPayload): PresenterParticipant[] {
+    const next = { userId: joined.userId, userName: joined.userName, score: joined.score };
+    return list.some((p) => p.userId === joined.userId)
+        ? list.map((p) => (p.userId === joined.userId ? next : p))
+        : [...list, next];
+}
+
+export function removeParticipant(list: PresenterParticipant[], left: ParticipantLeftPayload): PresenterParticipant[] {
+    return list.filter((p) => p.userId !== left.userId);
+}
+
+/** Lider tablosundaki puanları bağlı katılımcılara yansıtır ve puana göre sıralar. */
+export function applyLeaderboard(list: PresenterParticipant[], leaderboard: LeaderboardEntry[]): PresenterParticipant[] {
+    const scores = new Map(leaderboard.map((entry) => [entry.userId, entry.score]));
+    return list
+        .map((p) => ({ ...p, score: scores.get(p.userId) ?? p.score }))
+        .sort((a, b) => b.score - a.score);
 }
 
 type EventHandler<T> = (data: T) => void;
@@ -77,47 +169,9 @@ class LiveQuizHubService {
     private setupEventListeners(): void {
         if (!this.connection) return;
 
-        // Presenter events
-        this.connection.on('ParticipantJoined', (data) => {
-            this.emit('ParticipantJoined', data);
-        });
-
-        this.connection.on('ParticipantLeft', (data) => {
-            this.emit('ParticipantLeft', data);
-        });
-
-        this.connection.on('AnswerReceived', (data) => {
-            this.emit('AnswerReceived', data);
-        });
-
-        this.connection.on('QuestionResults', (data) => {
-            this.emit('QuestionResults', data);
-        });
-
-        // Voter events
-        this.connection.on('QuestionStarted', (data) => {
-            this.emit('QuestionStarted', data);
-        });
-
-        this.connection.on('QuestionEnded', (data) => {
-            this.emit('QuestionEnded', data);
-        });
-
-        this.connection.on('QuizEnded', (data) => {
-            this.emit('QuizEnded', data);
-        });
-
-        this.connection.on('ScoreUpdated', (data) => {
-            this.emit('ScoreUpdated', data);
-        });
-
-        this.connection.on('TimerTick', (data) => {
-            this.emit('TimerTick', data);
-        });
-
-        this.connection.on('Leaderboard', (data) => {
-            this.emit('Leaderboard', data);
-        });
+        for (const event of Object.values(LIVE_QUIZ_EVENTS)) {
+            this.connection.on(event, (data) => this.emit(event, data));
+        }
     }
 
     private emit(event: string, data: unknown): void {
@@ -127,7 +181,7 @@ class LiveQuizHubService {
         }
     }
 
-    on<T>(event: string, handler: EventHandler<T>): () => void {
+    on<T>(event: LiveQuizEvent, handler: EventHandler<T>): () => void {
         if (!this.eventHandlers.has(event)) {
             this.eventHandlers.set(event, new Set());
         }
@@ -189,9 +243,10 @@ class LiveQuizHubService {
         await this.connection.invoke('LeaveQuiz', examId);
     }
 
-    async submitAnswer(examId: string, questionId: string, answer: string): Promise<void> {
+    /** Sunucu cevabı kabul etmezse (geç, tekrar ya da kapanmış soru) false döner. */
+    async submitAnswer(examId: string, questionId: string, answer: string): Promise<boolean> {
         if (!this.connection) throw new Error('Not connected');
-        await this.connection.invoke('SubmitAnswer', examId, questionId, answer);
+        return await this.connection.invoke<boolean>('SubmitAnswer', examId, questionId, answer);
     }
 
     async disconnect(): Promise<void> {

@@ -1,19 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui';
-import { liveQuizHub } from '../../services/liveQuizHub';
+import {
+    liveQuizHub,
+    LIVE_QUIZ_EVENTS,
+    type JoinedQuizPayload,
+    type QuestionStartedPayload,
+    type QuizEndedPayload,
+    type ScoreUpdatedPayload,
+} from '../../services/liveQuizHub';
 import { useAuthStore } from '../../stores/authStore';
 import './LiveQuizVoter.css';
-
-interface QuestionData {
-    id: string;
-    content: string;
-    type: string;
-    options: string[];
-    orderIndex: number;
-    totalQuestions: number;
-    timeLimit?: number;
-}
 
 export const LiveQuizVoterPage: React.FC = () => {
     const { code } = useParams<{ code: string }>();
@@ -23,14 +20,13 @@ export const LiveQuizVoterPage: React.FC = () => {
     const [joinCode, setJoinCode] = useState(code || '');
     const [isJoining, setIsJoining] = useState(false);
     const [isJoined, setIsJoined] = useState(false);
-    const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null);
+    const [currentQuestion, setCurrentQuestion] = useState<QuestionStartedPayload | null>(null);
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [hasSubmitted, setHasSubmitted] = useState(false);
     const [score, setScore] = useState(0);
     const [waitingForQuestion, setWaitingForQuestion] = useState(false);
     const [quizEnded, setQuizEnded] = useState(false);
     const [finalRank, setFinalRank] = useState<number | null>(null);
-    const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
     const [answerResult, setAnswerResult] = useState<'correct' | 'wrong' | null>(null);
 
     const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -49,38 +45,34 @@ export const LiveQuizVoterPage: React.FC = () => {
     }, []);
 
     const setupHubListeners = useCallback(() => {
-        liveQuizHub.on<QuestionData>('QuestionStarted', (data) => {
-            setCurrentQuestion(data);
-            setSelectedAnswer(null);
-            setHasSubmitted(false);
-            setWaitingForQuestion(false);
-            setAnswerResult(null);
-            setTimeRemaining(data.timeLimit || null);
-        });
-
-        liveQuizHub.on<{ correctAnswer: string }>('QuestionEnded', (data) => {
-            if (selectedAnswer === data.correctAnswer) {
-                setAnswerResult('correct');
-            } else if (selectedAnswer) {
-                setAnswerResult('wrong');
-            }
-            setWaitingForQuestion(true);
-        });
-
-        liveQuizHub.on<{ score: number }>('ScoreUpdated', (data) => {
+        liveQuizHub.on<JoinedQuizPayload>(LIVE_QUIZ_EVENTS.JoinedQuiz, (data) => {
             setScore(data.score);
         });
 
-        liveQuizHub.on<{ remaining: number }>('TimerTick', (data) => {
-            setTimeRemaining(data.remaining);
+        liveQuizHub.on<QuestionStartedPayload>(LIVE_QUIZ_EVENTS.QuestionStarted, (data) => {
+            setCurrentQuestion(data);
+            setSelectedAnswer(null);
+            setHasSubmitted(data.hasAnswered || data.revealed);
+            setWaitingForQuestion(data.revealed);
+            setAnswerResult(null);
         });
 
-        liveQuizHub.on<{ rank: number; totalScore: number }>('QuizEnded', (data) => {
-            setQuizEnded(true);
-            setFinalRank(data.rank);
-            setScore(data.totalScore);
+        liveQuizHub.on(LIVE_QUIZ_EVENTS.QuestionEnded, () => {
+            setWaitingForQuestion(true);
         });
-    }, [selectedAnswer]);
+
+        // Doğru/yanlış bilgisi sunucunun puanlamasından gelir; istemci kendi karşılaştırmaz.
+        liveQuizHub.on<ScoreUpdatedPayload>(LIVE_QUIZ_EVENTS.ScoreUpdated, (data) => {
+            setScore(data.score);
+            setAnswerResult(data.answered ? (data.correct ? 'correct' : 'wrong') : null);
+        });
+
+        liveQuizHub.on<QuizEndedPayload>(LIVE_QUIZ_EVENTS.QuizEnded, (data) => {
+            setQuizEnded(true);
+            setFinalRank(data.rank ?? null);
+            if (data.totalScore !== undefined) setScore(data.totalScore);
+        });
+    }, []);
 
     const handleJoin = async () => {
         if (!joinCode.trim()) return;
@@ -100,7 +92,8 @@ export const LiveQuizVoterPage: React.FC = () => {
             setWaitingForQuestion(true);
         } catch (error) {
             console.error('Failed to join quiz:', error);
-            alert('Quiz\'e katılınamadı. Kodu kontrol edin.');
+            const message = error instanceof Error ? error.message.replace(/^.*HubException:\s*/, '') : '';
+            alert(message || 'Quiz\'e katılınamadı. Kodu kontrol edin.');
         } finally {
             setIsJoining(false);
         }
@@ -115,7 +108,7 @@ export const LiveQuizVoterPage: React.FC = () => {
         if (!selectedAnswer || !currentQuestion || hasSubmitted) return;
 
         try {
-            await liveQuizHub.submitAnswer('', currentQuestion.id, selectedAnswer);
+            await liveQuizHub.submitAnswer(currentQuestion.examId, currentQuestion.id, selectedAnswer);
             setHasSubmitted(true);
         } catch (error) {
             console.error('Failed to submit answer:', error);
@@ -200,6 +193,11 @@ export const LiveQuizVoterPage: React.FC = () => {
             <div className="live-quiz-voter">
                 <div className="voter-waiting">
                     <div className="waiting-pulse" />
+                    {answerResult && (
+                        <div className={`answer-result ${answerResult}`}>
+                            {answerResult === 'correct' ? '🎉 Doğru!' : '❌ Yanlış'}
+                        </div>
+                    )}
                     <h2>Soru Bekleniyor...</h2>
                     <p>Öğretmen bir sonraki soruyu başlattığında görünecek</p>
 
@@ -222,13 +220,7 @@ export const LiveQuizVoterPage: React.FC = () => {
                         Soru {currentQuestion.orderIndex} / {currentQuestion.totalQuestions}
                     </span>
                 </div>
-                <div className="voter-header-center">
-                    {timeRemaining !== null && (
-                        <div className={`timer ${timeRemaining <= 5 ? 'warning' : ''}`}>
-                            ⏱️ {timeRemaining}s
-                        </div>
-                    )}
-                </div>
+                <div className="voter-header-center" />
                 <div className="voter-header-right">
                     <div className="voter-score">
                         {score} puan
@@ -245,7 +237,22 @@ export const LiveQuizVoterPage: React.FC = () => {
                     <div className="voter-question-text">
                         {currentQuestion.content}
                     </div>
+                    {currentQuestion.imageUrl && (
+                        <img className="voter-question-image" src={currentQuestion.imageUrl} alt="Soru görseli" />
+                    )}
                 </div>
+
+                {/* Şıksız (kısa cevap) sorular */}
+                {currentQuestion.options.length === 0 && (
+                    <input
+                        type="text"
+                        className="join-code-input voter-text-answer"
+                        value={selectedAnswer ?? ''}
+                        onChange={(e) => !hasSubmitted && setSelectedAnswer(e.target.value || null)}
+                        placeholder="Cevabınız"
+                        disabled={hasSubmitted}
+                    />
+                )}
 
                 {/* Options */}
                 <div className="voter-options">
