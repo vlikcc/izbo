@@ -1,5 +1,5 @@
 /* ============================================
-   EduPlatform - Açık Kırmızı & Beyaz Tema
+   YZ Kampüs - yönetim paneli teması (öğretmen, yönetici ve eski seviye sayfaları)
    Premium Modern Tasarım Sistemi
    ============================================ */
 
@@ -90,6 +90,12 @@
    ============================================ */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+/* YZ Kampüs sayfaları (.kampus) tarayıcı varsayılan boşluklarıyla tasarlandı; sıfırlama onlara uygulanmaz. */
+:where(*:not(.kampus *)),
+:where(*:not(.kampus *))::before,
+:where(*:not(.kampus *))::after {
   margin: 0;
   padding: 0;
 }
@@ -109,13 +115,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
+a:where(:not(.kampus *)) {
   color: var(--color-primary-500);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
-a:hover {
+a:where(:not(.kampus *)):hover {
   color: var(--color-primary-600);
 }
 
@@ -124,21 +130,29 @@ img {
   height: auto;
 }
 
+/* YZ Kampüs logosu (maskot); logo kutusunun yazı boyutuna göre ölçeklenir */
+.brand-mark {
+  display: block;
+  width: 1.4em;
+  height: 1.4em;
+  object-fit: contain;
+}
+
 /* ============================================
    Typography
    ============================================ */
-h1, h2, h3, h4, h5, h6 {
+:is(h1, h2, h3, h4, h5, h6):where(:not(.kampus *)) {
   font-weight: 700;
   line-height: 1.3;
   color: var(--color-gray-900);
 }
 
-h1 { font-size: var(--font-size-4xl); }
-h2 { font-size: var(--font-size-3xl); }
-h3 { font-size: var(--font-size-2xl); }
-h4 { font-size: var(--font-size-xl); }
-h5 { font-size: var(--font-size-lg); }
-h6 { font-size: var(--font-size-base); }
+h1:where(:not(.kampus *)) { font-size: var(--font-size-4xl); }
+h2:where(:not(.kampus *)) { font-size: var(--font-size-3xl); }
+h3:where(:not(.kampus *)) { font-size: var(--font-size-2xl); }
+h4:where(:not(.kampus *)) { font-size: var(--font-size-xl); }
+h5:where(:not(.kampus *)) { font-size: var(--font-size-lg); }
+h6:where(:not(.kampus *)) { font-size: var(--font-size-base); }
 
 /* ============================================
    Utility Classes

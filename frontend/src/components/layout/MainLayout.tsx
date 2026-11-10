@@ -55,7 +55,7 @@ export const MainLayout: React.FC = () => {
             <aside id="app-sidebar" className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
                     <div className="sidebar-logo">
-                        <span className="sidebar-logo-icon" aria-hidden="true">📚</span>
+                        <span className="sidebar-logo-icon" aria-hidden="true"><img className="brand-mark" src="/icons/yz-kampus-192.png" alt="" /></span>
                         <span className="sidebar-logo-text">{t('appName')}</span>
                     </div>
                 </div>

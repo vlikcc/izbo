@@ -44,8 +44,8 @@ export const LoginPage: React.FC = () => {
                 <Card variant="glass" padding="lg" className="auth-card">
                     <div className="auth-header">
                         <div className="auth-logo">
-                            <span className="auth-logo-icon">📚</span>
-                            <span className="auth-logo-text">EduPlatform</span>
+                            <span className="auth-logo-icon" aria-hidden="true"><img className="brand-mark" src="/icons/yz-kampus-192.png" alt="" /></span>
+                            <span className="auth-logo-text">YZ Kampüs</span>
                         </div>
                         <h1 className="auth-title">Hoş Geldiniz</h1>
                         <p className="auth-subtitle">Hesabınıza giriş yapın</p>

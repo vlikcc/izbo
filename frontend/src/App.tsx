@@ -7,6 +7,7 @@ import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastHost } from './components/ui/ToastHost';
 import { UpgradeModal } from './components/subscription/UpgradeModal';
+import { kampusRoutes } from './kampus/routes';
 import type { User } from './types';
 import './index.css';
 
@@ -15,7 +16,6 @@ const LEARNER_ROLES: User['role'][] = ['Student', 'Instructor', 'Admin', 'SuperA
 
 const PublicLayout = lazy(() => import('./components/layout/PublicLayout').then((m) => ({ default: m.PublicLayout })));
 const LevelPage = lazy(() => import('./pages/public/LevelPage').then((m) => ({ default: m.LevelPage })));
-const LandingPage = lazy(() => import('./pages/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })));
@@ -87,10 +87,11 @@ function AppRoutes() {
     return (
         <Suspense fallback={<PageFallback />}>
             <Routes>
+                {/* YZ Kampüs (ilkokul) arayüzü: anasayfa, öğrenci/öğretmen/veli panelleri */}
+                {kampusRoutes()}
                 <Route element={<PublicLayout />}>
-                    <Route path="/" element={<LandingPage />} />
                     <Route path="/pricing" element={<PricingPage />} />
-                    <Route path="/sinif/:slug" element={<LevelPage />} />
+                    <Route path="/seviye/:slug" element={<LevelPage />} />
                     <Route path="/lgs" element={<LevelPage slugs={['lgs']} />} />
                     <Route path="/yks" element={<LevelPage slugs={['yks-tyt', 'yks-ayt', 'yks-ydt']} title="YKS" />} />
                 </Route>

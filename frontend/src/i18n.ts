@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
     tr: {
         translation: {
-            appName: 'EduPlatform',
+            appName: 'YZ Kampüs',
             nav: {
                 home: 'Ana Sayfa',
                 classrooms: 'Sınıflar',
@@ -28,7 +28,7 @@ const resources = {
     },
     en: {
         translation: {
-            appName: 'EduPlatform',
+            appName: 'YZ Kampüs',
             nav: {
                 home: 'Home',
                 classrooms: 'Classrooms',

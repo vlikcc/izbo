@@ -54,21 +54,34 @@ server {
 <url><loc>$public_scheme://$http_host/</loc></url>
 <url><loc>$public_scheme://$http_host/lgs</loc></url>
 <url><loc>$public_scheme://$http_host/yks</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/1-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/2-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/3-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/4-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/5-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/6-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/7-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/8-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/9-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/10-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/11-sinif</loc></url>
-<url><loc>$public_scheme://$http_host/sinif/12-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/1</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/2</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/3</loc></url>
+<url><loc>$public_scheme://$http_host/sinif/4</loc></url>
+<url><loc>$public_scheme://$http_host/seviye/5-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/seviye/6-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/seviye/7-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/seviye/8-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/seviye/9-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/seviye/10-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/seviye/11-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/seviye/12-sinif</loc></url>
+<url><loc>$public_scheme://$http_host/ornek-ders</loc></url>
+<url><loc>$public_scheme://$http_host/paketler</loc></url>
 <url><loc>$public_scheme://$http_host/pricing</loc></url>
 </urlset>
 ';
+    }
+
+    # YZ Kampüs çalışma kâğıtları (PDF) sayfa içindeki gizli çerçevede açılıp yazdırılır; sunucu
+    # genelindeki X-Frame-Options DENY / frame-ancestors 'none' bunu engellerdi. Buradaki add_header
+    # sunucu düzeyindeki başlıkların devralınmasını kestiği için gerekenler yeniden yazıldı.
+    location ^~ /kampus/assets/calisma-kagitlari/ {
+        expires 1d;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'self'" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     }
 
     # The base image's mime.types maps .js but not .mjs, so dynamically-imported ES module chunks

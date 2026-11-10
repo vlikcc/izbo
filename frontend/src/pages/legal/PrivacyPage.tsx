@@ -8,7 +8,7 @@ export const PrivacyPage: React.FC = () => (
             <p><Link to="/">← Ana sayfa</Link></p>
             <h1>Gizlilik Politikası</h1>
             <p>
-                EduPlatform, hesap bilgilerinizi (ad, e-posta, rol) ders, ödev ve sınav kayıtlarını
+                YZ Kampüs, hesap bilgilerinizi (ad, e-posta, rol) ders, ödev ve sınav kayıtlarını
                 işletmek için işler. Veriler sınıf üyeliğiyle sınırlı olarak eğitmenlere gösterilir.
             </p>
             <h2>Toplanan veriler</h2>

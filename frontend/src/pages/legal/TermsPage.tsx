@@ -8,7 +8,7 @@ export const TermsPage: React.FC = () => (
             <p><Link to="/">← Ana sayfa</Link></p>
             <h1>Kullanım Koşulları</h1>
             <p>
-                EduPlatform eğitim kurumları ve eğitmenler için bir öğrenme yönetim hizmetidir.
+                YZ Kampüs eğitim kurumları ve eğitmenler için bir öğrenme yönetim hizmetidir.
                 Hesap oluşturarak bu koşulları kabul etmiş olursunuz.
             </p>
             <h2>Hesap ve güvenlik</h2>

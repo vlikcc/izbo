@@ -45,7 +45,7 @@ export const LevelPage: React.FC<LevelPageProps> = ({ slugs, title }) => {
     const pageTitle = title ?? data?.level.name ?? 'Sınıf';
     const description = data ? describe(data) : '';
     const topicCount = data?.subjects.reduce((n, s) => n + s.topicCount, 0) ?? 0;
-    usePageMeta(`${pageTitle} Online Eğitim | Konu Anlatımı, Videolar ve Testler — EduPlatform`, description || undefined);
+    usePageMeta(`${pageTitle} Online Eğitim | Konu Anlatımı, Videolar ve Testler — YZ Kampüs`, description || undefined);
 
     return (
         <div className="lp">
@@ -153,7 +153,7 @@ export const LevelPage: React.FC<LevelPageProps> = ({ slugs, title }) => {
             <section className="lp-container lp-section">
                 <h2>Diğer sınıflar</h2>
                 <div className="lp-grade-links">
-                    {GRADES.map(g => <Link key={g} to={`/sinif/${g}-sinif`}>{g}. Sınıf</Link>)}
+                    {GRADES.map(g => <Link key={g} to={`/seviye/${g}-sinif`}>{g}. Sınıf</Link>)}
                     <Link to="/lgs">LGS</Link>
                     <Link to="/yks">YKS</Link>
                 </div>

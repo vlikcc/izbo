@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const DEFAULT_TITLE = 'EduPlatform';
+const DEFAULT_TITLE = 'YZ Kampüs';
 
 /**
  * Sets the document title and the description index.html already carries, and puts them back when the page

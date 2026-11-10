@@ -1,18 +1,14 @@
 {
-  "name": "EduPlatform",
-  "short_name": "EduPlatform",
-  "description": "Sanal sınıflar, sınavlar ve canlı dersler",
+  "name": "YZ Kampüs",
+  "short_name": "YZ Kampüs",
+  "description": "Karakterli ve oyunlaştırılmış öğrenme platformu: dersler, sınavlar, canlı dersler ve veli takibi",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#FA5252",
+  "background_color": "#FFF9F0",
+  "theme_color": "#6C4CF1",
   "lang": "tr",
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "/icons/yz-kampus-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/yz-kampus-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

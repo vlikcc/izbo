@@ -231,7 +231,7 @@ export const ProfilePage: React.FC = () => {
                                     const url = URL.createObjectURL(blob);
                                     const anchor = document.createElement('a');
                                     anchor.href = url;
-                                    anchor.download = 'eduplatform-verilerim.json';
+                                    anchor.download = 'yz-kampus-verilerim.json';
                                     anchor.click();
                                     URL.revokeObjectURL(url);
                                 } catch (err) {

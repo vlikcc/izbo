@@ -94,7 +94,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.RoutePrefix = "docs";
-        options.DocumentTitle = "EduPlatform API";
+        options.DocumentTitle = "YZ Kampüs API";
         options.SwaggerEndpoint("/openapi/auth/v1/swagger.json", "Auth");
         options.SwaggerEndpoint("/openapi/users/v1/swagger.json", "Users");
         options.SwaggerEndpoint("/openapi/classrooms/v1/swagger.json", "Classrooms");

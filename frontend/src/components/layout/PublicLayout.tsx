@@ -16,8 +16,8 @@ export const PublicLayout: React.FC = () => {
             <header className="public-nav">
                 <div className="public-nav-content">
                     <Link to="/" className="public-logo" onClick={close}>
-                        <span aria-hidden="true">📚</span>
-                        <span className="public-logo-text">EduPlatform</span>
+                        <span aria-hidden="true"><img className="brand-mark" src="/icons/yz-kampus-192.png" alt="" /></span>
+                        <span className="public-logo-text">YZ Kampüs</span>
                     </Link>
 
                     <button
@@ -59,15 +59,15 @@ export const PublicLayout: React.FC = () => {
                 <div className="public-footer-content">
                     <div>
                         <div className="public-logo">
-                            <span aria-hidden="true">📚</span>
-                            <span className="public-logo-text public-logo-text-light">EduPlatform</span>
+                            <span aria-hidden="true"><img className="brand-mark" src="/icons/yz-kampus-192.png" alt="" /></span>
+                            <span className="public-logo-text public-logo-text-light">YZ Kampüs</span>
                         </div>
                         <p className="public-footer-tagline">1–12. sınıf, LGS ve YKS için online kampüs.</p>
                     </div>
                     <nav aria-label="Sınıflar">
                         <h4>Sınıflar</h4>
                         <div className="public-footer-grades">
-                            {GRADES.map(g => <Link key={g} to={`/sinif/${g}-sinif`}>{g}. Sınıf</Link>)}
+                            {GRADES.map(g => <Link key={g} to={`/seviye/${g}-sinif`}>{g}. Sınıf</Link>)}
                             <Link to="/lgs">LGS</Link>
                             <Link to="/yks">YKS</Link>
                         </div>
@@ -86,7 +86,7 @@ export const PublicLayout: React.FC = () => {
                     </nav>
                 </div>
                 <div className="public-footer-bottom">
-                    © {new Date().getFullYear()} EduPlatform. Tüm hakları saklıdır.
+                    © {new Date().getFullYear()} YZ Kampüs. Tüm hakları saklıdır.
                 </div>
             </footer>
         </div>
