@@ -78,6 +78,10 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       Internal__ApiKey: ${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
       Internal__UserServiceUrl: http://userservice:80
+      # YZ Kampüs T.C. Kimlik No sign-in (KVKK): HMAC lookup key and AES-256-GCM key, each
+      # `openssl rand -base64 32`. Unset = T.C. sign-in answers 503. Never rotate without re-encrypting.
+      NationalId__LookupKey: ${NATIONAL_ID_LOOKUP_KEY:-}
+      NationalId__EncryptionKey: ${NATIONAL_ID_ENCRYPTION_KEY:-}
       # Creates the first SuperAdmin. Documented as a production step in the README, but the wiring
       # was missing here, so SEED_ENABLED did nothing and no admin account was ever created.
       # Turn SEED_ENABLED back to false once the account exists.
@@ -403,6 +407,7 @@ services:
       Content__MaxUploadMb: ${CONTENT_MAX_UPLOAD_MB:-2048}
       Subscription__BaseUrl: http://subscriptionservice:80
       Services__UserService: http://userservice
+      Services__ClassroomService: http://classroomservice
       Subscription__FailOpen: "true"
       OTEL_SERVICE_NAME: contentservice
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}

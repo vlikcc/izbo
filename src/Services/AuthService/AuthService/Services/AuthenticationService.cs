@@ -68,6 +68,18 @@ public interface IAuthService
     /// Opens a student account that signs in by user name. Returns null when the user name is taken.
     /// </summary>
     Task<User?> CreateChildAccountAsync(CreateChildAccountRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The shared tail of every successful sign-in, once the credential has been verified by the caller:
+    /// audit, directory mirror, token issue. <paramref name="method"/> is recorded in the audit trail.
+    /// </summary>
+    Task<AuthResponse> CompleteSignInAsync(User user, ClientFingerprint client, string method, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Changes the caller's own password. Returns the reason it was refused, or new tokens (every other
+    /// session is ended).
+    /// </summary>
+    Task<(string? Error, AuthResponse? Auth)> ChangePasswordAsync(Guid userId, ChangeOwnPasswordRequest request, ClientFingerprint client, CancellationToken cancellationToken = default);
 }
 
 public class AuthenticationService : IAuthService
@@ -197,7 +209,18 @@ public class AuthenticationService : IAuthService
             return null;
         }
 
-        _logger.LogInformation("User {UserId} logged in", user.Id);
+        return await CompleteSignInAsync(user, client ?? ClientFingerprint.Unknown, "Password", cancellationToken);
+    }
+
+    public async Task<AuthResponse> CompleteSignInAsync(
+        User user,
+        ClientFingerprint client,
+        string method,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+
+        _logger.LogInformation("User {UserId} logged in ({Method})", user.Id, method);
         await _audit.WriteAsync(new AuditRecord("Login", user.Id, "User", user.Id.ToString(), IpAddress: client?.IpAddress), cancellationToken);
 
         // Backfills accounts created before profiles were mirrored, so the admin directory fills in on
@@ -205,6 +228,44 @@ public class AuthenticationService : IAuthService
         await MirrorProfileAsync(user, cancellationToken);
 
         return await IssueTokensAsync(user, client, cancellationToken);
+    }
+
+    public async Task<(string? Error, AuthResponse? Auth)> ChangePasswordAsync(
+        Guid userId,
+        ChangeOwnPasswordRequest request,
+        ClientFingerprint client,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, cancellationToken);
+        if (user is null || !BCrypt.Net.BCrypt.Verify(request.CurrentPassword ?? string.Empty, user.PasswordHash))
+        {
+            return ("Mevcut şifre hatalı.", null);
+        }
+
+        if (KampusPasswordRules.Validate(request.NewPassword) is { } ruleError)
+        {
+            return (ruleError, null);
+        }
+
+        if (!string.Equals(request.NewPassword, request.NewPasswordConfirm, StringComparison.Ordinal))
+        {
+            return ("Yeni şifreler birbiriyle aynı değil.", null);
+        }
+
+        if (string.Equals(request.NewPassword, request.CurrentPassword, StringComparison.Ordinal))
+        {
+            return ("Yeni şifre eskisiyle aynı olamaz.", null);
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await RevokeAllTokensAsync(userId, RevocationReasons.RevokedByUser, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        await _audit.WriteAsync(new AuditRecord("PasswordChanged", userId, "User", userId.ToString(), IpAddress: client?.IpAddress), cancellationToken);
+
+        return (null, await IssueTokensAsync(user, client, cancellationToken));
     }
 
     public async Task<AuthResponse?> RefreshTokenAsync(

@@ -23,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- YZ Kampüs content with answer keys; regenerate with scripts/kampus/export-catalog.mjs. -->
+    <EmbeddedResource Include="Kampus\Catalog\kampus-catalog.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="EduPlatform.UnitTests" />
     <InternalsVisibleTo Include="EduPlatform.IntegrationTests" />
   </ItemGroup>

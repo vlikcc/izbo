@@ -74,3 +74,17 @@ public record LinkChildRequest(string Code);
 public record ResetChildPasswordRequest(string Password);
 public record GuardianCodeDto(string Code, DateTime ExpiresAt);
 public record GuardianshipDto(Guid StudentId, bool IsGuardian);
+
+// YZ Kampüs: T.C. Kimlik No ile giriş
+
+/// <summary>
+/// Signs in with a T.C. Kimlik No. <paramref name="Role"/> is the prototype's picker
+/// (<c>ogrenci</c>, <c>ogretmen</c>, <c>veli</c>); a mismatch fails exactly like a wrong password.
+/// </summary>
+public record NationalIdLoginRequest(string NationalId, string Password, string? Role = null);
+
+/// <summary>Assigns a T.C. Kimlik No to an account (internal, from the school/admin directory).</summary>
+public record AssignNationalIdRequest(string NationalId);
+
+/// <summary>The signed-in user changes their own password; new tokens are returned and other sessions end.</summary>
+public record ChangeOwnPasswordRequest(string CurrentPassword, string NewPassword, string NewPasswordConfirm);

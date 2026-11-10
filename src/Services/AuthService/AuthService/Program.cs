@@ -17,6 +17,10 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 builder.Services.AddEduPlatformAudit<AuthDbContext>();
 builder.Services.AddScoped<IAuthService, AuthenticationService>();
 builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();
+builder.Services.Configure<NationalIdOptions>(builder.Configuration.GetSection(NationalIdOptions.SectionName));
+builder.Services.AddSingleton<INationalIdProtector, NationalIdProtector>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<INationalIdAuthService, NationalIdAuthService>();
 builder.Services.AddSingleton<RabbitMqMessageBus>();
 builder.Services.AddSingleton<IMessageBus>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();

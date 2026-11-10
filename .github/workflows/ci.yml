@@ -114,6 +114,12 @@ jobs:
           - name: Content
             project: src/Services/ContentService/ContentService
             database: eduplatform_content
+            context: ContentDbContext
+          # YZ Kampüs: same database as Content, own context and migration history (__kampus_migrations).
+          - name: Kampus
+            project: src/Services/ContentService/ContentService
+            database: eduplatform_content
+            context: KampusDbContext
     services:
       postgres:
         image: postgres:16-alpine
@@ -137,8 +143,9 @@ jobs:
         run: dotnet tool install --global dotnet-ef --version 10.0.0
       - name: Validate ${{ matrix.name }} migrations
         run: |
-          dotnet ef database update --project ${{ matrix.project }} --connection "Host=localhost;Database=${{ matrix.database }};Username=postgres"
-          dotnet ef migrations has-pending-model-changes --project ${{ matrix.project }}
+          CONTEXT="${{ matrix.context }}"
+          dotnet ef database update --project ${{ matrix.project }} ${CONTEXT:+--context $CONTEXT} --connection "Host=localhost;Database=${{ matrix.database }};Username=postgres"
+          dotnet ef migrations has-pending-model-changes --project ${{ matrix.project }} ${CONTEXT:+--context $CONTEXT}
 
   docker:
     runs-on: ubuntu-latest
