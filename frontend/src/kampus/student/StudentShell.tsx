@@ -37,11 +37,15 @@ function LevelUpPop() {
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const me = Store.me(); if (!me || me.role !== 'ogrenci') return;
-        const n = Store.takeLevelUp(me.id); if (!n) return;  // kutlama bir kez gösterilir
-        const last = Store.collectionOf(me.id).slice(-1)[0];
-        // Zamanlayıcılar bilerek temizlenmez: StrictMode'daki ikinci effect turunda takeLevelUp boş döner.
-        setTimeout(() => setPop({ n, badge: last ? badgeName(last.topicId) : '' }), 0);
-        setTimeout(() => setPop(null), 6000);
+        // Kutlama bir kez gösterilir: sunucu seviyeyi bir kez döner (StrictMode'daki ikinci istek 0 alır).
+        if (!Store.pendingLevelUp()) return;
+        Store.takeLevelUp(me.id).then(async (n: number) => {
+            if (!n) return;
+            const prog = await Store.loadProgress().catch(() => null);
+            const last = (prog?.collection || []).slice(-1)[0];
+            setPop({ n, badge: last ? badgeName(last.topicId) : '' });
+            setTimeout(() => setPop(null), 6000);
+        }, () => { /* kutlama kritik değil */ });
     }, []);
     useEffect(() => { if (pop) { sfx.done(); confetti(ref.current); } }, [pop]);
     if (!pop) return null;
@@ -105,7 +109,7 @@ export function StudentShell({ student, active, greet = false, title = '', pill 
             <div className="yz-main">
                 <header className="yz-top">
                     {greet ? (
-                        <div className="yz-hello"><img className="yz-hello-maskot" src="/kampus/assets/karakterler/hareketli/maskot-selam.gif" alt="" /><h1>Merhaba, {student.name}!</h1></div>
+                        <div className="yz-hello"><img className="yz-hello-maskot" src="/kampus/assets/karakterler/hareketli/maskot-selam.gif" alt="" /><h1>Merhaba, {student.firstName || student.name}!</h1></div>
                     ) : (
                         <div className="yz-hello yz-hello-sm">
                             <CharArt id="maskot" className="yz-hello-maskot" />

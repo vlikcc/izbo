@@ -50,7 +50,7 @@ export function ExamDetailPage() {
     const [params] = useSearchParams();
     if (!student) return null;
     const e = Store.exam(id);
-    if (!e || !e.classIds.includes(student.classId)) return <ExamsPage />;
+    if (!e) return <ExamsPage />;  // sunucu yalnızca öğrencinin görebileceği değerlendirmeyi döner
     return <ExamDetail student={student} e={e} fresh={!!params.get('bitti')} />;
 }
 
@@ -155,7 +155,7 @@ export function AssessPlayPage() {
     const { id = '' } = useParams();
     if (!student) return null;
     const e = Store.exam(id);
-    if (!e || !e.classIds.includes(student.classId)) return <ExamsPage />;
+    if (!e) return <ExamsPage />;  // sunucu yalnızca öğrencinin görebileceği değerlendirmeyi döner
     return <AssessPlay student={student} id={id} e={e} />;
 }
 

@@ -7,7 +7,7 @@ import { ASSESS_BANK, ASSESS_SKILLS, COURSES, SUBJECTS, Store, TOPICS, courseTit
 import { Char, LightDots } from '../../components/Char';
 import { NotFoundPage } from '../public/NotFound';
 
-const subjName = (t: any): string => (t.meeting ? 'Buluşma' : courseTitle(COURSES[t.course].grade, COURSES[t.course].subject));
+const subjName = (t: any): string => (t.meeting ? 'Buluşma' : COURSES[t.course] ? courseTitle(COURSES[t.course].grade, COURSES[t.course].subject) : '');
 const cssVars = (v: Record<string, string>) => v as CSSProperties;
 const ymd = (d: Date) => d.toISOString().slice(0, 10);
 /** Bugün ve 3 gün sonrası (tarih alanlarının alt sınırı ve varsayılanı). */
@@ -19,15 +19,19 @@ export function TeacherHomePage() {
     const t = useMe();
     const classes = Store.teacherClasses(t);
     const asg = Store.assignmentsOfTeacher(t);
+    const checks = Store.processChecksOf(t);
+    // Tablolar satır satır okur; istekler önceden başlatılır ki sırayla beklenmesin
+    Store.prefetch({ classStudents: classes.map((c: any) => c.id), assignmentResults: asg.map((a: any) => a.id), processResults: checks.map((e: any) => e.id) });
     return (
         <section className="container page">
             <div className="dash-head"><div><h1>Merhaba {t.name.split(' ')[0]} Öğretmen</h1><p className="muted">Sınıflarınız ve verdiğiniz ödevler.</p></div>
                 <div className="dash-actions"><Link className="btn btn-primary btn-lg" to="/ogretmen/odev-ver">+ Ödev ver</Link>
                     <Link className="btn btn-ghost btn-lg" to="/ogretmen/degerlendirme-ata">+ Süreç değerlendirmesi ata</Link></div></div>
+            {!classes.length && <p className="muted">Henüz bir sınıfınız yok. Sınıfları <Link className="link" to="/app/classrooms">yönetim panelinden</Link> açıp öğrencilerinizi ekleyebilirsiniz.</p>}
             <div className="class-cards">{classes.map((c: any) => {
                 const st = Store.studentsOf(c.id);
                 return (
-                    <div key={c.id} className="class-card"><h3>{c.name}</h3><span className="muted">{c.grade}. sınıf · {st.length} öğrenci</span>
+                    <div key={c.id} className="class-card"><h3>{c.name}</h3><span className="muted">{c.grade ? `${c.grade}. sınıf · ` : ''}{st.length} öğrenci</span>
                         <div className="chips">{st.map((s: any) => <span key={s.id} className="chip">{s.name}</span>)}</div></div>
                 );
             })}</div>
@@ -96,14 +100,16 @@ export function ProcessFormPage() {
     const sel = Object.values(bySubj).flat().filter((k) => checked.includes(k));
     const n = sel.reduce((s, k) => s + Math.min(Number(per), poolSize(k)), 0);
 
-    function onSubmit(e: FormEvent) {
+    const [busy, setBusy] = useState(false);
+    async function onSubmit(e: FormEvent) {
         e.preventDefault();
         setErr('');
+        setBusy(true);
         try {
-            const ex = Store.createProcessCheck(Store.me(), { classId: cls, skills: sel, perSkill: Number(per), opensAt: op, closesAt: cl, title: ttl.trim() });
+            const ex = await Store.createProcessCheck(Store.me(), { classId: cls, skills: sel, perSkill: Number(per), opensAt: op, closesAt: cl, title: ttl.trim() });
             toast('Süreç değerlendirmesi atandı.', 'ok');
             navigate('/ogretmen/degerlendirme/' + ex.id);
-        } catch (ex) { setErr((ex as Error).message); }
+        } catch (ex) { setErr((ex as Error).message); } finally { setBusy(false); }
     }
 
     return (
@@ -114,7 +120,7 @@ export function ProcessFormPage() {
             <form id="pf" noValidate className="form" onSubmit={onSubmit}>
                 <label className="field"><span>Sınıf</span>
                     <select id="cls" value={cls} onChange={(e) => { setCls(e.target.value); setChecked([]); }}>
-                        {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name} ({c.grade}. sınıf)</option>)}
+                        {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.grade ? ` (${c.grade}. sınıf)` : ''}</option>)}
                     </select></label>
                 <fieldset className="field pc-skills"><legend>Dersler ve beceriler</legend><div id="skills">
                     {list.length ? Object.entries(bySubj).map(([su, ks]) => (
@@ -138,7 +144,7 @@ export function ProcessFormPage() {
                 </div>
                 <p className="pc-sum muted" id="sum" aria-live="polite">{sel.length ? `Toplam ${n} soru · yaklaşık ${Math.max(3, Math.round(n * 0.75))} dakika` : ''}</p>
                 <p className="form-err" id="err" role="alert">{err}</p>
-                <button className="btn btn-primary btn-lg" type="submit">Değerlendirmeyi ata</button>
+                <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>Değerlendirmeyi ata</button>
             </form>
         </section>
     );
@@ -147,10 +153,10 @@ export function ProcessFormPage() {
 const STATUS_LABEL: Record<string, [string, string]> = { sonuc: ['good', 'Tamamladı'], devam: ['', 'Yarıda'], acik: ['', 'Başlamadı'], yakinda: ['', 'Henüz açılmadı'] };
 
 export function ProcessResultsPage() {
-    const t = useMe();
+    useMe();
     const { id } = useParams();
     const e = Store.exam(id);
-    if (!e || e.kind !== 'surec' || e.teacherId !== t.id) return <NotFoundPage />;
+    if (!e || e.kind !== 'surec') return <NotFoundPage />;  // liste zaten yalnızca bu öğretmenin değerlendirmeleri
     const r = Store.processCheckResults(e);
     return (
         <section className="container page">
@@ -202,16 +208,19 @@ export function AssignFormPage() {
     const courses = Object.entries(COURSES).filter(([, c]: [string, any]) => c.grade === g) as [string, any][];
     const meetings = Object.entries(TOPICS).filter(([, tp]: [string, any]) => tp.meeting && tp.grade === g) as [string, any][];
 
-    function onSubmit(e: FormEvent) {
+    const [busy, setBusy] = useState(false);
+    async function onSubmit(e: FormEvent) {
         e.preventDefault();
         setErr('');
+        if (!cls) { setErr('Önce bir sınıfınız olmalı.'); return; }
         if (!topic) { setErr('Bir konu seçin.'); return; }
         if (!due) { setErr('Son tarihi seçin.'); return; }
+        setBusy(true);
         try {
-            const a = Store.createAssignment(Store.me(), { classId: cls, topicId: topic, due });
+            const a = await Store.createAssignment(Store.me(), { classId: cls, topicId: topic, due });
             toast('Ödev gönderildi.', 'ok');
             navigate('/ogretmen/odev/' + a.id);
-        } catch (ex) { setErr((ex as Error).message); }
+        } catch (ex) { setErr((ex as Error).message); } finally { setBusy(false); }
     }
 
     const radio = (id: string) => <input type="radio" name="topic" value={id} checked={topic === id} onChange={() => setTopic(id)} />;
@@ -223,7 +232,7 @@ export function AssignFormPage() {
             <form id="af" noValidate className="form" onSubmit={onSubmit}>
                 <label className="field"><span>Sınıf</span>
                     <select id="cls" value={cls} onChange={(e) => { setCls(e.target.value); setTopic(''); }}>
-                        {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name} ({c.grade}. sınıf)</option>)}
+                        {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.grade ? ` (${c.grade}. sınıf)` : ''}</option>)}
                     </select></label>
                 <div className="field"><span>Konu</span><div id="topics" className="topic-pick">
                     {(courses.length || meetings.length) ? (
@@ -243,7 +252,7 @@ export function AssignFormPage() {
                 </div></div>
                 <label className="field"><span>Son tarih</span><input type="date" id="due" min={dates.today} value={due} onChange={(e) => setDue(e.target.value)} /></label>
                 <p className="form-err" id="err" role="alert">{err}</p>
-                <button className="btn btn-primary btn-lg" type="submit">Ödevi gönder</button>
+                <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>Ödevi gönder</button>
             </form>
         </section>
     );
@@ -300,21 +309,23 @@ export function AssignmentResultsPage() {
 export function ParentHomePage() {
     const p = useMe();
     const kids = p.children.map(Store.user).filter(Boolean);
+    Store.prefetch({ childSummaries: kids.map((k: any) => k.id) });
     return (
         <section className="container page">
             <h1>Merhaba {p.name.split(' ')[0]}</h1>
             <p className="muted">Çocuklarınızın bu haftası.</p>
+            {!kids.length && <p className="muted">Henüz bağlı bir çocuk hesabı yok. <Link className="link" to="/app/children">Çocuk hesabı ekleyin</Link> ya da çocuğunuzun veli kodunu girin.</p>}
             {kids.map((k: any) => {
                 const s = Store.childSummary(k.id);
                 const tips = [...new Set<string>(s.completed.map((c: any) => c.topic.homeTip))].slice(0, 2);
                 return (
                     <article key={k.id} className="kid-summary">
-                        <header><Char id="maskot" size="xs" label={false} /><div><h2>{k.name}</h2><span className="muted">{k.grade}. sınıf · {k.classId}</span></div>
+                        <header><Char id="maskot" size="xs" label={false} /><div><h2>{k.name}</h2><span className="muted">{[k.grade ? `${k.grade}. sınıf` : '', k.classId].filter(Boolean).join(' · ')}</span></div>
                             <div className="ks-light"><LightDots n={s.light} /><span className="small muted">Bu hafta {s.completed.length} çalışma</span></div></header>
                         <div className="ks-grid">
                             <section><h3>✅ Neyi tamamladı?</h3>{s.completed.length ? <ul>{s.completed.map((c: any, i: number) => <li key={i}><b>{subjName(c.topic)}:</b> {c.topic.learned} <span className="muted small">({dayFmt(c.at)})</span></li>)}</ul> : <p className="muted">Bu hafta henüz çalışma yok.</p>}</section>
                             <section><h3>🔁 Neyi tekrar edebilir?</h3>{s.repeat.length ? <ul>{s.repeat.map((r: any) => <li key={r.skill}><b>{r.skill}</b> <span className="muted small">({r.topic.title})</span></li>)}</ul> : <p className="muted">Şu an tekrar gerektiren bir konu yok.</p>}</section>
-                            <section><h3>📌 Ödevler</h3>{s.pending.length ? <ul>{s.pending.map((a: any) => <li key={a.id}>{TOPICS[a.topicId].title} <span className="muted small">son gün {dateFmt(a.due)}</span></li>)}</ul> : <p className="muted">Bekleyen ödev yok.</p>}</section>
+                            <section><h3>📌 Ödevler</h3>{s.pending.length ? <ul>{s.pending.map((a: any) => <li key={a.id}>{(TOPICS[a.topicId] || {}).title || a.title} <span className="muted small">son gün {dateFmt(a.due)}</span></li>)}</ul> : <p className="muted">Bekleyen ödev yok.</p>}</section>
                             {tips.length > 0 && <section className="tips"><h3>🏠 Evde birlikte</h3><ul>{tips.map((x, i) => <li key={i}>{x}</li>)}</ul></section>}
                         </div>
                     </article>

@@ -109,6 +109,26 @@ public class KampusRewardTests : KampusTestBase
     }
 
     [SkippableFact]
+    public async Task Two_simultaneous_stop_starts_both_succeed_and_keep_one_row()
+    {
+        Skip.If(!Available, "Docker is not available for Testcontainers.");
+
+        await using (await FreshDbAsync())
+        {
+        }
+
+        // The page opens a stop twice at once in React StrictMode; the second insert must not fail.
+        var student = NewStudent();
+        var results = await Task.WhenAll(
+            Task.Run(async () => { await using var db = CreateDb(); return await Services(db).Learner.StartStopAsync(student, Topic, "anlatim"); }),
+            Task.Run(async () => { await using var db = CreateDb(); return await Services(db).Learner.StartStopAsync(student, Topic, "alistirma"); }));
+
+        results.ShouldAllBe(r => r.Value);
+        await using var check = CreateDb();
+        (await check.InProgress.CountAsync(p => p.StudentId == student.UserId)).ShouldBe(1);
+    }
+
+    [SkippableFact]
     public async Task Only_this_topics_exercises_answered_at_the_first_try_earn_stars()
     {
         Skip.If(!Available, "Docker is not available for Testcontainers.");

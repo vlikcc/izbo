@@ -1255,3 +1255,10 @@ body.no-scroll{overflow:hidden}
 .kampus .av-stage{align-items:stretch}
 .kampus .profile-banner .avb-fig{height:104%}
 .kampus .profile-hero .muted{font-size:16px}
+
+/* ---------- Veri yükleniyor / yüklenemedi (API bağlantısı) ---------- */
+.kampus .kampus-loading{display:flex;align-items:center;justify-content:center;gap:12px;min-height:40vh;color:var(--muted);font-family:var(--font-h);font-weight:700;font-size:18px}
+.kampus .kampus-spinner{width:28px;height:28px;border-radius:50%;border:4px solid var(--line2);border-top-color:var(--primary)}
+@media (prefers-reduced-motion:no-preference){.kampus .kampus-spinner{animation:kp-spin .8s linear infinite}}
+@keyframes kp-spin{to{transform:rotate(360deg)}}
+.kampus .kampus-error .lead{margin-bottom:16px}

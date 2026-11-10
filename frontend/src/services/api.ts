@@ -70,7 +70,9 @@ api.interceptors.response.use(
                 // Refresh failed, clear tokens and redirect to login
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
-                window.location.href = '/login';
+                // YZ Kampüs sayfaları (öğrenci/öğretmen/veli paneli) kendi giriş sayfasına döner
+                const kampus = /^\/(ogrenci|ogretmen|veli|hesabim)(\/|$)/.test(window.location.pathname);
+                window.location.href = kampus ? '/giris' : '/login';
                 return Promise.reject(refreshError);
             }
         }

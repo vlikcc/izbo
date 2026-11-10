@@ -96,6 +96,8 @@ function Patika({ student, cid, s, sub, plan, title, want, flash, kagit }: Patik
     // Patika dersin bütün konularını sırayla gösterir: her konu için bir gezegen ve dört uydu.
     // İçeriği hazır olmayan konuların uyduları gri görünür ("Hazırlanıyor").
     const all: any[] = plan.themes.flatMap((th: any) => th.topics.map((t: any) => ({ ...t, theme: th })));
+    // Her gezegen kendi mini test durumunu okur; istekler birlikte başlasın
+    Store.prefetch({ minitests: all.filter((t) => TOPICS[t.id]).map((t) => t.id) });
     const doneSet = Store.completedSet(sid);
     const current = all.find((t) => TOPICS[t.id] && Store.stopsDone(sid, t.id).length < topicStops(TOPICS[t.id]).length) || null;
     const sel = all.find((t) => t.id === want) || current || all.find((t) => TOPICS[t.id]) || all[0];
@@ -185,8 +187,9 @@ function Patika({ student, cid, s, sub, plan, title, want, flash, kagit }: Patik
     const markSheetUsed = (tid: string) => {
         if (savedRef.current || Store.stopsDone(sid, tid).includes('calisma')) return;
         savedRef.current = true;
-        Store.saveStop(sid, tid, 'calisma', {});
-        toast('Çalışma Kâğıdı tamamlandı! ✓', 'ok');
+        Store.saveStop(sid, tid, 'calisma', {}).then(
+            () => toast('Çalışma Kâğıdı tamamlandı! ✓', 'ok'),
+            (e: Error) => { savedRef.current = false; toast(e.message); });
     };
     // Pencere kapanınca patika o konuyla yeniden açılır (prototipte replaceState + App.render)
     const closeSheet = (tid: string) => {
@@ -198,7 +201,7 @@ function Patika({ student, cid, s, sub, plan, title, want, flash, kagit }: Patik
     const starHint = (tid: string, stop: string, isDone: boolean) => {
         const p = Store.starPreview(sid, tid, stop), kp = STOP_TYPES[stop].kp;
         const kpTxt = stop === 'minitest' ? `+${kp} 💎 KP (yeni set)` : isDone ? 'KP alındı' : `+${kp} 💎 KP`;
-        if (p.kind === 'none') return <span className="sp-hint">{kpTxt}</span>;
+        if (!p || p.kind === 'none') return <span className="sp-hint">{kpTxt}</span>;
         const st = p.max ? `en fazla ${p.max} ⭐` : p.left === 0 ? 'bugünkü 10 ⭐ doldu' : 'yıldızları alındı';
         return <span className="sp-hint"><b>{st}</b> · {kpTxt}</span>;
     };
@@ -287,7 +290,7 @@ function Patika({ student, cid, s, sub, plan, title, want, flash, kagit }: Patik
                             </button>
                             <div className="stop-pop" id={`sp-${uid}`} hidden={!open}>
                                 <b>{st.label}</b>
-                                {topic && starHint(t.id, st.id, isDone)}
+                                {topic && open && starHint(t.id, st.id, isDone)}
                                 {btn}
                             </div>
                         </div>

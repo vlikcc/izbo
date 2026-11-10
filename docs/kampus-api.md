@@ -292,3 +292,16 @@ okumada 404).
 - Değerlendirmenin `closesAt` tarihi geçince cevap almayı kesmiyor (prototip de kesmiyordu).
 - İçerik ön yüzde; sunucudaki katalog dışa aktarılan kopyadır (içerik CMS'e/soru bankasına taşınınca kaldırılmalı).
 - T.C. numarasını hesaba atayacak yönetici ekranı ve okul toplu aktarımı yok; yalnızca iç uç var.
+
+## 8. Ön yüz bağlantısı ve geliştirme verisi
+
+- Ön yüzde `frontend/src/kampus/core/store.ts` bu uçları çağırır. Sayfalar Store'u çizim sırasında senkron okur;
+  veri önbellekte yoksa okuma bekler (React Suspense), yazmalardan sonra önbellekteki veriler yenilenir.
+  Mini test (`minitests/{topicId}/answers`), değerlendirme (`exams/{examId}/answers`) ve kitap soruları
+  (`books/{bookId}/answers`, seçilen şık) soru soru gönderilir; puanlamayı sunucu yapar.
+- **Bilinen eksik:** öğretmen sonuçlarında (`assignments/{id}/results`, `process-checks/{id}/results`) `name`
+  boş gelir; ClassroomService öğrenci adı tutmuyor. Ön yüz adı sınıf listesinden (UserService) tamamlıyor;
+  kalıcı çözüm `KampusDirectory`'nin adları UserService'ten okumasıdır.
+- Yerel geliştirme verisi: `node scripts/kampus/seed-dev.mjs` (öğretmen, veli, iki öğrenci, 3-A sınıfı,
+  T.C. numaraları, bir ödev, bir süreç değerlendirmesi; hesaplar ve şifre betiğin başında). Giriş uçları IP başına
+  5 dakikada 10 istekle sınırlı olduğundan betik art arda çalıştırılırsa birkaç dakika beklemek gerekebilir.

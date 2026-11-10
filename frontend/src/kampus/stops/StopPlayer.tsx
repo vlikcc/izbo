@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    COURSES, MINITEST_SIZE, STOP_TYPES, SUBJECTS, Store, TOPICS, TOPIC_PLANETS,
+    COURSES, STOP_TYPES, SUBJECTS, Store, TOPICS, TOPIC_PLANETS,
     confetti, sfx, speak, stopContent, stopSpeak, toast, topicChar, topicStops, useKampus,
 } from '../core';
 import { Char, GainLine } from '../components/Char';
@@ -60,7 +60,7 @@ export function StopPlayer({ topicId, student, stopId, exitHref }: StopPlayerPro
         const s = Store.mtState(sid, topicId);
         const valid = !!s && !s.done && s.set.every((id: string) => ids.includes(id));
         if (valid && s.idx > 0) toast(`Kaldığın yerden devam ediyorsun: ${s.idx + 1}. soru`);
-        if (!valid) Store.mtNew(sid, topicId, ids, Math.min(MINITEST_SIZE, ids.length));
+        if (!valid) Store.mtNew(sid, topicId).catch((e: Error) => toast(e.message));  // sunucu havuzdan 5 soru seçer
     }, [sid, topicId, stopId, C]);
 
     // ---- Görünüm anahtarı, balon ve ilerleme çubuğu ----
@@ -87,36 +87,47 @@ export function StopPlayer({ topicId, student, stopId, exitHref }: StopPlayerPro
     else if (view.v !== 'test') barW = 100;
 
     // ---- Durak bitişi ----
-    function finishStop() {
+    const busy = useRef(false);
+    async function finishStop() {
+        if (busy.current) return;
+        busy.current = true;
         stopSpeak();
-        const r = Store.saveStop(sid, topicId, stopId, answers.current);
-        const done = Store.stopsDone(sid, topicId);
+        let r: any;
+        try { r = await Store.saveStop(sid, topicId, stopId, answers.current); }
+        catch (e) { busy.current = false; toast((e as Error).message); return; }
+        const prog = await Store.loadProgress().catch(() => null);
+        const done: string[] = (prog?.stops || {})[topicId] || [stopId];
         const nextStop = topicStops(topic).map((x: any) => x.id).find((id: string) => !done.includes(id));
         ch.react('happy');
         sfx.done(); confetti(stageRef.current);
         say(r.allDone ? 'Bu konunun bütün duraklarını bitirdin!' : 'Harika iş çıkardın!', false, 'done');
         const firstTry = Object.values(answers.current).filter((a: any) => a.wrong === 0).length;
-        const levelUp = r.levelUp && Store.takeLevelUp(sid) ? r.levelUp : 0;
+        const levelUp = r.levelUp && await Store.takeLevelUp(sid).catch(() => 0) ? r.levelUp : 0;
         setView({ v: 'done', r, nextStop, firstTry, levelUp });
+        busy.current = false;
     }
 
-    function testResult(s: any, list: any[]) {
+    async function testResult(_s: any, list: any[]) {
+        if (busy.current) return;
+        busy.current = true;
+        // Durak, yeni set ödülü ve yıldızlar sunucuda tek istekte (cevaplar sunucuda puanlandı)
+        let r: any;
+        try { r = await Store.mtComplete(sid, topicId, answers.current); }
+        catch (e) { busy.current = false; toast((e as Error).message); return; }
+        const s = Store.mtState(sid, topicId) || _s;
         const right = list.filter((x) => s.answers[x.id] && s.answers[x.id].ok).length;
-        const r0 = Store.saveStop(sid, topicId, stopId, answers.current);
-        const g = Store.mtReward(sid, topicId, s.attempt); // her yeni set bir kez ödüllenir
-        const r = { ...r0, kp: r0.kp + g.kp, cup: r0.cup + g.cup, daily: (r0.daily || 0) + (g.daily || 0), bonus: (r0.bonus || 0) + (g.bonus || 0), repeat: g.repeat, capped: g.capped };
         const great = right >= list.length - 1;
         ch.react(great ? 'happy' : 'hint');
         sfx.done(); if (great) confetti(stageRef.current);
         say(great ? `${list.length} sorudan ${right} doğru! Bu konuyu çok iyi anlamışsın!` : `${list.length} sorudan ${right} doğru. Yeni sorularla bir daha deneyelim mi?`, true, 'testDone');
-        const levelUp = r.levelUp && Store.takeLevelUp(sid) ? r.levelUp : 0;
+        const levelUp = r.levelUp && await Store.takeLevelUp(sid).catch(() => 0) ? r.levelUp : 0;
         setView({ v: 'testDone', s, qs: list, right, r, levelUp });
+        busy.current = false;
     }
 
-    function retryTest() {
+    async function retryTest() {
         answers.current = {};
-        const ids = pool.map((x) => x.id);
-        Store.mtNew(sid, topicId, ids, Math.min(MINITEST_SIZE, ids.length));
+        try { await Store.mtNew(sid, topicId); } catch (e) { toast((e as Error).message); return; }
         setView({ v: 'test', qIdx: 0 });
     }
 
@@ -183,14 +194,11 @@ export function StopPlayer({ topicId, student, stopId, exitHref }: StopPlayerPro
                 say={(t, sp) => say(t, sp)} react={ch.react}
                 onAnswer={(id, rec) => { answers.current[id] = rec; }}
                 onRecord={(given, ok) => {
-                    // Store'daki deneme kaydı yerinde güncellenir (prototipteki gibi)
-                    const s = Store.mtState(sid, topicId);
+                    // Cevap soru soru sunucuya gider ve orada puanlanır; ekran beklemesin diye deneme hemen ilerler
                     setView({ v: 'test', qIdx: idx });
-                    s.answers[q.id] = { given, ok }; s.idx++;
-                    if (s.idx >= list.length) s.done = true;
-                    Store.mtSave(sid, topicId, s);
+                    Store.mtAnswer(sid, topicId, q.id, given, ok).catch((e: Error) => toast(e.message));
                 }}
-                onDone={() => { const s = Store.mtState(sid, topicId); if (s.idx < list.length) setView({ v: 'test', qIdx: s.idx }); else testResult(s, list); }}
+                onDone={() => { const s = Store.mtState(sid, topicId); if (s.idx < list.length) setView({ v: 'test', qIdx: s.idx }); else void testResult(s, list); }}
             />
         );
     } else if (view.v === 'testDone') {

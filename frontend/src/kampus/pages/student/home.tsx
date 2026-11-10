@@ -41,7 +41,13 @@ export function StudentHomePage() {
 export function LessonsPage() {
     const student = useMe();
     if (!student) return null;
-    const subjects: string[] = GRADES[student.grade];
+    const subjects: string[] = GRADES[student.grade] || [];
+    // YZ Kampüs 1–4. sınıf içindir; profilde sınıf düzeyi yoksa dersler gösterilemez
+    if (!subjects.length) return (
+        <StudentShell student={student} active="dersler" title="Derslerim">
+            <div className="todo-empty"><CharArt id="maskot" className="empty-maskot" /><div className="speech">Sınıf düzeyin henüz tanımlı değil. Öğretmenin ya da velin profilinde sınıfını seçince derslerin burada görünecek.</div></div>
+        </StudentShell>
+    );
     return (
         <StudentShell student={student} active="dersler" title="Derslerim" pill={`${student.grade}. Sınıf`}>
             <div className="lesson-grid" style={{ '--n': subjects.length } as CSSProperties}>

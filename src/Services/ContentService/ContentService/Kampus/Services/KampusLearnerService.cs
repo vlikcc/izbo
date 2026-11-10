@@ -90,7 +90,9 @@ public sealed class KampusLearnerService
             return ContentResult.Ok(false);
         }
 
+        var now = _clock.UtcNow;
         var row = await _db.InProgress.FirstOrDefaultAsync(p => p.StudentId == caller.UserId, cancellationToken);
+        var added = row is null;
         if (row is null)
         {
             row = new KampusInProgress { StudentId = caller.UserId };
@@ -99,8 +101,21 @@ public sealed class KampusLearnerService
 
         row.TopicId = topicId;
         row.StopId = stopId;
-        row.At = _clock.UtcNow;
-        await _db.SaveChangesAsync(cancellationToken);
+        row.At = now;
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException) when (added)
+        {
+            // Aynı anda gelen başka bir istek satırı önce ekledi (ör. sayfanın iki kez açılması): onu güncelle.
+            _db.Entry(row).State = EntityState.Detached;
+            await _db.InProgress.Where(p => p.StudentId == caller.UserId).ExecuteUpdateAsync(s => s
+                .SetProperty(p => p.TopicId, topicId)
+                .SetProperty(p => p.StopId, stopId)
+                .SetProperty(p => p.At, now), cancellationToken);
+        }
+
         return ContentResult.Ok(true);
     }
 

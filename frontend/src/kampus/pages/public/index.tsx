@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Herkese açık sayfalar (prototipte js/pages-public.js): anasayfa, sınıflar, örnek ders, kitle sayfaları, giriş.
-import { Fragment, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CHARACTERS, COURSES, GRADES, SAMPLE_TOPICS, SUBJECTS, Store, TOPICS, courseTitle, toast, useKampus, useMe } from '../../core';
 import { Char } from '../../components/Char';
@@ -144,10 +144,12 @@ export function SampleListPage() {
 export function SamplePlayPage() {
     const { id = '' } = useParams();
     const me = useMe();
-    if (!SAMPLE_TOPICS.includes(id) && !(me && me.role === 'ogretmen' && TOPICS[id])) return <NotFoundPage />;
+    const teacher = !!me && me.role === 'ogretmen';
+    if (!SAMPLE_TOPICS.includes(id) && !Store.ready()) return null;  // öğretmen önizlemesi: oturum çözülüyor
+    if (!SAMPLE_TOPICS.includes(id) && !(teacher && TOPICS[id])) return <NotFoundPage />;
     return (
         <div id="player-root">
-            <TopicPlayer topicId={id} guest exitHref={me ? '/ogretmen/odev-ver' : '/ornek-ders'} />
+            <TopicPlayer topicId={id} guest exitHref={teacher ? '/ogretmen/odev-ver' : '/ornek-ders'} />
         </div>
     );
 }
@@ -244,11 +246,6 @@ export function StubPage({ title }: { title: string }) {
 
 // ---- Giriş: T.C. kimlik no + şifre ----
 const ROLES = ['ogrenci', 'veli', 'ogretmen'];
-const DEMOS: Record<string, [string, string][]> = {
-    ogrenci: [['deniz', 'Deniz (ödev + sınav var)'], ['ada', 'Ada (boş durum)'], ['ali', 'Ali (1. sınıf)'], ['zeynep', 'Zeynep (3. sınıf)']],
-    veli: [['veli', 'Selin Kaya (veli)']],
-    ogretmen: [['ogretmen', 'Ayşe Yılmaz (öğretmen)']],
-};
 
 export function LoginPage() {
     const [params] = useSearchParams();
@@ -312,14 +309,6 @@ export function LoginPage() {
                     <button className="btn btn-primary btn-lg block" type="submit" id="loginbtn" disabled={busy}>Giriş yap</button>
                     <p className="muted small center"><Link className="link" to="/sifremi-unuttum">Şifremi unuttum</Link></p>
                 </form>
-                <div className="demo-box"><b>Demo hesaplar</b>
-                    {role === 'ogrenci'
-                        ? <p className="muted small">Örnek öğrenci: T.C. <b>12345678910</b> · Şifre <b>Admin123</b></p>
-                        : <p className="muted small">Demo şifre: <b>Kampus2026</b> (T.C. numaraları README.md dosyasında)</p>}
-                    <div>{DEMOS[role].map(([id, l], i) => (
-                        <Fragment key={id}>{i > 0 && ' '}<button className="btn btn-ghost btn-sm" data-demo={id} onClick={() => go(Store.loginDemo(id))}>{l}</button></Fragment>
-                    ))}</div>
-                </div>
             </div>
         </section>
     );
@@ -369,10 +358,12 @@ export function PasswordForm({ prefix = 'cp' }: { prefix?: string }) {
 
 export function AccountPage() {
     const u = useMe();
+    if (!Store.ready()) return null;  // oturum sunucudan çözülüyor
     if (!u || u.role === 'ogrenci') return <Navigate to="/giris" replace />;
+    // T.C. kimlik numarası sunucudan hiç dönmez (KVKK); hesap adıyla ve e-postasıyla gösterilir
     return (
         <section className="container page narrow"><h1>Hesabım</h1>
-            <p className="muted">{u.name} · T.C. {u.tc.slice(0, 3)}*****{u.tc.slice(-2)}</p>
+            <p className="muted">{[u.name, u.email].filter(Boolean).join(' · ')}</p>
             <h2>Şifremi değiştir</h2><PasswordForm prefix="cp" /></section>
     );
 }

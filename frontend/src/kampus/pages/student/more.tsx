@@ -52,8 +52,11 @@ function BookReader({ student, book, page }: { student: any; book: any; page: nu
     const navigate = useNavigate();
     const st = Store.bookState(student.id, book.id);
     const base = `/ogrenci/kutuphane?kitap=${book.id}`;
-    const finish = () => {
-        const g = st.finished ? { kp: 0 } : Store.finishBook(student.id, book.id);
+    const finish = async () => {
+        let g: any = { kp: 0 };
+        if (!st.finished) {
+            try { g = await Store.finishBook(student.id, book.id); } catch (e) { toast((e as Error).message); return; }
+        }
         if (g.kp) { sfx.done(); toast(`Kitabı bitirdin! +${g.kp} 💎 KP${g.cup ? ` · +${g.cup} ⭐` : ''}`, 'ok'); }
         navigate(`${base}&sorular=1`);
     };
@@ -83,12 +86,16 @@ function BookQuestions({ student, book }: { student: any; book: any }) {
     const [picked, setPicked] = useState<Record<string, Picked>>({});
     const base = `/ogrenci/kutuphane?kitap=${book.id}`;
     // Her soruda bu ziyarette tek deneme: yanlışsa soru açık kalır, sonra yeniden denenir
-    const answer = (q: any, v: string) => {
-        if (picked[q.id]) return;
-        const ok = v === q.answer;
-        const g = Store.answerBook(student.id, book.id, q.id, ok);
-        setPicked((p) => ({ ...p, [q.id]: { v, ok, g } }));
-        if (ok) sfx.correct(); else sfx.wrong();
+    const sending = useRef<Record<string, boolean>>({});
+    const answer = async (q: any, v: string) => {
+        if (picked[q.id] || sending.current[q.id]) return;
+        sending.current[q.id] = true;
+        // Seçilen şık sunucuya gider; doğruluğu ve ödülü sunucu belirler
+        try {
+            const res = await Store.answerBook(student.id, book.id, q.id, v);
+            setPicked((p) => ({ ...p, [q.id]: { v, ok: res.ok, g: res.gain } }));
+            if (res.ok) sfx.correct(); else sfx.wrong();
+        } catch (e) { toast((e as Error).message); } finally { sending.current[q.id] = false; }
     };
     return (
         <>
@@ -186,10 +193,12 @@ function GameRound({ student, game }: { student: any; game: any }) {
     const next = (i: number, sc: number) => {
         const r = i + 1;
         if (r >= game.rounds) {
-            const g = Store.finishGame(student.id, game.id, sc);
             setRound((x) => ({ ...x, nums: null, picked: null }));
-            setEnd({ g, t: stamp() });
+            const t = stamp();
             sfx.done();
+            Store.finishGame(student.id, game.id, sc).then(
+                (g: any) => setEnd({ g, t }),
+                (e: Error) => { toast(e.message); setEnd({ g: { kp: 0, cup: 0 }, t }); });
             return;
         }
         setRound({ i: r, nums: newPair(), picked: null });
@@ -249,6 +258,7 @@ export function KupaPage() {
     const student = useMe();
     const [pick, setPick] = useState<NickPick | null>(null);
     const [welcome, setWelcome] = useState<{ nick: string } | null>(null);
+    const [joining, setJoining] = useState(false);
     const joinRef = useRef<HTMLButtonElement>(null);
     const okRef = useRef<HTMLButtonElement>(null);
     const welcomeCard = useRef<HTMLDivElement>(null);
@@ -266,8 +276,9 @@ export function KupaPage() {
     const b = c.progress.bonus;
 
     // Kupaya katıl → önce takma ad seçimi (listeden ya da otomatik), sonra katılım ve karşılama
-    const openPick = () => {
-        const info = Store.nickChoices(student.id);   // { taken: grubundaki adlar, last: hatırlanan ad, suggest }
+    const openPick = async () => {
+        let info: any;   // { taken: grubundaki adlar, last: hatırlanan ad, suggest } — her açılışta sunucudan tazelenir
+        try { info = await Store.loadNickChoices(); } catch (e) { toast((e as Error).message); return; }
         const start = info.last && !info.taken.includes(info.last) ? info.last : info.suggest;
         const [a0, n0] = splitNick(start);
         setPick({ info, adj: adjOr(a0), noun: nounOr(n0), err: '' });
@@ -281,14 +292,15 @@ export function KupaPage() {
         setPick({ ...pick, adj: x, noun: y, err: '' });
         sfx.tap();
     };
-    const join = () => {
-        if (!pick) return;
+    const join = async () => {
+        if (!pick || joining) return;
+        setJoining(true);
         try {
-            const j2 = Store.joinCup(student.id, cur);
+            const j2 = await Store.joinCup(student.id, cur);
             sfx.done();
             setPick(null);
             setWelcome({ nick: j2.nick });
-        } catch (e: any) { setPick({ ...pick, err: e.message }); }
+        } catch (e: any) { setPick({ ...pick, err: e.message }); } finally { setJoining(false); }
     };
 
     return (
@@ -426,7 +438,12 @@ export function ProfilePage() {
     if (!student) return null;
 
     const lvl = Store.campusLevel(student.id);
-    const subjects = GRADES[student.grade];
+    const subjects: string[] = GRADES[student.grade] || [];
+    // Her konunun mini test durumu ayrı istenir; birlikte başlasın
+    Store.prefetch({ minitests: subjects.flatMap((s) => {
+        const plan = MEB_PLAN[`${student.grade}-${s}`];
+        return (plan ? plan.themes.flatMap((th: any) => th.topics.map((t: any) => t.id)) : []).filter((id: string) => TOPICS[id]);
+    }) });
     // Çalışmalarım: ders ders tamamlanan konular ve Mini Test sonuçları (kişisel ilerleme)
     const work = subjects.map((s: string) => {
         const plan = MEB_PLAN[`${student.grade}-${s}`];
@@ -453,7 +470,7 @@ export function ProfilePage() {
                 <RawHtml html={AvatarArt.banner(av.cfg, av.eq, { title: student.name + ' avatarı' })} />
                 <Link className="avb-edit" to="/ogrenci/avatar" aria-label="Avatarımı düzenle" title="Avatarımı düzenle">{PENCIL}</Link>
             </section>
-            <section className="profile-hero"><div><h2>{student.name}</h2><p className="muted">{student.grade}. sınıf · {student.classId}</p>
+            <section className="profile-hero"><div><h2>{student.name}</h2><p className="muted">{[student.grade ? `${student.grade}. sınıf` : '', student.classId].filter(Boolean).join(' · ')}</p>
                 <div className="hero-stats"><span className="hero-lvl"><Emblem n={lvl} size="sm" /><span>Kampüs Seviyesi <b>{lvl}</b></span></span>
                     <span className="yz-stars yz-kp" title="Kampüs Puanı: avatar için harcanabilir, birikir"><span aria-hidden="true">💎</span> {Store.stars(student.id)} KP</span>
                     <Link className="hero-cup" to="/ogrenci/kupa" title="Bu haftanın Kupa Yıldızı (her pazartesi sıfırlanır)">Bu hafta {cup.points} ⭐{cup.joined ? ` · ${cup.rank}. sıra` : ''}</Link></div>
@@ -549,10 +566,10 @@ export function AvatarEditPage() {
     );
     const tryOn = (it: any) => { setPreview(it); sfx.tap(); };
     const wear = (it: any) => { setEq({ ...eq, [it.slot]: eq[it.slot] === it.id ? null : it.id }); setPreview(null); };
-    const buy = (it: any) => {
+    const buy = async (it: any) => {
         if (!preview || preview.id !== it.id) { setPreview(it); toast(`Önce önizle: ${it.name}. Açmak için tekrar dokun.`); return; }
         try {
-            setOwned(Store.buyItem(student.id, it.id).owned);
+            setOwned((await Store.buyItem(student.id, it.id)).owned);
             setEq({ ...eq, [it.slot]: it.id });
             setPreview(null);
             sfx.correct();
@@ -560,7 +577,9 @@ export function AvatarEditPage() {
         } catch (e: any) { toast(e.message); }
     };
     const save = () => {
-        try { Store.saveAvatar(student.id, cfg, eq); toast('Avatarın kaydedildi! 🎨', 'ok'); navigate('/ogrenci/profilim'); } catch (e: any) { toast(e.message); }
+        Store.saveAvatar(student.id, cfg, eq).then(
+            () => { toast('Avatarın kaydedildi! 🎨', 'ok'); navigate('/ogrenci/profilim'); },
+            (e: Error) => toast(e.message));
     };
     const items = AVATAR_ITEMS.filter((x: any) => x.slot === tab);
 

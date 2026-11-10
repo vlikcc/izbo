@@ -4,7 +4,7 @@
 // adım adım ipucu, doğru cevapta kısa tepki, 1. sınıfta yönergeye dokununca ses yeniden çalar.
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PRAISE, STOP_TYPES, Store, TOPICS, confetti, pick, sfx, speak, stopSpeak, topicChar, useKampus } from '../core';
+import { PRAISE, STOP_TYPES, Store, TOPICS, confetti, pick, sfx, speak, stopSpeak, toast, topicChar, useKampus } from '../core';
 import { GainLine } from '../components/Char';
 import type { CharState } from '../components/useCharReact';
 import { Bubble } from '../stops/Bubble';
@@ -95,9 +95,13 @@ export function TopicPlayer({ topicId, guest = false, student = null, exitHref, 
         if (topic.audioFirst || voice) speak(voice || text);
     };
 
-    function finishStop() {
+    async function finishStop() {
         stopSpeak();
-        const r = (!guest && student) ? Store.saveStop(student.id, topicId, stopId, answers.current) : { stars: 0 };
+        let r: any = { stars: 0 };
+        if (!guest && student) {
+            try { r = await Store.saveStop(student.id, topicId, stopId, answers.current); }
+            catch (e) { toast((e as Error).message); return; }
+        }
         const label = STOP_TYPES[stopId as string] ? (stopId === 'etkinlik' ? topic.compare.title : STOP_TYPES[stopId as string].label) : 'Durak';
         reactAll('happy');
         sfx.done();
@@ -109,9 +113,10 @@ export function TopicPlayer({ topicId, guest = false, student = null, exitHref, 
     }
 
     function finish() {
-        if (stopId) return finishStop();
+        if (stopId) { void finishStop(); return; }
         stopSpeak();
-        if (!guest && student) Store.saveAttempt(student.id, topicId, answers.current);
+        // Konu kaydı sunucuya gider (bekleyen ödev varsa ona bağlanır); kutlama beklemeden gösterilir
+        if (!guest && student) Store.saveAttempt(student.id, topicId, answers.current).catch((e: Error) => toast(e.message));
         const A = answers.current;
         const weak = [...(topic.practice || []), ...(topic.check || [])].filter((q: any) => A[q.id] && ((A[q.id].step === 'check' && A[q.id].wrong > 0) || A[q.id].wrong >= 2));
         const weakSkills = [...new Set(weak.map((q: any) => q.skill as string))];
