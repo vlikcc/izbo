@@ -47,6 +47,55 @@ namespace AuthService.Migrations
                     b.ToTable("email_verification_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("AuthService.Models.NationalIdCredential", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Ciphertext")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LookupHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("LookupHash")
+                        .IsUnique();
+
+                    b.ToTable("national_id_credentials", (string)null);
+                });
+
+            modelBuilder.Entity("AuthService.Models.NationalIdLoginThrottle", b =>
+                {
+                    b.Property<string>("LookupHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("FailedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("LastFailureAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("LookupHash");
+
+                    b.ToTable("national_id_login_throttles", (string)null);
+                });
+
             modelBuilder.Entity("AuthService.Models.PasswordResetToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -267,6 +316,15 @@ namespace AuthService.Migrations
                         .HasFilter("\"Username\" IS NOT NULL");
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("AuthService.Models.NationalIdCredential", b =>
+                {
+                    b.HasOne("Shared.Models.User", null)
+                        .WithOne()
+                        .HasForeignKey("AuthService.Models.NationalIdCredential", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("AuthService.Models.RefreshToken", b =>

@@ -20,13 +20,18 @@ public class AuthController : ControllerBase
     private const string RegistrationAccepted =
         "Kayıt talebiniz alındı. Giriş ekranından hesabınıza giriş yapabilirsiniz.";
 
+    /// <summary>The one answer for an unknown number, a wrong password, a wrong role and a disabled account.</summary>
+    private const string NationalIdRejected = "T.C. kimlik numarası veya şifre hatalı.";
+
     private readonly IAuthService _authService;
     private readonly IAccountEmailService _accountEmail;
+    private readonly INationalIdAuthService _nationalId;
 
-    public AuthController(IAuthService authService, IAccountEmailService accountEmail)
+    public AuthController(IAuthService authService, IAccountEmailService accountEmail, INationalIdAuthService nationalId)
     {
         _authService = authService;
         _accountEmail = accountEmail;
+        _nationalId = nationalId;
     }
 
     [HttpPost("register")]
@@ -58,6 +63,58 @@ public class AuthController : ControllerBase
             return Unauthorized(new ApiResponse<AuthResponse>(false, null, "E-posta/kullanıcı adı veya parola hatalı"));
 
         return Ok(new ApiResponse<AuthResponse>(true, result, "Giriş başarılı"));
+    }
+
+    /// <summary>
+    /// YZ Kampüs sign-in: T.C. Kimlik No + password. Never says which of the two was wrong; repeated failures
+    /// lock the number for a while whether or not an account has it.
+    /// </summary>
+    [HttpPost("tc-login")]
+    [EnableRateLimiting(AuthRateLimits.Login)]
+    public async Task<ActionResult<ApiResponse<AuthResponse>>> NationalIdLogin(
+        [FromBody] NationalIdLoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var result = await _nationalId.LoginAsync(request, Client(), cancellationToken);
+
+        switch (result.Status)
+        {
+            case NationalIdLoginStatus.Success:
+                return Ok(new ApiResponse<AuthResponse>(true, result.Auth, "Giriş başarılı"));
+            case NationalIdLoginStatus.InvalidNumber:
+                return BadRequest(new ApiResponse<AuthResponse>(false, null, "Geçerli bir T.C. kimlik numarası gir (11 hane)."));
+            case NationalIdLoginStatus.MissingPassword:
+                return BadRequest(new ApiResponse<AuthResponse>(false, null, "Şifreni gir."));
+            case NationalIdLoginStatus.LockedOut:
+                Response.Headers.RetryAfter = result.RetryAfterSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                return StatusCode(StatusCodes.Status429TooManyRequests, new ApiResponse<AuthResponse>(
+                    false, null, $"Çok fazla hatalı deneme. {result.RetryAfterSeconds} saniye sonra tekrar dene."));
+            case NationalIdLoginStatus.Unavailable:
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse<AuthResponse>(
+                    false, null, "T.C. kimlik numarasıyla giriş şu anda kullanılamıyor."));
+            default:
+                return Unauthorized(new ApiResponse<AuthResponse>(false, null, NationalIdRejected));
+        }
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    [EnableRateLimiting(AuthRateLimits.Login)]
+    public async Task<ActionResult<ApiResponse<AuthResponse>>> ChangePassword(
+        [FromBody] ChangeOwnPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var (error, auth) = await _authService.ChangePasswordAsync(User.GetCaller().UserId, request, Client(), cancellationToken);
+        if (error is not null)
+        {
+            return BadRequest(new ApiResponse<AuthResponse>(false, null, error));
+        }
+
+        return Ok(new ApiResponse<AuthResponse>(true, auth, "Şifre güncellendi"));
     }
 
     [HttpPost("refresh")]

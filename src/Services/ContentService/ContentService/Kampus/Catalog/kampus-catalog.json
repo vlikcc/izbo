@@ -1,0 +1,4960 @@
+{
+ "generatedFrom": "frontend/src/kampus/core (data.ts, content.ts)",
+ "grades": {
+  "1": [
+   "turkce",
+   "matematik",
+   "hayat"
+  ],
+  "2": [
+   "turkce",
+   "matematik",
+   "hayat",
+   "ingilizce"
+  ],
+  "3": [
+   "turkce",
+   "matematik",
+   "fen",
+   "hayat",
+   "ingilizce"
+  ],
+  "4": [
+   "turkce",
+   "matematik",
+   "fen",
+   "sosyal",
+   "ingilizce",
+   "din",
+   "ihyd",
+   "trafik"
+  ]
+ },
+ "courses": {
+  "1-turkce": {
+   "grade": 1,
+   "subject": "turkce",
+   "topics": [
+    "k-e-sesi",
+    "k-l-sesi"
+   ]
+  },
+  "3-matematik": {
+   "grade": 3,
+   "subject": "matematik",
+   "topics": [
+    "k-dogal-karsilastirma",
+    "k-toplam-tahmin",
+    "k-eldeli-toplama"
+   ]
+  }
+ },
+ "topics": {
+  "k-e-sesi": {
+   "course": "1-turkce",
+   "grade": 1,
+   "subject": "turkce",
+   "title": "\"e\" Sesi",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "e-p1",
+     "type": "choice",
+     "skill": "Kelimenin ilk sesini bulma",
+     "answer": [
+      "elma"
+     ],
+     "options": [
+      {
+       "v": "elma",
+       "label": "elma"
+      },
+      {
+       "v": "kedi",
+       "label": "kedi"
+      },
+      {
+       "v": "top",
+       "label": "top"
+      }
+     ]
+    },
+    {
+     "id": "e-p2",
+     "type": "choice",
+     "skill": "\"e\" harfini tanıma",
+     "answer": [
+      "e"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "a"
+      },
+      {
+       "v": "e",
+       "label": "e"
+      },
+      {
+       "v": "o",
+       "label": "o"
+      }
+     ]
+    },
+    {
+     "id": "e-p3",
+     "type": "choice",
+     "skill": "Kelimenin içindeki sesi duyma",
+     "answer": [
+      "ev"
+     ],
+     "options": [
+      {
+       "v": "ev",
+       "label": "ev"
+      },
+      {
+       "v": "balik",
+       "label": "balık"
+      },
+      {
+       "v": "araba",
+       "label": "araba"
+      }
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "e-c1",
+     "type": "choice",
+     "skill": "Duyduğu kelimeyi tanıma",
+     "answer": [
+      "ekmek"
+     ],
+     "options": [
+      {
+       "v": "ekmek",
+       "label": "ekmek"
+      },
+      {
+       "v": "ay",
+       "label": "ay"
+      },
+      {
+       "v": "kus",
+       "label": "kuş"
+      }
+     ]
+    },
+    {
+     "id": "e-c2",
+     "type": "choice",
+     "skill": "\"e\" harfini tanıma",
+     "answer": [
+      "e"
+     ],
+     "options": [
+      {
+       "v": "E",
+       "label": "E"
+      },
+      {
+       "v": "e",
+       "label": "e"
+      },
+      {
+       "v": "a",
+       "label": "a"
+      }
+     ]
+    },
+    {
+     "id": "e-c3",
+     "type": "choice",
+     "skill": "Kelimenin ilk sesini bulma",
+     "answer": [
+      "eldiven"
+     ],
+     "options": [
+      {
+       "v": "eldiven",
+       "label": "eldiven"
+      },
+      {
+       "v": "kopek",
+       "label": "köpek"
+      },
+      {
+       "v": "muz",
+       "label": "muz"
+      }
+     ]
+    },
+    {
+     "id": "e-p1",
+     "type": "choice",
+     "skill": "Kelimenin ilk sesini bulma",
+     "answer": [
+      "elma"
+     ],
+     "options": [
+      {
+       "v": "elma",
+       "label": "elma"
+      },
+      {
+       "v": "kedi",
+       "label": "kedi"
+      },
+      {
+       "v": "top",
+       "label": "top"
+      }
+     ]
+    },
+    {
+     "id": "e-p2",
+     "type": "choice",
+     "skill": "\"e\" harfini tanıma",
+     "answer": [
+      "e"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "a"
+      },
+      {
+       "v": "e",
+       "label": "e"
+      },
+      {
+       "v": "o",
+       "label": "o"
+      }
+     ]
+    },
+    {
+     "id": "e-p3",
+     "type": "choice",
+     "skill": "Kelimenin içindeki sesi duyma",
+     "answer": [
+      "ev"
+     ],
+     "options": [
+      {
+       "v": "ev",
+       "label": "ev"
+      },
+      {
+       "v": "balik",
+       "label": "balık"
+      },
+      {
+       "v": "araba",
+       "label": "araba"
+      }
+     ]
+    }
+   ],
+   "practice": [
+    {
+     "id": "e-p1",
+     "type": "choice",
+     "skill": "Kelimenin ilk sesini bulma",
+     "answer": [
+      "elma"
+     ],
+     "options": [
+      {
+       "v": "elma",
+       "label": "elma"
+      },
+      {
+       "v": "kedi",
+       "label": "kedi"
+      },
+      {
+       "v": "top",
+       "label": "top"
+      }
+     ]
+    },
+    {
+     "id": "e-p2",
+     "type": "choice",
+     "skill": "\"e\" harfini tanıma",
+     "answer": [
+      "e"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "a"
+      },
+      {
+       "v": "e",
+       "label": "e"
+      },
+      {
+       "v": "o",
+       "label": "o"
+      }
+     ]
+    },
+    {
+     "id": "e-p3",
+     "type": "choice",
+     "skill": "Kelimenin içindeki sesi duyma",
+     "answer": [
+      "ev"
+     ],
+     "options": [
+      {
+       "v": "ev",
+       "label": "ev"
+      },
+      {
+       "v": "balik",
+       "label": "balık"
+      },
+      {
+       "v": "araba",
+       "label": "araba"
+      }
+     ]
+    }
+   ],
+   "check": [
+    {
+     "id": "e-c1",
+     "type": "choice",
+     "skill": "Duyduğu kelimeyi tanıma",
+     "answer": [
+      "ekmek"
+     ],
+     "options": [
+      {
+       "v": "ekmek",
+       "label": "ekmek"
+      },
+      {
+       "v": "ay",
+       "label": "ay"
+      },
+      {
+       "v": "kus",
+       "label": "kuş"
+      }
+     ]
+    },
+    {
+     "id": "e-c2",
+     "type": "choice",
+     "skill": "\"e\" harfini tanıma",
+     "answer": [
+      "e"
+     ],
+     "options": [
+      {
+       "v": "E",
+       "label": "E"
+      },
+      {
+       "v": "e",
+       "label": "e"
+      },
+      {
+       "v": "a",
+       "label": "a"
+      }
+     ]
+    },
+    {
+     "id": "e-c3",
+     "type": "choice",
+     "skill": "Kelimenin ilk sesini bulma",
+     "answer": [
+      "eldiven"
+     ],
+     "options": [
+      {
+       "v": "eldiven",
+       "label": "eldiven"
+      },
+      {
+       "v": "kopek",
+       "label": "köpek"
+      },
+      {
+       "v": "muz",
+       "label": "muz"
+      }
+     ]
+    }
+   ]
+  },
+  "k-l-sesi": {
+   "course": "1-turkce",
+   "grade": 1,
+   "subject": "turkce",
+   "title": "\"l\" Sesi ve \"el\"",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "l-p1",
+     "type": "choice",
+     "skill": "Kelimenin ilk sesini bulma",
+     "answer": [
+      "limon"
+     ],
+     "options": [
+      {
+       "v": "limon",
+       "label": "limon"
+      },
+      {
+       "v": "elma",
+       "label": "elma"
+      },
+      {
+       "v": "kedi",
+       "label": "kedi"
+      }
+     ]
+    },
+    {
+     "id": "l-p2",
+     "type": "choice",
+     "skill": "\"l\" harfini tanıma",
+     "answer": [
+      "l"
+     ],
+     "options": [
+      {
+       "v": "l",
+       "label": "l"
+      },
+      {
+       "v": "e",
+       "label": "e"
+      },
+      {
+       "v": "t",
+       "label": "t"
+      }
+     ]
+    },
+    {
+     "id": "l-p3",
+     "type": "choice",
+     "skill": "Sesleri birleştirip hece okuma",
+     "answer": [
+      "el"
+     ],
+     "options": [
+      {
+       "v": "el",
+       "label": "el"
+      },
+      {
+       "v": "ev",
+       "label": "ev"
+      },
+      {
+       "v": "at",
+       "label": "at"
+      }
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "l-c1",
+     "type": "choice",
+     "skill": "Duyduğu heceyi tanıma",
+     "answer": [
+      "le"
+     ],
+     "options": [
+      {
+       "v": "le",
+       "label": "le"
+      },
+      {
+       "v": "el",
+       "label": "el"
+      }
+     ]
+    },
+    {
+     "id": "l-c2",
+     "type": "choice",
+     "skill": "Kelimenin içindeki sesi duyma",
+     "answer": [
+      "aslan"
+     ],
+     "options": [
+      {
+       "v": "aslan",
+       "label": "aslan"
+      },
+      {
+       "v": "ari",
+       "label": "arı"
+      },
+      {
+       "v": "araba",
+       "label": "araba"
+      }
+     ]
+    },
+    {
+     "id": "l-c3",
+     "type": "choice",
+     "skill": "Sesleri birleştirip hece okuma",
+     "answer": [
+      "el"
+     ],
+     "options": [
+      {
+       "v": "el",
+       "label": "el"
+      },
+      {
+       "v": "le",
+       "label": "le"
+      },
+      {
+       "v": "ev",
+       "label": "ev"
+      }
+     ]
+    },
+    {
+     "id": "l-p1",
+     "type": "choice",
+     "skill": "Kelimenin ilk sesini bulma",
+     "answer": [
+      "limon"
+     ],
+     "options": [
+      {
+       "v": "limon",
+       "label": "limon"
+      },
+      {
+       "v": "elma",
+       "label": "elma"
+      },
+      {
+       "v": "kedi",
+       "label": "kedi"
+      }
+     ]
+    },
+    {
+     "id": "l-p2",
+     "type": "choice",
+     "skill": "\"l\" harfini tanıma",
+     "answer": [
+      "l"
+     ],
+     "options": [
+      {
+       "v": "l",
+       "label": "l"
+      },
+      {
+       "v": "e",
+       "label": "e"
+      },
+      {
+       "v": "t",
+       "label": "t"
+      }
+     ]
+    },
+    {
+     "id": "l-p3",
+     "type": "choice",
+     "skill": "Sesleri birleştirip hece okuma",
+     "answer": [
+      "el"
+     ],
+     "options": [
+      {
+       "v": "el",
+       "label": "el"
+      },
+      {
+       "v": "ev",
+       "label": "ev"
+      },
+      {
+       "v": "at",
+       "label": "at"
+      }
+     ]
+    }
+   ],
+   "practice": [
+    {
+     "id": "l-p1",
+     "type": "choice",
+     "skill": "Kelimenin ilk sesini bulma",
+     "answer": [
+      "limon"
+     ],
+     "options": [
+      {
+       "v": "limon",
+       "label": "limon"
+      },
+      {
+       "v": "elma",
+       "label": "elma"
+      },
+      {
+       "v": "kedi",
+       "label": "kedi"
+      }
+     ]
+    },
+    {
+     "id": "l-p2",
+     "type": "choice",
+     "skill": "\"l\" harfini tanıma",
+     "answer": [
+      "l"
+     ],
+     "options": [
+      {
+       "v": "l",
+       "label": "l"
+      },
+      {
+       "v": "e",
+       "label": "e"
+      },
+      {
+       "v": "t",
+       "label": "t"
+      }
+     ]
+    },
+    {
+     "id": "l-p3",
+     "type": "choice",
+     "skill": "Sesleri birleştirip hece okuma",
+     "answer": [
+      "el"
+     ],
+     "options": [
+      {
+       "v": "el",
+       "label": "el"
+      },
+      {
+       "v": "ev",
+       "label": "ev"
+      },
+      {
+       "v": "at",
+       "label": "at"
+      }
+     ]
+    }
+   ],
+   "check": [
+    {
+     "id": "l-c1",
+     "type": "choice",
+     "skill": "Duyduğu heceyi tanıma",
+     "answer": [
+      "le"
+     ],
+     "options": [
+      {
+       "v": "le",
+       "label": "le"
+      },
+      {
+       "v": "el",
+       "label": "el"
+      }
+     ]
+    },
+    {
+     "id": "l-c2",
+     "type": "choice",
+     "skill": "Kelimenin içindeki sesi duyma",
+     "answer": [
+      "aslan"
+     ],
+     "options": [
+      {
+       "v": "aslan",
+       "label": "aslan"
+      },
+      {
+       "v": "ari",
+       "label": "arı"
+      },
+      {
+       "v": "araba",
+       "label": "araba"
+      }
+     ]
+    },
+    {
+     "id": "l-c3",
+     "type": "choice",
+     "skill": "Sesleri birleştirip hece okuma",
+     "answer": [
+      "el"
+     ],
+     "options": [
+      {
+       "v": "el",
+       "label": "el"
+      },
+      {
+       "v": "le",
+       "label": "le"
+      },
+      {
+       "v": "ev",
+       "label": "ev"
+      }
+     ]
+    }
+   ]
+  },
+  "k-dogal-karsilastirma": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Doğal Sayıları Karşılaştırma",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "dk-a1",
+     "type": "tf",
+     "skill": "Üç basamaklı sayıları karşılaştırma",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "dk-a2",
+     "type": "match",
+     "skill": "Basamaklara göre karşılaştırma",
+     "pairs": 3
+    },
+    {
+     "id": "dk-a3",
+     "type": "write",
+     "skill": "Karşılaştırma işaretini kullanma",
+     "answer": [
+      "<"
+     ]
+    },
+    {
+     "id": "dk-a4",
+     "type": "tf",
+     "skill": "Basamak sayısına göre karşılaştırma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "dk-a5",
+     "type": "write",
+     "skill": "Karşılaştırma problemleri",
+     "answer": [
+      "287"
+     ]
+    },
+    {
+     "id": "dk-a6",
+     "type": "match",
+     "skill": "Sayıları sıralama",
+     "pairs": 3
+    }
+   ],
+   "testPool": [
+    {
+     "id": "dk-t1",
+     "type": "choice",
+     "skill": "Üç basamaklı sayıları karşılaştırma",
+     "answer": [
+      "790"
+     ],
+     "options": [
+      {
+       "v": "709",
+       "label": "709"
+      },
+      {
+       "v": "790",
+       "label": "790"
+      },
+      {
+       "v": "97",
+       "label": "97"
+      }
+     ]
+    },
+    {
+     "id": "dk-t2",
+     "type": "choice",
+     "skill": "Karşılaştırma işaretini kullanma",
+     "answer": [
+      ">"
+     ],
+     "options": [
+      {
+       "v": "<",
+       "label": "<"
+      },
+      {
+       "v": ">",
+       "label": ">"
+      },
+      {
+       "v": "=",
+       "label": "="
+      }
+     ]
+    },
+    {
+     "id": "dk-t3",
+     "type": "tf",
+     "skill": "Karşılaştırma işaretini kullanma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "dk-t4",
+     "type": "choice",
+     "skill": "Üç basamaklı sayıları karşılaştırma",
+     "answer": [
+      "518"
+     ],
+     "options": [
+      {
+       "v": "582",
+       "label": "582"
+      },
+      {
+       "v": "529",
+       "label": "529"
+      },
+      {
+       "v": "518",
+       "label": "518"
+      }
+     ]
+    },
+    {
+     "id": "dk-t5",
+     "type": "tf",
+     "skill": "Basamaklara göre karşılaştırma",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "dk-t6",
+     "type": "write",
+     "skill": "Karşılaştırma işaretini kullanma",
+     "answer": [
+      "<"
+     ]
+    },
+    {
+     "id": "dk-t7",
+     "type": "choice",
+     "skill": "Sayıları sıralama",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "135 < 153 < 315"
+      },
+      {
+       "v": "b",
+       "label": "153 < 135 < 315"
+      },
+      {
+       "v": "c",
+       "label": "315 < 153 < 135"
+      }
+     ]
+    },
+    {
+     "id": "dk-t8",
+     "type": "choice",
+     "skill": "Karşılaştırma problemleri",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "A okulu"
+      },
+      {
+       "v": "b",
+       "label": "B okulu"
+      },
+      {
+       "v": "e",
+       "label": "Eşit"
+      }
+     ]
+    },
+    {
+     "id": "dk-t9",
+     "type": "tf",
+     "skill": "Üç basamaklı sayıları karşılaştırma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "dk-t10",
+     "type": "write",
+     "skill": "Üç basamaklı sayıları karşılaştırma",
+     "answer": [
+      "860"
+     ]
+    },
+    {
+     "id": "dk-t11",
+     "type": "choice",
+     "skill": "Basamaklara göre karşılaştırma",
+     "answer": [
+      "8"
+     ],
+     "options": [
+      {
+       "v": "5",
+       "label": "5"
+      },
+      {
+       "v": "6",
+       "label": "6"
+      },
+      {
+       "v": "8",
+       "label": "8"
+      }
+     ]
+    },
+    {
+     "id": "dk-t12",
+     "type": "write",
+     "skill": "Karşılaştırma işaretini kullanma",
+     "answer": [
+      "="
+     ]
+    },
+    {
+     "id": "dk-t13",
+     "type": "choice",
+     "skill": "Sayıları sıralama",
+     "answer": [
+      "456"
+     ],
+     "options": [
+      {
+       "v": "445",
+       "label": "445"
+      },
+      {
+       "v": "456",
+       "label": "456"
+      },
+      {
+       "v": "465",
+       "label": "465"
+      }
+     ]
+    },
+    {
+     "id": "dk-t14",
+     "type": "tf",
+     "skill": "Basamak sayısına göre karşılaştırma",
+     "answer": [
+      "false"
+     ]
+    }
+   ],
+   "practice": [
+    {
+     "id": "dk-p1",
+     "type": "choice",
+     "skill": "Üç basamaklı sayıları karşılaştırma",
+     "answer": [
+      "231"
+     ],
+     "options": [
+      {
+       "v": "213",
+       "label": "213"
+      },
+      {
+       "v": "231",
+       "label": "231"
+      }
+     ]
+    },
+    {
+     "id": "dk-p2",
+     "type": "choice",
+     "skill": "Karşılaştırma işaretini kullanma",
+     "answer": [
+      "<"
+     ],
+     "options": [
+      {
+       "v": "<",
+       "label": "<"
+      },
+      {
+       "v": ">",
+       "label": ">"
+      },
+      {
+       "v": "=",
+       "label": "="
+      }
+     ]
+    },
+    {
+     "id": "dk-p3",
+     "type": "choice",
+     "skill": "Karşılaştırma problemleri",
+     "answer": [
+      "can"
+     ],
+     "options": [
+      {
+       "v": "ayse",
+       "label": "Ayşe"
+      },
+      {
+       "v": "can",
+       "label": "Can"
+      },
+      {
+       "v": "esit",
+       "label": "Eşit okudular"
+      }
+     ]
+    }
+   ],
+   "check": [
+    {
+     "id": "dk-c1",
+     "type": "choice",
+     "skill": "Basamak sayısına göre karşılaştırma",
+     "answer": [
+      "94"
+     ],
+     "options": [
+      {
+       "v": "409",
+       "label": "409"
+      },
+      {
+       "v": "490",
+       "label": "490"
+      },
+      {
+       "v": "94",
+       "label": "94"
+      }
+     ]
+    },
+    {
+     "id": "dk-c2",
+     "type": "choice",
+     "skill": "Karşılaştırma işaretini kullanma",
+     "answer": [
+      ">"
+     ],
+     "options": [
+      {
+       "v": "<",
+       "label": "<"
+      },
+      {
+       "v": ">",
+       "label": ">"
+      },
+      {
+       "v": "=",
+       "label": "="
+      }
+     ]
+    },
+    {
+     "id": "dk-c3",
+     "type": "choice",
+     "skill": "Karşılaştırma işaretini kullanma",
+     "answer": [
+      "="
+     ],
+     "options": [
+      {
+       "v": "<",
+       "label": "<"
+      },
+      {
+       "v": ">",
+       "label": ">"
+      },
+      {
+       "v": "=",
+       "label": "="
+      }
+     ]
+    }
+   ]
+  },
+  "k-eldeli-toplama": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Eldeli Toplama",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "m-p1",
+     "type": "choice",
+     "skill": "İki basamaklı eldeli toplama",
+     "answer": [
+      "42"
+     ],
+     "options": [
+      {
+       "v": "32",
+       "label": "32"
+      },
+      {
+       "v": "42",
+       "label": "42"
+      },
+      {
+       "v": "312",
+       "label": "312"
+      },
+      {
+       "v": "41",
+       "label": "41"
+      }
+     ]
+    },
+    {
+     "id": "m-p2",
+     "type": "choice",
+     "skill": "İki basamaklı eldeli toplama",
+     "answer": [
+      "84"
+     ],
+     "options": [
+      {
+       "v": "74",
+       "label": "74"
+      },
+      {
+       "v": "84",
+       "label": "84"
+      },
+      {
+       "v": "714",
+       "label": "714"
+      },
+      {
+       "v": "85",
+       "label": "85"
+      }
+     ]
+    },
+    {
+     "id": "m-p3",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "63"
+     ],
+     "options": [
+      {
+       "v": "53",
+       "label": "53"
+      },
+      {
+       "v": "63",
+       "label": "63"
+      },
+      {
+       "v": "513",
+       "label": "513"
+      },
+      {
+       "v": "13",
+       "label": "13"
+      }
+     ]
+    },
+    {
+     "id": "m-p4",
+     "type": "choice",
+     "skill": "Üç basamaklı eldeli toplama",
+     "answer": [
+      "183"
+     ],
+     "options": [
+      {
+       "v": "173",
+       "label": "173"
+      },
+      {
+       "v": "183",
+       "label": "183"
+      },
+      {
+       "v": "1713",
+       "label": "1713"
+      },
+      {
+       "v": "184",
+       "label": "184"
+      }
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "m-c1",
+     "type": "choice",
+     "skill": "İki basamaklı eldeli toplama",
+     "answer": [
+      "82"
+     ],
+     "options": [
+      {
+       "v": "72",
+       "label": "72"
+      },
+      {
+       "v": "82",
+       "label": "82"
+      },
+      {
+       "v": "712",
+       "label": "712"
+      },
+      {
+       "v": "83",
+       "label": "83"
+      }
+     ]
+    },
+    {
+     "id": "m-c2",
+     "type": "choice",
+     "skill": "Üç basamaklı eldeli toplama",
+     "answer": [
+      "273"
+     ],
+     "options": [
+      {
+       "v": "263",
+       "label": "263"
+      },
+      {
+       "v": "273",
+       "label": "273"
+      },
+      {
+       "v": "2613",
+       "label": "2613"
+      },
+      {
+       "v": "283",
+       "label": "283"
+      }
+     ]
+    },
+    {
+     "id": "m-c3",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "173"
+     ],
+     "options": [
+      {
+       "v": "163",
+       "label": "163"
+      },
+      {
+       "v": "173",
+       "label": "173"
+      },
+      {
+       "v": "1613",
+       "label": "1613"
+      },
+      {
+       "v": "183",
+       "label": "183"
+      }
+     ]
+    },
+    {
+     "id": "m-p1",
+     "type": "choice",
+     "skill": "İki basamaklı eldeli toplama",
+     "answer": [
+      "42"
+     ],
+     "options": [
+      {
+       "v": "32",
+       "label": "32"
+      },
+      {
+       "v": "42",
+       "label": "42"
+      },
+      {
+       "v": "312",
+       "label": "312"
+      },
+      {
+       "v": "41",
+       "label": "41"
+      }
+     ]
+    },
+    {
+     "id": "m-p2",
+     "type": "choice",
+     "skill": "İki basamaklı eldeli toplama",
+     "answer": [
+      "84"
+     ],
+     "options": [
+      {
+       "v": "74",
+       "label": "74"
+      },
+      {
+       "v": "84",
+       "label": "84"
+      },
+      {
+       "v": "714",
+       "label": "714"
+      },
+      {
+       "v": "85",
+       "label": "85"
+      }
+     ]
+    },
+    {
+     "id": "m-p3",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "63"
+     ],
+     "options": [
+      {
+       "v": "53",
+       "label": "53"
+      },
+      {
+       "v": "63",
+       "label": "63"
+      },
+      {
+       "v": "513",
+       "label": "513"
+      },
+      {
+       "v": "13",
+       "label": "13"
+      }
+     ]
+    },
+    {
+     "id": "m-p4",
+     "type": "choice",
+     "skill": "Üç basamaklı eldeli toplama",
+     "answer": [
+      "183"
+     ],
+     "options": [
+      {
+       "v": "173",
+       "label": "173"
+      },
+      {
+       "v": "183",
+       "label": "183"
+      },
+      {
+       "v": "1713",
+       "label": "1713"
+      },
+      {
+       "v": "184",
+       "label": "184"
+      }
+     ]
+    }
+   ],
+   "practice": [
+    {
+     "id": "m-p1",
+     "type": "choice",
+     "skill": "İki basamaklı eldeli toplama",
+     "answer": [
+      "42"
+     ],
+     "options": [
+      {
+       "v": "32",
+       "label": "32"
+      },
+      {
+       "v": "42",
+       "label": "42"
+      },
+      {
+       "v": "312",
+       "label": "312"
+      },
+      {
+       "v": "41",
+       "label": "41"
+      }
+     ]
+    },
+    {
+     "id": "m-p2",
+     "type": "choice",
+     "skill": "İki basamaklı eldeli toplama",
+     "answer": [
+      "84"
+     ],
+     "options": [
+      {
+       "v": "74",
+       "label": "74"
+      },
+      {
+       "v": "84",
+       "label": "84"
+      },
+      {
+       "v": "714",
+       "label": "714"
+      },
+      {
+       "v": "85",
+       "label": "85"
+      }
+     ]
+    },
+    {
+     "id": "m-p3",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "63"
+     ],
+     "options": [
+      {
+       "v": "53",
+       "label": "53"
+      },
+      {
+       "v": "63",
+       "label": "63"
+      },
+      {
+       "v": "513",
+       "label": "513"
+      },
+      {
+       "v": "13",
+       "label": "13"
+      }
+     ]
+    },
+    {
+     "id": "m-p4",
+     "type": "choice",
+     "skill": "Üç basamaklı eldeli toplama",
+     "answer": [
+      "183"
+     ],
+     "options": [
+      {
+       "v": "173",
+       "label": "173"
+      },
+      {
+       "v": "183",
+       "label": "183"
+      },
+      {
+       "v": "1713",
+       "label": "1713"
+      },
+      {
+       "v": "184",
+       "label": "184"
+      }
+     ]
+    }
+   ],
+   "check": [
+    {
+     "id": "m-c1",
+     "type": "choice",
+     "skill": "İki basamaklı eldeli toplama",
+     "answer": [
+      "82"
+     ],
+     "options": [
+      {
+       "v": "72",
+       "label": "72"
+      },
+      {
+       "v": "82",
+       "label": "82"
+      },
+      {
+       "v": "712",
+       "label": "712"
+      },
+      {
+       "v": "83",
+       "label": "83"
+      }
+     ]
+    },
+    {
+     "id": "m-c2",
+     "type": "choice",
+     "skill": "Üç basamaklı eldeli toplama",
+     "answer": [
+      "273"
+     ],
+     "options": [
+      {
+       "v": "263",
+       "label": "263"
+      },
+      {
+       "v": "273",
+       "label": "273"
+      },
+      {
+       "v": "2613",
+       "label": "2613"
+      },
+      {
+       "v": "283",
+       "label": "283"
+      }
+     ]
+    },
+    {
+     "id": "m-c3",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "173"
+     ],
+     "options": [
+      {
+       "v": "163",
+       "label": "163"
+      },
+      {
+       "v": "173",
+       "label": "173"
+      },
+      {
+       "v": "1613",
+       "label": "1613"
+      },
+      {
+       "v": "183",
+       "label": "183"
+      }
+     ]
+    }
+   ]
+  },
+  "k-toplam-tahmin": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Toplamı Tahmin Etme",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "t-p1",
+     "type": "choice",
+     "skill": "En yakın onluğa yuvarlama",
+     "answer": [
+      "50"
+     ],
+     "options": [
+      {
+       "v": "50",
+       "label": "50"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      }
+     ]
+    },
+    {
+     "id": "t-p2",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "60"
+     ],
+     "options": [
+      {
+       "v": "50",
+       "label": "50"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      },
+      {
+       "v": "70",
+       "label": "70"
+      }
+     ]
+    },
+    {
+     "id": "t-p3",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "100"
+     ],
+     "options": [
+      {
+       "v": "80",
+       "label": "80"
+      },
+      {
+       "v": "90",
+       "label": "90"
+      },
+      {
+       "v": "100",
+       "label": "100"
+      }
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "t-c1",
+     "type": "choice",
+     "skill": "En yakın onluğa yuvarlama",
+     "answer": [
+      "40"
+     ],
+     "options": [
+      {
+       "v": "40",
+       "label": "40"
+      },
+      {
+       "v": "50",
+       "label": "50"
+      }
+     ]
+    },
+    {
+     "id": "t-c2",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "50"
+     ],
+     "options": [
+      {
+       "v": "40",
+       "label": "40"
+      },
+      {
+       "v": "50",
+       "label": "50"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      }
+     ]
+    },
+    {
+     "id": "t-c3",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "90"
+     ],
+     "options": [
+      {
+       "v": "80",
+       "label": "80"
+      },
+      {
+       "v": "90",
+       "label": "90"
+      },
+      {
+       "v": "100",
+       "label": "100"
+      }
+     ]
+    },
+    {
+     "id": "t-p1",
+     "type": "choice",
+     "skill": "En yakın onluğa yuvarlama",
+     "answer": [
+      "50"
+     ],
+     "options": [
+      {
+       "v": "50",
+       "label": "50"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      }
+     ]
+    },
+    {
+     "id": "t-p2",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "60"
+     ],
+     "options": [
+      {
+       "v": "50",
+       "label": "50"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      },
+      {
+       "v": "70",
+       "label": "70"
+      }
+     ]
+    },
+    {
+     "id": "t-p3",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "100"
+     ],
+     "options": [
+      {
+       "v": "80",
+       "label": "80"
+      },
+      {
+       "v": "90",
+       "label": "90"
+      },
+      {
+       "v": "100",
+       "label": "100"
+      }
+     ]
+    }
+   ],
+   "practice": [
+    {
+     "id": "t-p1",
+     "type": "choice",
+     "skill": "En yakın onluğa yuvarlama",
+     "answer": [
+      "50"
+     ],
+     "options": [
+      {
+       "v": "50",
+       "label": "50"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      }
+     ]
+    },
+    {
+     "id": "t-p2",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "60"
+     ],
+     "options": [
+      {
+       "v": "50",
+       "label": "50"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      },
+      {
+       "v": "70",
+       "label": "70"
+      }
+     ]
+    },
+    {
+     "id": "t-p3",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "100"
+     ],
+     "options": [
+      {
+       "v": "80",
+       "label": "80"
+      },
+      {
+       "v": "90",
+       "label": "90"
+      },
+      {
+       "v": "100",
+       "label": "100"
+      }
+     ]
+    }
+   ],
+   "check": [
+    {
+     "id": "t-c1",
+     "type": "choice",
+     "skill": "En yakın onluğa yuvarlama",
+     "answer": [
+      "40"
+     ],
+     "options": [
+      {
+       "v": "40",
+       "label": "40"
+      },
+      {
+       "v": "50",
+       "label": "50"
+      }
+     ]
+    },
+    {
+     "id": "t-c2",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "50"
+     ],
+     "options": [
+      {
+       "v": "40",
+       "label": "40"
+      },
+      {
+       "v": "50",
+       "label": "50"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      }
+     ]
+    },
+    {
+     "id": "t-c3",
+     "type": "choice",
+     "skill": "Toplamı tahmin etme",
+     "answer": [
+      "90"
+     ],
+     "options": [
+      {
+       "v": "80",
+       "label": "80"
+      },
+      {
+       "v": "90",
+       "label": "90"
+      },
+      {
+       "v": "100",
+       "label": "100"
+      }
+     ]
+    }
+   ]
+  },
+  "b-pazar-yeri": {
+   "grade": null,
+   "subject": "",
+   "title": "Pazar Yeri Telaşı",
+   "meeting": true,
+   "stops": [],
+   "exercises": [
+    {
+     "id": "b-p1",
+     "type": "choice",
+     "skill": "Listeyi okuyup anlama",
+     "answer": [
+      "3"
+     ],
+     "options": [
+      {
+       "v": "2",
+       "label": "2"
+      },
+      {
+       "v": "3",
+       "label": "3"
+      },
+      {
+       "v": "4",
+       "label": "4"
+      }
+     ]
+    },
+    {
+     "id": "b-p2",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "42"
+     ],
+     "options": [
+      {
+       "v": "32",
+       "label": "32 TL"
+      },
+      {
+       "v": "42",
+       "label": "42 TL"
+      },
+      {
+       "v": "312",
+       "label": "312 TL"
+      }
+     ]
+    },
+    {
+     "id": "b-p3",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "57"
+     ],
+     "options": [
+      {
+       "v": "47",
+       "label": "47 TL"
+      },
+      {
+       "v": "57",
+       "label": "57 TL"
+      },
+      {
+       "v": "67",
+       "label": "67 TL"
+      }
+     ]
+    },
+    {
+     "id": "b-p4",
+     "type": "choice",
+     "skill": "Sonucu yorumlama",
+     "answer": [
+      "yeter3"
+     ],
+     "options": [
+      {
+       "v": "yeter3",
+       "label": "Evet, 3 TL artar"
+      },
+      {
+       "v": "eksik3",
+       "label": "Hayır, 3 TL eksik"
+      },
+      {
+       "v": "tam",
+       "label": "Evet, tam yeter"
+      }
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "b-p1",
+     "type": "choice",
+     "skill": "Listeyi okuyup anlama",
+     "answer": [
+      "3"
+     ],
+     "options": [
+      {
+       "v": "2",
+       "label": "2"
+      },
+      {
+       "v": "3",
+       "label": "3"
+      },
+      {
+       "v": "4",
+       "label": "4"
+      }
+     ]
+    },
+    {
+     "id": "b-p2",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "42"
+     ],
+     "options": [
+      {
+       "v": "32",
+       "label": "32 TL"
+      },
+      {
+       "v": "42",
+       "label": "42 TL"
+      },
+      {
+       "v": "312",
+       "label": "312 TL"
+      }
+     ]
+    },
+    {
+     "id": "b-p3",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "57"
+     ],
+     "options": [
+      {
+       "v": "47",
+       "label": "47 TL"
+      },
+      {
+       "v": "57",
+       "label": "57 TL"
+      },
+      {
+       "v": "67",
+       "label": "67 TL"
+      }
+     ]
+    },
+    {
+     "id": "b-p4",
+     "type": "choice",
+     "skill": "Sonucu yorumlama",
+     "answer": [
+      "yeter3"
+     ],
+     "options": [
+      {
+       "v": "yeter3",
+       "label": "Evet, 3 TL artar"
+      },
+      {
+       "v": "eksik3",
+       "label": "Hayır, 3 TL eksik"
+      },
+      {
+       "v": "tam",
+       "label": "Evet, tam yeter"
+      }
+     ]
+    }
+   ],
+   "practice": [
+    {
+     "id": "b-p1",
+     "type": "choice",
+     "skill": "Listeyi okuyup anlama",
+     "answer": [
+      "3"
+     ],
+     "options": [
+      {
+       "v": "2",
+       "label": "2"
+      },
+      {
+       "v": "3",
+       "label": "3"
+      },
+      {
+       "v": "4",
+       "label": "4"
+      }
+     ]
+    },
+    {
+     "id": "b-p2",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "42"
+     ],
+     "options": [
+      {
+       "v": "32",
+       "label": "32 TL"
+      },
+      {
+       "v": "42",
+       "label": "42 TL"
+      },
+      {
+       "v": "312",
+       "label": "312 TL"
+      }
+     ]
+    },
+    {
+     "id": "b-p3",
+     "type": "choice",
+     "skill": "Toplama problemleri",
+     "answer": [
+      "57"
+     ],
+     "options": [
+      {
+       "v": "47",
+       "label": "47 TL"
+      },
+      {
+       "v": "57",
+       "label": "57 TL"
+      },
+      {
+       "v": "67",
+       "label": "67 TL"
+      }
+     ]
+    },
+    {
+     "id": "b-p4",
+     "type": "choice",
+     "skill": "Sonucu yorumlama",
+     "answer": [
+      "yeter3"
+     ],
+     "options": [
+      {
+       "v": "yeter3",
+       "label": "Evet, 3 TL artar"
+      },
+      {
+       "v": "eksik3",
+       "label": "Hayır, 3 TL eksik"
+      },
+      {
+       "v": "tam",
+       "label": "Evet, tam yeter"
+      }
+     ]
+    }
+   ],
+   "check": []
+  },
+  "p-1000e-kadar": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "1000'e Kadar Sayılar",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "k1-a1",
+     "type": "tf",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k1-a2",
+     "type": "match",
+     "skill": "Sayıları okuma ve yazma",
+     "pairs": 3
+    },
+    {
+     "id": "k1-a3",
+     "type": "write",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "407"
+     ]
+    },
+    {
+     "id": "k1-a4",
+     "type": "tf",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k1-a5",
+     "type": "match",
+     "skill": "Sayıları okuma ve yazma",
+     "pairs": 3
+    },
+    {
+     "id": "k1-a6",
+     "type": "write",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "1000"
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "k1-t1",
+     "type": "choice",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "730"
+     ],
+     "options": [
+      {
+       "v": "703",
+       "label": "703"
+      },
+      {
+       "v": "730",
+       "label": "730"
+      },
+      {
+       "v": "7030",
+       "label": "7030"
+      }
+     ]
+    },
+    {
+     "id": "k1-t2",
+     "type": "choice",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "608"
+     ],
+     "options": [
+      {
+       "v": "68",
+       "label": "68"
+      },
+      {
+       "v": "608",
+       "label": "608"
+      },
+      {
+       "v": "680",
+       "label": "680"
+      }
+     ]
+    },
+    {
+     "id": "k1-t3",
+     "type": "tf",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k1-t4",
+     "type": "write",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "351"
+     ]
+    },
+    {
+     "id": "k1-t5",
+     "type": "choice",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "b"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "dört yüz sekiz"
+      },
+      {
+       "v": "b",
+       "label": "dört yüz seksen"
+      },
+      {
+       "v": "c",
+       "label": "sekiz yüz kırk"
+      }
+     ]
+    },
+    {
+     "id": "k1-t6",
+     "type": "tf",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k1-t7",
+     "type": "write",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "273"
+     ]
+    },
+    {
+     "id": "k1-t8",
+     "type": "choice",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "150"
+     ],
+     "options": [
+      {
+       "v": "105",
+       "label": "105"
+      },
+      {
+       "v": "150",
+       "label": "150"
+      },
+      {
+       "v": "15",
+       "label": "15"
+      }
+     ]
+    },
+    {
+     "id": "k1-t9",
+     "type": "tf",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k1-t10",
+     "type": "write",
+     "skill": "Sayıları okuma ve yazma",
+     "answer": [
+      "800"
+     ]
+    }
+   ],
+   "practice": [],
+   "check": []
+  },
+  "p-cozumleme": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Basamak ve Basamak Değeri",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "k2-a1",
+     "type": "tf",
+     "skill": "Basamak değeri",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k2-a2",
+     "type": "match",
+     "skill": "Basamak değeri",
+     "pairs": 3
+    },
+    {
+     "id": "k2-a3",
+     "type": "write",
+     "skill": "Basamak değeri",
+     "answer": [
+      "649"
+     ]
+    },
+    {
+     "id": "k2-a4",
+     "type": "tf",
+     "skill": "Basamak değeri",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k2-a5",
+     "type": "match",
+     "skill": "Basamak değeri",
+     "pairs": 3
+    },
+    {
+     "id": "k2-a6",
+     "type": "write",
+     "skill": "Basamak değeri",
+     "answer": [
+      "700"
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "k2-t1",
+     "type": "choice",
+     "skill": "Basamak değeri",
+     "answer": [
+      "20"
+     ],
+     "options": [
+      {
+       "v": "2",
+       "label": "2"
+      },
+      {
+       "v": "20",
+       "label": "20"
+      },
+      {
+       "v": "200",
+       "label": "200"
+      }
+     ]
+    },
+    {
+     "id": "k2-t2",
+     "type": "choice",
+     "skill": "Basamak değeri",
+     "answer": [
+      "405"
+     ],
+     "options": [
+      {
+       "v": "45",
+       "label": "45"
+      },
+      {
+       "v": "405",
+       "label": "405"
+      },
+      {
+       "v": "450",
+       "label": "450"
+      }
+     ]
+    },
+    {
+     "id": "k2-t3",
+     "type": "tf",
+     "skill": "Basamak değeri",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k2-t4",
+     "type": "write",
+     "skill": "Basamak değeri",
+     "answer": [
+      "3"
+     ]
+    },
+    {
+     "id": "k2-t5",
+     "type": "choice",
+     "skill": "Basamak değeri",
+     "answer": [
+      "451"
+     ],
+     "options": [
+      {
+       "v": "145",
+       "label": "145"
+      },
+      {
+       "v": "514",
+       "label": "514"
+      },
+      {
+       "v": "451",
+       "label": "451"
+      }
+     ]
+    },
+    {
+     "id": "k2-t6",
+     "type": "tf",
+     "skill": "Basamak değeri",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k2-t7",
+     "type": "write",
+     "skill": "Basamak değeri",
+     "answer": [
+      "512"
+     ]
+    },
+    {
+     "id": "k2-t8",
+     "type": "choice",
+     "skill": "Basamak değeri",
+     "answer": [
+      "y"
+     ],
+     "options": [
+      {
+       "v": "b",
+       "label": "Birler"
+      },
+      {
+       "v": "o",
+       "label": "Onlar"
+      },
+      {
+       "v": "y",
+       "label": "Yüzler"
+      }
+     ]
+    },
+    {
+     "id": "k2-t9",
+     "type": "tf",
+     "skill": "Basamak değeri",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k2-t10",
+     "type": "write",
+     "skill": "Basamak değeri",
+     "answer": [
+      "370"
+     ]
+    }
+   ],
+   "practice": [],
+   "check": []
+  },
+  "p-yuvarlama": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "En Yakın Onluk ve Yüzlük",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "k3-a1",
+     "type": "tf",
+     "skill": "Yuvarlama",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k3-a2",
+     "type": "match",
+     "skill": "Yuvarlama",
+     "pairs": 3
+    },
+    {
+     "id": "k3-a3",
+     "type": "write",
+     "skill": "Yuvarlama",
+     "answer": [
+      "140"
+     ]
+    },
+    {
+     "id": "k3-a4",
+     "type": "tf",
+     "skill": "Yuvarlama",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k3-a5",
+     "type": "match",
+     "skill": "Yuvarlama",
+     "pairs": 3
+    },
+    {
+     "id": "k3-a6",
+     "type": "write",
+     "skill": "Yuvarlama",
+     "answer": [
+      "800"
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "k3-t1",
+     "type": "choice",
+     "skill": "Yuvarlama",
+     "answer": [
+      "70"
+     ],
+     "options": [
+      {
+       "v": "60",
+       "label": "60"
+      },
+      {
+       "v": "70",
+       "label": "70"
+      },
+      {
+       "v": "100",
+       "label": "100"
+      }
+     ]
+    },
+    {
+     "id": "k3-t2",
+     "type": "choice",
+     "skill": "Yuvarlama",
+     "answer": [
+      "300"
+     ],
+     "options": [
+      {
+       "v": "300",
+       "label": "300"
+      },
+      {
+       "v": "340",
+       "label": "340"
+      },
+      {
+       "v": "400",
+       "label": "400"
+      }
+     ]
+    },
+    {
+     "id": "k3-t3",
+     "type": "tf",
+     "skill": "Yuvarlama",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k3-t4",
+     "type": "write",
+     "skill": "Yuvarlama",
+     "answer": [
+      "250"
+     ]
+    },
+    {
+     "id": "k3-t5",
+     "type": "choice",
+     "skill": "Yuvarlama",
+     "answer": [
+      "36"
+     ],
+     "options": [
+      {
+       "v": "34",
+       "label": "34"
+      },
+      {
+       "v": "36",
+       "label": "36"
+      },
+      {
+       "v": "45",
+       "label": "45"
+      }
+     ]
+    },
+    {
+     "id": "k3-t6",
+     "type": "tf",
+     "skill": "Yuvarlama",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k3-t7",
+     "type": "write",
+     "skill": "Yuvarlama",
+     "answer": [
+      "600"
+     ]
+    },
+    {
+     "id": "k3-t8",
+     "type": "choice",
+     "skill": "Yuvarlama",
+     "answer": [
+      "b"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "170 ile 180"
+      },
+      {
+       "v": "b",
+       "label": "180 ile 190"
+      },
+      {
+       "v": "c",
+       "label": "100 ile 200"
+      }
+     ]
+    },
+    {
+     "id": "k3-t9",
+     "type": "tf",
+     "skill": "Yuvarlama",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k3-t10",
+     "type": "write",
+     "skill": "Yuvarlama",
+     "answer": [
+      "1000"
+     ]
+    }
+   ],
+   "practice": [],
+   "check": []
+  },
+  "p-ritmik": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Ritmik Sayma",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "k4-a1",
+     "type": "tf",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k4-a2",
+     "type": "match",
+     "skill": "Ritmik sayma",
+     "pairs": 3
+    },
+    {
+     "id": "k4-a3",
+     "type": "write",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "36"
+     ]
+    },
+    {
+     "id": "k4-a4",
+     "type": "tf",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k4-a5",
+     "type": "match",
+     "skill": "Ritmik sayma",
+     "pairs": 3
+    },
+    {
+     "id": "k4-a6",
+     "type": "write",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "49"
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "k4-t1",
+     "type": "choice",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "24"
+     ],
+     "options": [
+      {
+       "v": "22",
+       "label": "22"
+      },
+      {
+       "v": "24",
+       "label": "24"
+      },
+      {
+       "v": "26",
+       "label": "26"
+      }
+     ]
+    },
+    {
+     "id": "k4-t2",
+     "type": "choice",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "490"
+     ],
+     "options": [
+      {
+       "v": "481",
+       "label": "481"
+      },
+      {
+       "v": "490",
+       "label": "490"
+      },
+      {
+       "v": "580",
+       "label": "580"
+      }
+     ]
+    },
+    {
+     "id": "k4-t3",
+     "type": "tf",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k4-t4",
+     "type": "write",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "48"
+     ]
+    },
+    {
+     "id": "k4-t5",
+     "type": "choice",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "700"
+     ],
+     "options": [
+      {
+       "v": "790",
+       "label": "790"
+      },
+      {
+       "v": "700",
+       "label": "700"
+      },
+      {
+       "v": "600",
+       "label": "600"
+      }
+     ]
+    },
+    {
+     "id": "k4-t6",
+     "type": "tf",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k4-t7",
+     "type": "write",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "42"
+     ]
+    },
+    {
+     "id": "k4-t8",
+     "type": "choice",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "7, 14, 21"
+      },
+      {
+       "v": "b",
+       "label": "7, 17, 27"
+      },
+      {
+       "v": "c",
+       "label": "7, 12, 17"
+      }
+     ]
+    },
+    {
+     "id": "k4-t9",
+     "type": "tf",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k4-t10",
+     "type": "write",
+     "skill": "Ritmik sayma",
+     "answer": [
+      "88"
+     ]
+    }
+   ],
+   "practice": [],
+   "check": []
+  },
+  "p-tek-cift": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Tek ve Çift Sayılar",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "k5-a1",
+     "type": "tf",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k5-a2",
+     "type": "match",
+     "skill": "Tek ve çift sayılar",
+     "pairs": 3
+    },
+    {
+     "id": "k5-a3",
+     "type": "write",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "28"
+     ]
+    },
+    {
+     "id": "k5-a4",
+     "type": "tf",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k5-a5",
+     "type": "match",
+     "skill": "Tek ve çift sayılar",
+     "pairs": 3
+    },
+    {
+     "id": "k5-a6",
+     "type": "write",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "458"
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "k5-t1",
+     "type": "choice",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "388"
+     ],
+     "options": [
+      {
+       "v": "133",
+       "label": "133"
+      },
+      {
+       "v": "245",
+       "label": "245"
+      },
+      {
+       "v": "388",
+       "label": "388"
+      }
+     ]
+    },
+    {
+     "id": "k5-t2",
+     "type": "choice",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "617"
+     ],
+     "options": [
+      {
+       "v": "506",
+       "label": "506"
+      },
+      {
+       "v": "617",
+       "label": "617"
+      },
+      {
+       "v": "720",
+       "label": "720"
+      }
+     ]
+    },
+    {
+     "id": "k5-t3",
+     "type": "tf",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k5-t4",
+     "type": "write",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "21"
+     ]
+    },
+    {
+     "id": "k5-t5",
+     "type": "tf",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k5-t6",
+     "type": "choice",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "b"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "Artan olmaz"
+      },
+      {
+       "v": "b",
+       "label": "1 kalem artar"
+      },
+      {
+       "v": "c",
+       "label": "2 kalem artar"
+      }
+     ]
+    },
+    {
+     "id": "k5-t7",
+     "type": "write",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "5"
+     ]
+    },
+    {
+     "id": "k5-t8",
+     "type": "choice",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "b"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "Tek sayılara"
+      },
+      {
+       "v": "b",
+       "label": "Çift sayılara"
+      },
+      {
+       "v": "c",
+       "label": "Her ikisine"
+      }
+     ]
+    },
+    {
+     "id": "k5-t9",
+     "type": "tf",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k5-t10",
+     "type": "write",
+     "skill": "Tek ve çift sayılar",
+     "answer": [
+      "99"
+     ]
+    }
+   ],
+   "practice": [],
+   "check": []
+  },
+  "p-tek-cift-toplam": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Tek ve Çift Sayıların Toplamı",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "k6-a1",
+     "type": "tf",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k6-a2",
+     "type": "match",
+     "skill": "Tek ve çift sayıların toplamı",
+     "pairs": 3
+    },
+    {
+     "id": "k6-a3",
+     "type": "write",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "15"
+     ]
+    },
+    {
+     "id": "k6-a4",
+     "type": "tf",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k6-a5",
+     "type": "match",
+     "skill": "Tek ve çift sayıların toplamı",
+     "pairs": 3
+    },
+    {
+     "id": "k6-a6",
+     "type": "write",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "9"
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "k6-t1",
+     "type": "choice",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "tek"
+     ],
+     "options": [
+      {
+       "v": "tek",
+       "label": "Tek"
+      },
+      {
+       "v": "cift",
+       "label": "Çift"
+      }
+     ]
+    },
+    {
+     "id": "k6-t2",
+     "type": "choice",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "cift"
+     ],
+     "options": [
+      {
+       "v": "tek",
+       "label": "Tek"
+      },
+      {
+       "v": "cift",
+       "label": "Çift"
+      }
+     ]
+    },
+    {
+     "id": "k6-t3",
+     "type": "tf",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k6-t4",
+     "type": "write",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "13"
+     ]
+    },
+    {
+     "id": "k6-t5",
+     "type": "tf",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k6-t6",
+     "type": "choice",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "c"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "3 + 5"
+      },
+      {
+       "v": "b",
+       "label": "4 + 6"
+      },
+      {
+       "v": "c",
+       "label": "4 + 5"
+      }
+     ]
+    },
+    {
+     "id": "k6-t7",
+     "type": "choice",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "9 + 9"
+      },
+      {
+       "v": "b",
+       "label": "2 + 7"
+      },
+      {
+       "v": "c",
+       "label": "6 + 1"
+      }
+     ]
+    },
+    {
+     "id": "k6-t8",
+     "type": "tf",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k6-t9",
+     "type": "write",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "17"
+     ]
+    },
+    {
+     "id": "k6-t10",
+     "type": "choice",
+     "skill": "Tek ve çift sayıların toplamı",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "Her zaman tek"
+      },
+      {
+       "v": "b",
+       "label": "Her zaman çift"
+      },
+      {
+       "v": "c",
+       "label": "Bazen tek, bazen çift"
+      }
+     ]
+    }
+   ],
+   "practice": [],
+   "check": []
+  },
+  "p-oruntu": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Şekil Örüntüleri",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "k7-a1",
+     "type": "tf",
+     "skill": "Örüntüler",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k7-a2",
+     "type": "match",
+     "skill": "Örüntüler",
+     "pairs": 3
+    },
+    {
+     "id": "k7-a3",
+     "type": "write",
+     "skill": "Örüntüler",
+     "answer": [
+      "20"
+     ]
+    },
+    {
+     "id": "k7-a4",
+     "type": "tf",
+     "skill": "Örüntüler",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k7-a5",
+     "type": "match",
+     "skill": "Örüntüler",
+     "pairs": 3
+    },
+    {
+     "id": "k7-a6",
+     "type": "write",
+     "skill": "Örüntüler",
+     "answer": [
+      "7"
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "k7-t1",
+     "type": "choice",
+     "skill": "Örüntüler",
+     "answer": [
+      "28"
+     ],
+     "options": [
+      {
+       "v": "27",
+       "label": "27"
+      },
+      {
+       "v": "28",
+       "label": "28"
+      },
+      {
+       "v": "29",
+       "label": "29"
+      }
+     ]
+    },
+    {
+     "id": "k7-t2",
+     "type": "choice",
+     "skill": "Örüntüler",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "y",
+       "label": "⭐"
+      },
+      {
+       "v": "a",
+       "label": "🌙"
+      },
+      {
+       "v": "g",
+       "label": "☀️"
+      }
+     ]
+    },
+    {
+     "id": "k7-t3",
+     "type": "tf",
+     "skill": "Örüntüler",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k7-t4",
+     "type": "write",
+     "skill": "Örüntüler",
+     "answer": [
+      "70"
+     ]
+    },
+    {
+     "id": "k7-t5",
+     "type": "choice",
+     "skill": "Örüntüler",
+     "answer": [
+      "b"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "Her adımda 3 artıyor"
+      },
+      {
+       "v": "b",
+       "label": "Her adımda 5 artıyor"
+      },
+      {
+       "v": "c",
+       "label": "Her adımda 8 artıyor"
+      }
+     ]
+    },
+    {
+     "id": "k7-t6",
+     "type": "tf",
+     "skill": "Örüntüler",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k7-t7",
+     "type": "write",
+     "skill": "Örüntüler",
+     "answer": [
+      "10"
+     ]
+    },
+    {
+     "id": "k7-t8",
+     "type": "choice",
+     "skill": "Örüntüler",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "6, 12, 18"
+      },
+      {
+       "v": "b",
+       "label": "6, 10, 14"
+      },
+      {
+       "v": "c",
+       "label": "6, 16, 26"
+      }
+     ]
+    },
+    {
+     "id": "k7-t9",
+     "type": "tf",
+     "skill": "Örüntüler",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k7-t10",
+     "type": "write",
+     "skill": "Örüntüler",
+     "answer": [
+      "40"
+     ]
+    }
+   ],
+   "practice": [],
+   "check": []
+  },
+  "p-nesne-tahmin": {
+   "course": "3-matematik",
+   "grade": 3,
+   "subject": "matematik",
+   "title": "Nesne Sayısını Tahmin Etme",
+   "meeting": false,
+   "stops": [
+    "anlatim",
+    "alistirma",
+    "minitest",
+    "ozet"
+   ],
+   "exercises": [
+    {
+     "id": "k8-a1",
+     "type": "tf",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k8-a2",
+     "type": "match",
+     "skill": "Nesne sayısını tahmin etme",
+     "pairs": 3
+    },
+    {
+     "id": "k8-a3",
+     "type": "write",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "30"
+     ]
+    },
+    {
+     "id": "k8-a4",
+     "type": "tf",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k8-a5",
+     "type": "match",
+     "skill": "Nesne sayısını tahmin etme",
+     "pairs": 3
+    },
+    {
+     "id": "k8-a6",
+     "type": "write",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "80"
+     ]
+    }
+   ],
+   "testPool": [
+    {
+     "id": "k8-t1",
+     "type": "choice",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "60"
+     ],
+     "options": [
+      {
+       "v": "30",
+       "label": "30"
+      },
+      {
+       "v": "45",
+       "label": "45"
+      },
+      {
+       "v": "60",
+       "label": "60"
+      }
+     ]
+    },
+    {
+     "id": "k8-t2",
+     "type": "choice",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "b"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "Tahminim çok az"
+      },
+      {
+       "v": "b",
+       "label": "Tahminim sonuca çok yakın"
+      },
+      {
+       "v": "c",
+       "label": "Tahminim çok fazla"
+      }
+     ]
+    },
+    {
+     "id": "k8-t3",
+     "type": "tf",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k8-t4",
+     "type": "write",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "90"
+     ]
+    },
+    {
+     "id": "k8-t5",
+     "type": "choice",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "Sonuçtan az"
+      },
+      {
+       "v": "b",
+       "label": "Sonuçla eşit"
+      },
+      {
+       "v": "c",
+       "label": "Sonuçtan fazla"
+      }
+     ]
+    },
+    {
+     "id": "k8-t6",
+     "type": "tf",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "true"
+     ]
+    },
+    {
+     "id": "k8-t7",
+     "type": "write",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "60"
+     ]
+    },
+    {
+     "id": "k8-t8",
+     "type": "choice",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "a"
+     ],
+     "options": [
+      {
+       "v": "a",
+       "label": "Tahminim sonuçtan fazla"
+      },
+      {
+       "v": "b",
+       "label": "Tahminim sonuçtan az"
+      },
+      {
+       "v": "c",
+       "label": "Tahminim sonuçla eşit"
+      }
+     ]
+    },
+    {
+     "id": "k8-t9",
+     "type": "tf",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "false"
+     ]
+    },
+    {
+     "id": "k8-t10",
+     "type": "write",
+     "skill": "Nesne sayısını tahmin etme",
+     "answer": [
+      "24"
+     ]
+    }
+   ],
+   "practice": [],
+   "check": []
+  }
+ },
+ "stopTypes": {
+  "anlatim": {
+   "kp": 10,
+   "sheet": false
+  },
+  "alistirma": {
+   "kp": 10,
+   "sheet": false
+  },
+  "minitest": {
+   "kp": 10,
+   "sheet": false
+  },
+  "calisma": {
+   "kp": 0,
+   "sheet": true
+  },
+  "ozet": {
+   "kp": 5,
+   "sheet": false
+  }
+ },
+ "minitestSize": 5,
+ "kpRules": {
+  "anlatim": 10,
+  "alistirma": 10,
+  "minitest": 10,
+  "ozet": 5,
+  "kitapBitir": 5,
+  "kitapSoru": 3,
+  "kitapMax": 20,
+  "oyun": 5,
+  "gunluk": 5,
+  "bonus": 5
+ },
+ "starDailyMax": 10,
+ "cup": {
+  "winners": 5,
+  "groupSize": 20,
+  "themes": [
+   {
+    "id": "kuyruklu-yildiz",
+    "name": "Kuyruklu Yıldız Kupası"
+   },
+   {
+    "id": "ay-isigi",
+    "name": "Ay Işığı Kupası"
+   },
+   {
+    "id": "gunes",
+    "name": "Güneş Kupası"
+   },
+   {
+    "id": "gokkusagi",
+    "name": "Gökkuşağı Kupası"
+   },
+   {
+    "id": "saturn",
+    "name": "Satürn Kupası"
+   },
+   {
+    "id": "kuzey-isigi",
+    "name": "Kuzey Işığı Kupası"
+   }
+  ],
+  "taskPool": [
+   {
+    "id": "calis",
+    "stops": [
+     "alistirma",
+     "minitest"
+    ],
+    "label": "Bir alıştırma ya da mini test bitir",
+    "icon": "✏️"
+   },
+   {
+    "id": "anlatim",
+    "stops": [
+     "anlatim"
+    ],
+    "label": "Bir konu anlatımı dinle",
+    "icon": "🎧"
+   },
+   {
+    "id": "ozet",
+    "stops": [
+     "ozet"
+    ],
+    "label": "Bir konu özeti oku",
+    "icon": "📖"
+   },
+   {
+    "id": "kitap",
+    "stops": [
+     "kitap"
+    ],
+    "label": "Bir kitap oku ve anlama sorularını tamamla",
+    "icon": "📚"
+   },
+   {
+    "id": "oyun",
+    "stops": [
+     "oyun"
+    ],
+    "label": "Bir oyun turunu bitir",
+    "icon": "🎮"
+   }
+  ],
+  "weeklyTasks": [
+   "anlatim",
+   "kitap",
+   "oyun"
+  ],
+  "bonusTasks": [
+   "ozet",
+   "oyun",
+   "anlatim",
+   "kitap"
+  ],
+  "nickAdjectives": [
+   "Cesur",
+   "Meraklı",
+   "Neşeli",
+   "Mavi",
+   "Hızlı",
+   "Parlak",
+   "Sakin",
+   "Uçan",
+   "Gizemli",
+   "Akıllı",
+   "Renkli",
+   "Sevimli",
+   "Minik",
+   "Bulut",
+   "Yıldızlı",
+   "Güneşli"
+  ],
+  "nickNouns": [
+   {
+    "name": "Yunus",
+    "emoji": "🐬"
+   },
+   {
+    "name": "Balina",
+    "emoji": "🐋"
+   },
+   {
+    "name": "Kartal",
+    "emoji": "🦅"
+   },
+   {
+    "name": "Tavşan",
+    "emoji": "🐰"
+   },
+   {
+    "name": "Roket",
+    "emoji": "🚀"
+   },
+   {
+    "name": "Sincap",
+    "emoji": "🐿️"
+   },
+   {
+    "name": "Baykuş",
+    "emoji": "🦉"
+   },
+   {
+    "name": "Pusula",
+    "emoji": "🧭"
+   },
+   {
+    "name": "Panda",
+    "emoji": "🐼"
+   },
+   {
+    "name": "Tilki",
+    "emoji": "🦊"
+   },
+   {
+    "name": "Kaplumbağa",
+    "emoji": "🐢"
+   },
+   {
+    "name": "Fener",
+    "emoji": "🔦"
+   },
+   {
+    "name": "Kuyrukluyıldız",
+    "emoji": "☄️"
+   },
+   {
+    "name": "Penguen",
+    "emoji": "🐧"
+   },
+   {
+    "name": "Ahtapot",
+    "emoji": "🐙"
+   },
+   {
+    "name": "Zürafa",
+    "emoji": "🦒"
+   }
+  ]
+ },
+ "books": [
+  {
+   "id": "kayip-kitap",
+   "title": "Kayıp Kitap",
+   "grade": 3,
+   "questions": [
+    {
+     "id": "q1",
+     "answer": "a"
+    },
+    {
+     "id": "q2",
+     "answer": "b"
+    },
+    {
+     "id": "q3",
+     "answer": "c"
+    },
+    {
+     "id": "q4",
+     "answer": "b"
+    },
+    {
+     "id": "q5",
+     "answer": "a"
+    }
+   ]
+  },
+  {
+   "id": "sayi-avcilari",
+   "title": "Sayı Avcıları",
+   "grade": 3,
+   "questions": [
+    {
+     "id": "q1",
+     "answer": "b"
+    },
+    {
+     "id": "q2",
+     "answer": "a"
+    },
+    {
+     "id": "q3",
+     "answer": "c"
+    },
+    {
+     "id": "q4",
+     "answer": "a"
+    },
+    {
+     "id": "q5",
+     "answer": "b"
+    }
+   ]
+  }
+ ],
+ "games": [
+  {
+   "id": "sayi-balonlari",
+   "title": "Sayı Balonları",
+   "subject": "matematik",
+   "rounds": 8
+  }
+ ],
+ "avatar": {
+  "default": {
+   "skin": "#F6CBA8",
+   "hair": "kisa",
+   "hairColor": "#6B3E26",
+   "shirt": "#4C8DF0",
+   "eyes": "#4A3426"
+  },
+  "base": {
+   "skin": [
+    "#FBE0C8",
+    "#F6CBA8",
+    "#E0A77E",
+    "#B97A53",
+    "#8A5638"
+   ],
+   "hair": [
+    "kisa",
+    "uzun",
+    "kivircik",
+    "topuz",
+    "kel"
+   ],
+   "hairColor": [
+    "#2B1D14",
+    "#6B3E26",
+    "#C2662D",
+    "#E8B84A",
+    "#7A5CF0"
+   ],
+   "shirt": [
+    "#4C8DF0",
+    "#34B256",
+    "#FF7A1A",
+    "#E25A86",
+    "#8E5CF7",
+    "#F2B705"
+   ],
+   "eyes": [
+    "#4A3426",
+    "#2F6FBF",
+    "#4E8F2A",
+    "#6B4E9B",
+    "#2B1D14"
+   ]
+  },
+  "items": [
+   {
+    "id": "roket-gozluk",
+    "slot": "acc",
+    "name": "Roket Gözlüğü",
+    "price": 30
+   },
+   {
+    "id": "kasif-sapka",
+    "slot": "acc",
+    "name": "Kâşif Şapkası",
+    "price": 35
+   },
+   {
+    "id": "yildiz-tac",
+    "slot": "acc",
+    "name": "Yıldız Taç",
+    "price": 40
+   },
+   {
+    "id": "kulaklik",
+    "slot": "acc",
+    "name": "Müzik Kulaklığı",
+    "price": 25
+   },
+   {
+    "id": "uzay-tulumu",
+    "slot": "outfit",
+    "name": "Uzay Tulumu",
+    "price": 50
+   },
+   {
+    "id": "super-pelerin",
+    "slot": "outfit",
+    "name": "Süper Pelerin",
+    "price": 45
+   },
+   {
+    "id": "sporcu-formasi",
+    "slot": "outfit",
+    "name": "Sporcu Forması",
+    "price": 30
+   },
+   {
+    "id": "gece-gokyuzu",
+    "slot": "bg",
+    "name": "Gece Gökyüzü",
+    "price": 20
+   },
+   {
+    "id": "orman",
+    "slot": "bg",
+    "name": "Orman",
+    "price": 20
+   },
+   {
+    "id": "okyanus",
+    "slot": "bg",
+    "name": "Okyanus",
+    "price": 20
+   },
+   {
+    "id": "gezegenler",
+    "slot": "bg",
+    "name": "Gezegenler",
+    "price": 25
+   }
+  ]
+ },
+ "assessSkills": {
+  "karsilastirma": {
+   "subject": "matematik",
+   "name": "Sayıları karşılaştırma",
+   "can": "Sayıları karşılaştırabiliyorsun",
+   "study": "sayı karşılaştırmayı",
+   "course": "3-matematik",
+   "topicId": "k-dogal-karsilastirma"
+  },
+  "basamak": {
+   "subject": "matematik",
+   "name": "Basamak değeri",
+   "can": "Basamak değerini biliyorsun",
+   "study": "basamak değerini",
+   "course": "3-matematik",
+   "topicId": "p-cozumleme"
+  },
+  "ritmik": {
+   "subject": "matematik",
+   "name": "Ritmik sayma",
+   "can": "Ritmik sayabiliyorsun",
+   "study": "ritmik saymayı",
+   "course": "3-matematik",
+   "topicId": "p-ritmik"
+  },
+  "tekcift": {
+   "subject": "matematik",
+   "name": "Tek ve çift sayılar",
+   "can": "Tek ve çift sayıları ayırt edebiliyorsun",
+   "study": "tek ve çift sayıları",
+   "course": "3-matematik",
+   "topicId": "p-tek-cift"
+  },
+  "kesir": {
+   "subject": "matematik",
+   "name": "Bütün, yarım, çeyrek",
+   "can": null,
+   "study": null,
+   "course": "3-matematik",
+   "topicId": "p-butun-yarim-ceyrek"
+  },
+  "saat": {
+   "subject": "matematik",
+   "name": "Saati okuma",
+   "can": null,
+   "study": null,
+   "course": "3-matematik",
+   "topicId": "p-saat"
+  },
+  "para": {
+   "subject": "matematik",
+   "name": "Paralarımız",
+   "can": null,
+   "study": null,
+   "course": "3-matematik",
+   "topicId": "p-paralar"
+  },
+  "okuma": {
+   "subject": "turkce",
+   "name": "Okuduğunu anlama",
+   "can": "Okuduğunu anlıyorsun",
+   "study": "okuduğunu anlamayı",
+   "course": "3-turkce",
+   "topicId": null
+  },
+  "kelime": {
+   "subject": "turkce",
+   "name": "Eş ve zıt anlamlı kelimeler",
+   "can": "Eş ve zıt anlamlı kelimeleri biliyorsun",
+   "study": "eş ve zıt anlamlı kelimeleri",
+   "course": "3-turkce",
+   "topicId": null
+  },
+  "saglik": {
+   "subject": "hayat",
+   "name": "Sağlığını koruma",
+   "can": "Sağlığını korumayı biliyorsun",
+   "study": "sağlıklı yaşam davranışlarını",
+   "course": "3-hayat",
+   "topicId": null
+  },
+  "guvenlik": {
+   "subject": "hayat",
+   "name": "Güvenlik ve trafik",
+   "can": "Güvenlik ve trafik kurallarını biliyorsun",
+   "study": "güvenlik ve trafik kurallarını",
+   "course": "3-hayat",
+   "topicId": null
+  },
+  "afet": {
+   "subject": "hayat",
+   "name": "Afetlerde yapılacaklar",
+   "can": "Afetlerde ne yapacağını biliyorsun",
+   "study": "afetlerde yapılacakları",
+   "course": "3-hayat",
+   "topicId": null
+  }
+ },
+ "assessBank": [
+  {
+   "id": "b-k1",
+   "type": "choice",
+   "skill": "karsilastirma",
+   "answer": [
+    "591"
+   ],
+   "options": [
+    {
+     "v": "519",
+     "label": "519"
+    },
+    {
+     "v": "591",
+     "label": "591"
+    },
+    {
+     "v": "195",
+     "label": "195"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Hangisi en büyük?",
+   "input": null
+  },
+  {
+   "id": "b-k2",
+   "type": "write",
+   "skill": "karsilastirma",
+   "answer": [
+    "<"
+   ],
+   "grade": 3,
+   "prompt": "Boşluğa işaret yaz:  408 ☐ 480",
+   "input": "sign"
+  },
+  {
+   "id": "b-k3",
+   "type": "tf",
+   "skill": "karsilastirma",
+   "answer": [
+    "true"
+   ],
+   "grade": 3,
+   "prompt": "999 sayısı 1000 sayısından küçüktür.",
+   "input": null
+  },
+  {
+   "id": "b-k4",
+   "type": "choice",
+   "skill": "karsilastirma",
+   "answer": [
+    "a"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "246 < 264 < 426"
+    },
+    {
+     "v": "b",
+     "label": "264 < 246 < 426"
+    },
+    {
+     "v": "c",
+     "label": "426 < 264 < 246"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Küçükten büyüğe sıralanmış olan hangisi?",
+   "input": null
+  },
+  {
+   "id": "b-b1",
+   "type": "choice",
+   "skill": "basamak",
+   "answer": [
+    "600"
+   ],
+   "options": [
+    {
+     "v": "6",
+     "label": "6"
+    },
+    {
+     "v": "60",
+     "label": "60"
+    },
+    {
+     "v": "600",
+     "label": "600"
+    }
+   ],
+   "grade": 3,
+   "prompt": "674 sayısında 6 rakamının basamak değeri kaçtır?",
+   "input": null
+  },
+  {
+   "id": "b-b2",
+   "type": "write",
+   "skill": "basamak",
+   "answer": [
+    "350"
+   ],
+   "grade": 3,
+   "prompt": "3 yüzlük, 5 onluk ve 0 birlikten oluşan sayıyı yaz.",
+   "input": "number"
+  },
+  {
+   "id": "b-b3",
+   "type": "tf",
+   "skill": "basamak",
+   "answer": [
+    "true"
+   ],
+   "grade": 3,
+   "prompt": "508 sayısının onlar basamağında 0 rakamı vardır.",
+   "input": null
+  },
+  {
+   "id": "b-b4",
+   "type": "write",
+   "skill": "basamak",
+   "answer": [
+    "462"
+   ],
+   "grade": 3,
+   "prompt": "400 + 60 + 2 kaçtır?",
+   "input": "number"
+  },
+  {
+   "id": "b-r1",
+   "type": "write",
+   "skill": "ritmik",
+   "answer": [
+    "32"
+   ],
+   "grade": 3,
+   "prompt": "Sekizer ileri say:  8, 16, 24, ☐",
+   "input": "number"
+  },
+  {
+   "id": "b-r2",
+   "type": "choice",
+   "skill": "ritmik",
+   "answer": [
+    "340"
+   ],
+   "options": [
+    {
+     "v": "340",
+     "label": "340"
+    },
+    {
+     "v": "345",
+     "label": "345"
+    },
+    {
+     "v": "250",
+     "label": "250"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Onar geri say:  370, 360, 350, ☐",
+   "input": null
+  },
+  {
+   "id": "b-r3",
+   "type": "tf",
+   "skill": "ritmik",
+   "answer": [
+    "true"
+   ],
+   "grade": 3,
+   "prompt": "6, 12, 18, 24 dizisinde altışar ileri sayılmıştır.",
+   "input": null
+  },
+  {
+   "id": "b-r4",
+   "type": "choice",
+   "skill": "ritmik",
+   "answer": [
+    "600"
+   ],
+   "options": [
+    {
+     "v": "650",
+     "label": "650"
+    },
+    {
+     "v": "600",
+     "label": "600"
+    },
+    {
+     "v": "500",
+     "label": "500"
+    }
+   ],
+   "grade": 3,
+   "prompt": "900, 800, 700, ☐",
+   "input": null
+  },
+  {
+   "id": "b-t1",
+   "type": "choice",
+   "skill": "tekcift",
+   "answer": [
+    "87"
+   ],
+   "options": [
+    {
+     "v": "64",
+     "label": "64"
+    },
+    {
+     "v": "70",
+     "label": "70"
+    },
+    {
+     "v": "87",
+     "label": "87"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Hangisi tek sayıdır?",
+   "input": null
+  },
+  {
+   "id": "b-t2",
+   "type": "tf",
+   "skill": "tekcift",
+   "answer": [
+    "true"
+   ],
+   "grade": 3,
+   "prompt": "0 bir çift sayıdır.",
+   "input": null
+  },
+  {
+   "id": "b-t3",
+   "type": "tf",
+   "skill": "tekcift",
+   "answer": [
+    "false"
+   ],
+   "grade": 3,
+   "prompt": "Bir tek ve bir çift sayının toplamı çift sayıdır.",
+   "input": null
+  },
+  {
+   "id": "b-t4",
+   "type": "choice",
+   "skill": "tekcift",
+   "answer": [
+    "cift"
+   ],
+   "options": [
+    {
+     "v": "tek",
+     "label": "Tek"
+    },
+    {
+     "v": "cift",
+     "label": "Çift"
+    }
+   ],
+   "grade": 3,
+   "prompt": "5 + 7 toplamı nasıl bir sayıdır?",
+   "input": null
+  },
+  {
+   "id": "b-o1",
+   "type": "choice",
+   "skill": "okuma",
+   "answer": [
+    "b"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "Yürüyerek"
+    },
+    {
+     "v": "b",
+     "label": "Bisikletle"
+    },
+    {
+     "v": "c",
+     "label": "Otobüsle"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Ece sabah erken kalktı, kahvaltısını yaptı ve bisikletiyle parka gitti. Parkta arkadaşı Can'ı gördü.  Ece parka neyle gitti?",
+   "input": null
+  },
+  {
+   "id": "b-o2",
+   "type": "tf",
+   "skill": "okuma",
+   "answer": [
+    "false"
+   ],
+   "grade": 3,
+   "prompt": "Kuşlar kışın sıcak ülkelere göç eder. Bazı kuşlar ise bulunduğu yerde kalır.  Metne göre bütün kuşlar göç eder.",
+   "input": null
+  },
+  {
+   "id": "b-o3",
+   "type": "choice",
+   "skill": "okuma",
+   "answer": [
+    "a"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "Ali'nin fidan yetiştirmesi"
+    },
+    {
+     "v": "b",
+     "label": "Baharın gelmesi"
+    },
+    {
+     "v": "c",
+     "label": "Ali'nin okula gitmesi"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Ali bahçeye üç fidan dikti. Her gün fidanlarını suladı. Bahar gelince fidanlar çiçek açtı.  Metnin konusu nedir?",
+   "input": null
+  },
+  {
+   "id": "b-o4",
+   "type": "write",
+   "skill": "okuma",
+   "answer": [
+    "5"
+   ],
+   "grade": 3,
+   "prompt": "Zeynep kütüphaneden 2 masal, 3 şiir kitabı aldı.  Zeynep toplam kaç kitap aldı?",
+   "input": "number"
+  },
+  {
+   "id": "b-k1",
+   "type": "choice",
+   "skill": "kelime",
+   "answer": [
+    "kucuk"
+   ],
+   "options": [
+    {
+     "v": "kucuk",
+     "label": "küçük"
+    },
+    {
+     "v": "iri",
+     "label": "iri"
+    },
+    {
+     "v": "genis",
+     "label": "geniş"
+    }
+   ],
+   "grade": 3,
+   "prompt": "\"Büyük\" kelimesinin zıt anlamlısı hangisidir?",
+   "input": null
+  },
+  {
+   "id": "b-k2",
+   "type": "tf",
+   "skill": "kelime",
+   "answer": [
+    "true"
+   ],
+   "grade": 3,
+   "prompt": "\"Okul\" ile \"mektep\" eş anlamlı kelimelerdir.",
+   "input": null
+  },
+  {
+   "id": "b-k3",
+   "type": "choice",
+   "skill": "kelime",
+   "answer": [
+    "yanit"
+   ],
+   "options": [
+    {
+     "v": "soru",
+     "label": "soru"
+    },
+    {
+     "v": "yanit",
+     "label": "yanıt"
+    },
+    {
+     "v": "sual",
+     "label": "sual"
+    }
+   ],
+   "grade": 3,
+   "prompt": "\"Cevap\" kelimesinin eş anlamlısı hangisidir?",
+   "input": null
+  },
+  {
+   "id": "b-k4",
+   "type": "tf",
+   "skill": "kelime",
+   "answer": [
+    "false"
+   ],
+   "grade": 3,
+   "prompt": "\"Sıcak\" kelimesinin zıt anlamlısı \"ılık\"tır.",
+   "input": null
+  },
+  {
+   "id": "b-s1",
+   "type": "choice",
+   "skill": "saglik",
+   "answer": [
+    "a"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "Yemekten önce ellerimizi yıkamak"
+    },
+    {
+     "v": "b",
+     "label": "Gece geç saatlere kadar uyanık kalmak"
+    },
+    {
+     "v": "c",
+     "label": "Çok şekerli yiyecekler yemek"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Hangisi sağlığımızı korumak için yapılır?",
+   "input": null
+  },
+  {
+   "id": "b-s2",
+   "type": "tf",
+   "skill": "saglik",
+   "answer": [
+    "true"
+   ],
+   "grade": 3,
+   "prompt": "Dişlerimizi günde en az iki kez fırçalamalıyız.",
+   "input": null
+  },
+  {
+   "id": "b-s3",
+   "type": "tf",
+   "skill": "saglik",
+   "answer": [
+    "false"
+   ],
+   "grade": 3,
+   "prompt": "Düzenli spor yapmak sağlığımıza zarar verir.",
+   "input": null
+  },
+  {
+   "id": "b-s4",
+   "type": "choice",
+   "skill": "saglik",
+   "answer": [
+    "b"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "Her öğünde yalnızca aynı yiyeceği yemek"
+    },
+    {
+     "v": "b",
+     "label": "Sebze, meyve ve süt ürünleri tüketmek"
+    },
+    {
+     "v": "c",
+     "label": "Kahvaltı yapmamak"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Dengeli beslenmek için hangisi doğrudur?",
+   "input": null
+  },
+  {
+   "id": "b-g1",
+   "type": "choice",
+   "skill": "guvenlik",
+   "answer": [
+    "a"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "Yaya geçidinden"
+    },
+    {
+     "v": "b",
+     "label": "Park etmiş araçların arasından"
+    },
+    {
+     "v": "c",
+     "label": "Virajlardan"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Karşıdan karşıya nereden geçmeliyiz?",
+   "input": null
+  },
+  {
+   "id": "b-g2",
+   "type": "tf",
+   "skill": "guvenlik",
+   "answer": [
+    "false"
+   ],
+   "grade": 3,
+   "prompt": "Yayalar için kırmızı ışık yanarken karşıya geçilebilir.",
+   "input": null
+  },
+  {
+   "id": "b-g3",
+   "type": "choice",
+   "skill": "guvenlik",
+   "answer": [
+    "b"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "Arabaya binerim"
+    },
+    {
+     "v": "b",
+     "label": "Hayır der, güvendiğim bir büyüğe haber veririm"
+    },
+    {
+     "v": "c",
+     "label": "Adresimi söylerim"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Tanımadığın biri seni arabasına çağırırsa ne yaparsın?",
+   "input": null
+  },
+  {
+   "id": "b-g4",
+   "type": "tf",
+   "skill": "guvenlik",
+   "answer": [
+    "true"
+   ],
+   "grade": 3,
+   "prompt": "Arabanın arka koltuğunda da emniyet kemeri takılmalıdır.",
+   "input": null
+  },
+  {
+   "id": "b-a1",
+   "type": "choice",
+   "skill": "afet",
+   "answer": [
+    "a"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "Çök, kapan, tutun"
+    },
+    {
+     "v": "b",
+     "label": "Merdivenlerden koşarak inmek"
+    },
+    {
+     "v": "c",
+     "label": "Asansöre binmek"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Deprem anında ne yapmalıyız?",
+   "input": null
+  },
+  {
+   "id": "b-a2",
+   "type": "tf",
+   "skill": "afet",
+   "answer": [
+    "true"
+   ],
+   "grade": 3,
+   "prompt": "Afet ve acil durum çantası afetten önce hazırlanır.",
+   "input": null
+  },
+  {
+   "id": "b-a3",
+   "type": "choice",
+   "skill": "afet",
+   "answer": [
+    "b"
+   ],
+   "options": [
+    {
+     "v": "a",
+     "label": "Afet çantası hazırlamak"
+    },
+    {
+     "v": "b",
+     "label": "Toplanma alanına gitmek"
+    },
+    {
+     "v": "c",
+     "label": "Dolapları duvara sabitlemek"
+    }
+   ],
+   "grade": 3,
+   "prompt": "Hangisi afetten sonra yapılır?",
+   "input": null
+  },
+  {
+   "id": "b-a4",
+   "type": "tf",
+   "skill": "afet",
+   "answer": [
+    "false"
+   ],
+   "grade": 3,
+   "prompt": "Yangın anında binadan çıkmak için asansör kullanılır.",
+   "input": null
+  }
+ ]
+}

@@ -313,6 +313,7 @@ services:
       - Content__MaxUploadMb=${CONTENT_MAX_UPLOAD_MB:-2048}
       - Subscription__BaseUrl=http://subscriptionservice:80
       - Services__UserService=http://userservice
+      - Services__ClassroomService=http://classroomservice
       - Subscription__FailOpen=true
       - OTEL_SERVICE_NAME=contentservice
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}

@@ -17,6 +17,8 @@ public class AuthDbContext : DbContext, IAuditDbContext
     public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<AuditEvent> AuditEvents { get; set; }
+    public DbSet<NationalIdCredential> NationalIdCredentials { get; set; }
+    public DbSet<NationalIdLoginThrottle> NationalIdLoginThrottles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -88,6 +90,25 @@ public class AuthDbContext : DbContext, IAuditDbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.ProcessedAt);
             entity.Property(e => e.Type).HasMaxLength(64);
+        });
+
+        // T.C. Kimlik No: only a keyed hash and ciphertext are stored (KVKK), in tables of their own so the
+        // shared User model other services map stays unchanged.
+        modelBuilder.Entity<NationalIdCredential>(entity =>
+        {
+            entity.ToTable("national_id_credentials");
+            entity.HasKey(e => e.UserId);
+            entity.HasIndex(e => e.LookupHash).IsUnique();
+            entity.Property(e => e.LookupHash).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.Ciphertext).IsRequired().HasMaxLength(128);
+            entity.HasOne<User>().WithOne().HasForeignKey<NationalIdCredential>(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<NationalIdLoginThrottle>(entity =>
+        {
+            entity.ToTable("national_id_login_throttles");
+            entity.HasKey(e => e.LookupHash);
+            entity.Property(e => e.LookupHash).HasMaxLength(64);
         });
 
         modelBuilder.Entity<AuditEvent>(entity =>

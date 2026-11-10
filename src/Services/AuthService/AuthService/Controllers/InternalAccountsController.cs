@@ -17,10 +17,34 @@ namespace AuthService.Controllers;
 public class InternalAccountsController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly INationalIdAuthService _nationalId;
 
-    public InternalAccountsController(IAuthService authService)
+    public InternalAccountsController(IAuthService authService, INationalIdAuthService nationalId)
     {
         _authService = authService;
+        _nationalId = nationalId;
+    }
+
+    /// <summary>
+    /// Gives an account its T.C. Kimlik No (school import or admin directory). The number is validated,
+    /// stored encrypted and is never echoed back.
+    /// </summary>
+    [HttpPut("accounts/{id}/national-id")]
+    public async Task<ActionResult<ApiResponse<bool>>> AssignNationalId(
+        Guid id,
+        [FromBody] AssignNationalIdRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await _nationalId.AssignAsync(id, request.NationalId, cancellationToken) switch
+        {
+            NationalIdAssignmentStatus.Updated => Ok(new ApiResponse<bool>(true, true, "National id assigned")),
+            NationalIdAssignmentStatus.InvalidNumber => BadRequest(new ApiResponse<bool>(false, false, "Invalid national id")),
+            NationalIdAssignmentStatus.UserNotFound => NotFound(new ApiResponse<bool>(false, false, "Account not found")),
+            NationalIdAssignmentStatus.InUse => Conflict(new ApiResponse<bool>(false, false, "National id already in use")),
+            _ => StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse<bool>(false, false, "National id keys are not configured"))
+        };
     }
 
     [HttpPost("accounts/{id}/active")]

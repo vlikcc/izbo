@@ -32,6 +32,14 @@ yükleme rotası için Kestrel sınırını kaldırır (`ContentUpload__MaxReque
 `respondingTimeouts.readTimeout` değeri (v3'te varsayılan 60 sn) büyük yüklemeleri keser — Traefik statik
 yapılandırmasında artırın (ör. `3600s`).
 
+### YZ Kampüs (ilkokul arayüzü)
+
+İlkokul (1–4. sınıf) arayüzünün sunucu tarafı: T.C. Kimlik No ile giriş AuthService'te (`/api/auth/tc-login`),
+ilerleme, ödül defteri (💎 KP / ⭐), Yıldız Kupası, avatar, Kampüs ödevleri ve beceri değerlendirmeleri
+ContentService içindeki Kampüs modülünde (`/api/kampus/*`, ayrı `KampusDbContext`). Uç listesi ve kurallar:
+[docs/kampus-api.md](docs/kampus-api.md). T.C. numarası yalnızca HMAC özeti ve AES-GCM şifreli olarak saklanır;
+prod'da `NATIONAL_ID_LOOKUP_KEY` ve `NATIONAL_ID_ENCRYPTION_KEY` gerekir.
+
 ### Abonelik / kota katmanı
 
 **SubscriptionService** plan kataloğunu (Free/Pro/Kurumsal), abonelikleri, kullanım sayaçlarını ve

@@ -1,10 +1,15 @@
 using System.Text.Json.Serialization;
 using ContentService.Data;
+using ContentService.Kampus;
+using ContentService.Kampus.Catalog;
+using ContentService.Kampus.Data;
+using ContentService.Kampus.Services;
 using ContentService.Services;
 using ContentService.Services.Assessments;
 using ContentService.Services.Media;
 using ContentService.Services.Questions;
 using ContentService.Services.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Minio;
 using Shared.Audit;
@@ -62,9 +67,29 @@ builder.Services.AddHostedService<VideoTranscodeWorker>();
 builder.Services.AddSubscriptionGuard(builder.Configuration);
 builder.Services.AddGuardianAccessClient(builder.Configuration);
 
+// YZ Kampüs: learner progress, rewards ledger, Yıldız Kupası, avatar, assignments and skill checks.
+builder.Services.AddDbContext<KampusDbContext>(options =>
+    options.UseNpgsql(
+        NpgsqlPooling.Apply(builder.Configuration.GetConnectionString("Postgres")),
+        npgsql => npgsql.MigrationsHistoryTable(KampusDbContext.MigrationsHistoryTable)));
+builder.Services.AddSingleton(KampusCatalog.LoadEmbedded());
+builder.Services.AddSingleton<KampusClock>();
+builder.Services.AddClassroomAccessClient(builder.Configuration);
+builder.Services.AddHttpClient(KampusDirectory.ClassroomClientName, client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:ClassroomService"]!.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddScoped<IKampusDirectory, KampusDirectory>();
+builder.Services.AddScoped<KampusCupService>();
+builder.Services.AddScoped<KampusLearnerService>();
+builder.Services.AddScoped<KampusAvatarService>();
+builder.Services.AddScoped<KampusTeachingService>();
+
 var app = builder.Build();
 app.UseEduPlatformPipeline(configure: pipeline => pipeline.UseSubscriptionQuotaExceptions());
 
 app.ApplyMigrations<ContentDbContext>();
+app.ApplyMigrations<KampusDbContext>();
 
 app.Run();
